@@ -34,6 +34,10 @@ body {
   overflow-x: hidden;
 }
 
+.font-serif {
+  font-family: var(--font-serif), Playfair Display, Georgia, Cambria, 'Times New Roman', serif;
+}
+
 /* PRELOADER */
 .boot {
   position: fixed;
@@ -126,10 +130,31 @@ body {
   padding: max(18px, calc(env(safe-area-inset-top, 0px) + 14px)) clamp(20px, 4vw, 56px) 18px;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 100%);
   pointer-events: none;
+  transition: background 0.4s var(--ease);
 }
 .chrome * {
   pointer-events: auto;
 }
+.chrome.over-possibilities {
+  background: linear-gradient(to bottom, rgba(255, 245, 240, 0.75) 0%, rgba(255, 245, 240, 0.4) 60%, rgba(255, 245, 240, 0) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.chrome.over-possibilities .mark,
+.chrome.over-possibilities .mark-star,
+.chrome.over-possibilities .nav a:not(.pill) {
+  color: #1a2621;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.8);
+}
+.chrome.over-possibilities .pill {
+  background: #1a2621;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(26, 38, 33, 0.25);
+}
+.chrome.over-possibilities .pill:hover {
+  background: #0d1713;
+}
+
 .mark {
   display: flex;
   align-items: center;
@@ -139,12 +164,13 @@ body {
   letter-spacing: -0.015em;
   color: #ffffff;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  transition: color 0.3s var(--ease);
 }
 .mark-star {
   opacity: 0.95;
   color: #ffffff;
   display: inline-block;
-  transition: transform 0.5s var(--ease);
+  transition: transform 0.5s var(--ease), color 0.3s var(--ease);
 }
 .mark:hover .mark-star {
   transform: rotate(90deg);
@@ -163,7 +189,7 @@ body {
   letter-spacing: -0.01em;
   opacity: 0.9;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease), color 0.3s var(--ease);
 }
 .nav a:not(.pill):hover {
   opacity: 1;
@@ -202,12 +228,12 @@ body {
   outline-offset: 2px;
 }
 
-/* FOOTER */
+/* FOOTER IN VIDEO HERO */
 .foot {
   position: fixed;
   bottom: 0;
   right: 0;
-  z-index: 40;
+  z-index: 25;
   padding: 18px clamp(20px, 4vw, 56px) max(18px, calc(env(safe-area-inset-bottom, 0px) + 14px));
   font-size: 12.5px;
   font-weight: 500;
@@ -215,6 +241,7 @@ body {
   color: rgba(255, 255, 255, 0.75);
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
   pointer-events: none;
+  transition: opacity 0.4s var(--ease);
 }
 
 /* NARRATIVE PANELS - ALIGNED TO BOTTOM LEFT CORNER */
@@ -262,8 +289,8 @@ body {
   opacity: 0.6;
 }
 
-/* CLEAN BOLD HEADING (GLASS REMOVED, HIGH IMPACT) */
-h1 {
+/* HERO HEADING (CLEAN, HIGH IMPACT) */
+.hero-title {
   font-weight: 600;
   font-size: clamp(38px, 6.2vw, 84px);
   line-height: 1.04;
@@ -274,7 +301,7 @@ h1 {
   text-wrap: balance;
 }
 
-/* HIGH-VISIBILITY SUBHEADING (INCREASED WEIGHT, CRISP VISIBILITY) */
+/* HERO SUBHEADING */
 .sub {
   margin-top: clamp(14px, 1.8vw, 22px);
   font-size: clamp(17px, 1.35vw, 22px);
@@ -299,15 +326,296 @@ h1 {
   font-weight: 600;
 }
 
-/* SNAPPY SCROLL TRACK (FAST PACED) */
+/* FAST PACED SCROLL TRACK FOR VIDEO HERO */
 .track {
   position: relative;
   z-index: 1;
-  height: 260vh;
-  min-height: 2000px;
+  height: 250vh;
+  min-height: 1900px;
 }
 
-/* RESPONSIVE OPTIMIZATIONS */
+/* ============================================================== */
+/* NEW SECTION: "DISCOVER THE POSSIBILITIES — EVERYTHING YOU NEED" */
+/* ============================================================== */
+.possibilities-section {
+  position: relative;
+  z-index: 30;
+  min-height: 100vh;
+  width: 100%;
+  background-image: url('https://res.cloudinary.com/diometfe9/image/upload/v1790183196/download_enkn9u.png');
+  background-size: cover;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: max(110px, calc(env(safe-area-inset-top, 0px) + 95px)) clamp(20px, 4vw, 56px) max(60px, calc(env(safe-area-inset-bottom, 0px) + 50px));
+  box-shadow: 0 -25px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+/* Subtle atmospheric lighting shimmer */
+.possibilities-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 68% 30%, rgba(255, 220, 180, 0.22) 0%, rgba(255, 255, 255, 0) 55%);
+  pointer-events: none;
+}
+
+.possibilities-header {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 860px;
+  margin: 0 auto clamp(30px, 4vh, 60px);
+}
+
+.possibilities-eyebrow {
+  font-size: clamp(12px, 0.85vw, 14px);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #24362f;
+  margin-bottom: 10px;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.85), 0 2px 10px rgba(255, 230, 210, 0.5);
+}
+
+.possibilities-title {
+  font-family: var(--font-serif), Playfair Display, Georgia, serif;
+  font-size: clamp(38px, 4.6vw, 68px);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  color: #172722;
+  margin-bottom: 14px;
+  text-wrap: balance;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9), 0 2px 12px rgba(255, 225, 210, 0.6);
+}
+
+.possibilities-desc {
+  font-size: clamp(15.5px, 1.25vw, 19px);
+  font-weight: 400;
+  line-height: 1.55;
+  color: #2f4239;
+  max-width: 58ch;
+  text-wrap: pretty;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
+}
+
+/* 4 GLOWING FROSTED GLASS CARDS CONTAINER */
+.cards-grid {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1220px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: clamp(16px, 1.8vw, 24px);
+  margin-top: auto;
+  padding-bottom: clamp(10px, 2vh, 30px);
+}
+
+/* INDIVIDUAL FROSTED GLASS CARD */
+.glass-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: space-between;
+  min-height: clamp(300px, 32vw, 340px);
+  padding: clamp(26px, 2.5vw, 34px) clamp(18px, 1.8vw, 24px) clamp(22px, 2.2vw, 28px);
+  border-radius: 26px;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.16) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1.5px solid rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 24px 50px -12px rgba(160, 70, 60, 0.3),
+    0 0 32px rgba(255, 205, 185, 0.35),
+    inset 0 1.5px 2px rgba(255, 255, 255, 0.85),
+    inset 0 -2px 14px rgba(255, 170, 150, 0.3);
+  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+/* Warm radiant light bloom under each card */
+.glass-card::before {
+  content: "";
+  position: absolute;
+  bottom: -35px;
+  left: 20%;
+  right: 20%;
+  height: 60px;
+  background: radial-gradient(ellipse at center, rgba(255, 180, 150, 0.6) 0%, rgba(255, 180, 150, 0) 75%);
+  filter: blur(14px);
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+}
+
+.glass-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.22) 100%);
+  box-shadow:
+    0 32px 68px -12px rgba(160, 70, 60, 0.42),
+    0 0 45px rgba(255, 220, 200, 0.5),
+    inset 0 1.5px 2px rgba(255, 255, 255, 1),
+    inset 0 -2px 16px rgba(255, 170, 150, 0.4);
+}
+.glass-card:hover::before {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* CIRCULAR ICON WRAPPER */
+.card-icon-wrap {
+  width: clamp(54px, 4.8vw, 64px);
+  height: clamp(54px, 4.8vw, 64px);
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.7);
+  transition: transform 0.4s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
+}
+.glass-card:hover .card-icon-wrap {
+  transform: scale(1.08) rotate(4deg);
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* CARD TITLE */
+.card-title {
+  font-family: var(--font-serif), Playfair Display, Georgia, serif;
+  font-size: clamp(22px, 1.85vw, 27px);
+  font-weight: 500;
+  color: #ffffff;
+  margin-top: clamp(14px, 1.5vw, 18px);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* CARD DESCRIPTION */
+.card-desc {
+  font-size: clamp(13px, 0.95vw, 14.5px);
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.94);
+  font-weight: 400;
+  max-width: 26ch;
+  margin-bottom: clamp(16px, 1.8vw, 22px);
+  text-wrap: balance;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* PILL BUTTON WITH ARROW */
+.card-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  width: 90px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  border: 1.5px solid rgba(255, 255, 255, 0.76);
+  color: #ffffff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  transition: background 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.card-btn span {
+  display: inline-block;
+  font-size: 16px;
+  line-height: 1;
+  transition: transform 0.25s var(--ease);
+}
+.glass-card:hover .card-btn {
+  background: rgba(255, 255, 255, 0.42);
+  border-color: #ffffff;
+  transform: scale(1.05);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+}
+.glass-card:hover .card-btn span {
+  transform: translateX(4px);
+}
+
+/* INTERACTIVE MODAL FOR CARDS */
+.feature-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(13, 12, 11, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s var(--ease), visibility 0.3s;
+}
+.feature-modal-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+.feature-modal-card {
+  width: 100%;
+  max-width: 520px;
+  border-radius: 28px;
+  background: #fbf9f6;
+  border: 1px solid rgba(13, 12, 11, 0.1);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.35);
+  padding: clamp(28px, 4vw, 40px);
+  position: relative;
+  transform: translateY(20px) scale(0.96);
+  transition: transform 0.35s var(--ease);
+}
+.feature-modal-backdrop.open .feature-modal-card {
+  transform: translateY(0) scale(1);
+}
+.modal-close-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(13, 12, 11, 0.06);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--fg);
+  font-size: 18px;
+  transition: background 0.2s;
+}
+.modal-close-btn:hover {
+  background: rgba(13, 12, 11, 0.12);
+}
+
+/* RESPONSIVE OPTIMIZATIONS FOR ALL SCREEN SIZES */
+@media (max-width: 1080px) {
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    max-width: 640px;
+  }
+}
+
 @media (max-width: 768px) {
   .nav a:not(.pill) {
     display: none;
@@ -323,7 +631,7 @@ h1 {
   .panel {
     padding: 24px 24px clamp(50px, 8vh, 70px);
   }
-  h1 {
+  .hero-title {
     max-width: 12ch;
     font-size: clamp(32px, 8.5vw, 48px);
   }
@@ -335,13 +643,37 @@ h1 {
   .foot {
     display: none;
   }
+  .possibilities-section {
+    padding: 90px 20px 50px;
+  }
+  .possibilities-title {
+    font-size: clamp(32px, 8vw, 44px);
+  }
+  .possibilities-desc {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 620px) {
+  .cards-grid {
+    grid-template-columns: 1fr;
+    max-width: 340px;
+    gap: 16px;
+  }
+  .glass-card {
+    min-height: 240px;
+    padding: 24px 20px 20px;
+  }
+  .card-desc {
+    margin-bottom: 14px;
+  }
 }
 
 @media (max-width: 480px) {
   .mark-star {
     display: none;
   }
-  h1 {
+  .hero-title {
     font-size: clamp(28px, 9vw, 38px);
   }
   .eyebrow {

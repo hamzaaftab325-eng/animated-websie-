@@ -1,12 +1,52 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Lenis from 'lenis';
 
+interface CardInfo {
+  id: string;
+  title: string;
+  description: string;
+  longDesc: string;
+  features: string[];
+}
+
+const CARDS_DATA: CardInfo[] = [
+  {
+    id: 'create',
+    title: 'Create',
+    description: 'Bring your ideas to life with intuitive tools.',
+    longDesc: 'From procedural geometric meshes to complex architectural models, bring high-fidelity spatial concepts into reality with real-time responsive tooling.',
+    features: ['Real-time 3D Viewport', 'Procedural Mesh Generation', 'PBR Shaders & Texturing', 'Automated Quad Remeshing']
+  },
+  {
+    id: 'explore',
+    title: 'Explore',
+    description: 'Discover new perspectives and endless inspiration.',
+    longDesc: 'Navigate through a curated multiverse of spatial design assets, material libraries, and dynamic lighting presets crafted for next-generation digital experiences.',
+    features: ['Curated Asset Marketplace', 'Interactive Studio Environments', 'Spectral Lighting Presets', '360° Panoramic Previews']
+  },
+  {
+    id: 'transform',
+    title: 'Transform',
+    description: 'Turn imagination into reality.',
+    longDesc: 'Accelerate your production pipeline with cloud-distributed render farms, GPU-accelerated ray tracing, and automated optimization for web and mobile.',
+    features: ['Distributed GPU Compute', 'Automated LOD Generation', 'Instant glTF & USDZ Exports', 'Real-time Raytracing Passes']
+  },
+  {
+    id: 'grow',
+    title: 'Grow',
+    description: 'A brighter, more creative tomorrow awaits.',
+    longDesc: 'Scale your design systems, collaborate in real time with global teams, and deploy immersive 3D scenes directly into production-grade applications.',
+    features: ['Multi-user Sync & Branching', 'Enterprise Design Tokens', 'Global Edge CDN Delivery', 'Analytics & Engagement Telemetry']
+  }
+];
+
 export default function Page() {
   const initializedRef = useRef(false);
+  const [activeModal, setActiveModal] = useState<CardInfo | null>(null);
 
   useEffect(() => {
     if (initializedRef.current) return;
@@ -14,7 +54,7 @@ export default function Page() {
 
     gsap.registerPlugin(ScrollTrigger);
 
-    // Fast, ultra-smooth responsive Lenis instance
+    // Fast, responsive Lenis smooth scroll
     const lenis = new Lenis({
       duration: 0.75,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -8 * t)),
@@ -40,12 +80,15 @@ export default function Page() {
     const bootPct = document.getElementById("bootPct");
     const meter = document.getElementById("meter");
     const panels = [].slice.call(document.querySelectorAll("[data-panel]")) as HTMLElement[];
+    const heroTrack = document.getElementById("heroTrack");
+    const chromeHeader = document.querySelector(".chrome");
+    const footNote = document.querySelector(".foot") as HTMLElement | null;
 
-    // Tighter, faster pacing for the 3 scenes
+    // 3 narrative cue zones within hero track (0..1)
     const CUES = [
-      [0.00, 0.00, 0.20, 0.30],
-      [0.38, 0.48, 0.65, 0.75],
-      [0.82, 0.90, 1.10, 1.20]
+      [0.00, 0.00, 0.22, 0.32],
+      [0.40, 0.50, 0.68, 0.78],
+      [0.84, 0.92, 1.00, 1.05]
     ];
     const DRIFT = 20;
 
@@ -72,9 +115,26 @@ export default function Page() {
     let rafId: number;
 
     function readScroll() {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      progress = max > 0 ? clamp(window.pageYOffset / max, 0, 1) : 0;
+      const scrollY = window.pageYOffset;
+      const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : (window.innerHeight * 1.5);
+      
+      // Video hero progress (0..1 during hero track)
+      progress = trackHeight > 0 ? clamp(scrollY / trackHeight, 0, 1) : 0;
       if (duration) seekTo = progress * duration;
+
+      // Header adapt style when scrolled into possibilities section
+      if (chromeHeader) {
+        if (scrollY > trackHeight - 40) {
+          chromeHeader.classList.add("over-possibilities");
+        } else {
+          chromeHeader.classList.remove("over-possibilities");
+        }
+      }
+
+      // Hide hero corner foot note once past hero
+      if (footNote) {
+        footNote.style.opacity = scrollY > trackHeight * 0.9 ? "0" : "1";
+      }
     }
 
     function paint() {
@@ -96,12 +156,12 @@ export default function Page() {
       }
     }
 
-    // High performance rAF loop with fast and crisp video response
+    // High performance rAF loop
     function frame() {
       if (ready && duration) {
         const gap = seekTo - seekAt;
         if (Math.abs(gap) > 0.0004) {
-          seekAt += gap * 0.28; // Snappy, responsive video playback tracking
+          seekAt += gap * 0.28;
           if (clip && clip.readyState >= 2 && !clip.seeking) {
             try {
               clip.currentTime = seekAt;
@@ -170,7 +230,6 @@ export default function Page() {
       setTimeout(start, 8000);
     }
 
-    // Preload video as a memory Blob for lossless zero-latency seeking
     function preload() {
       const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
       const signal = controller ? controller.signal : undefined;
@@ -238,22 +297,78 @@ export default function Page() {
       window.addEventListener(ev, unlock, { once: true, passive: true });
     });
 
-    // Fast smooth scroll navigation
+    // Nav smooth scroll handlers
     const navWorks = document.querySelector('a[href="#board"]');
     const navAbout = document.querySelector('a[href="#visit"]');
+    const navPossibilities = document.querySelector('a[href="#possibilities"]');
     const navBrief = document.querySelectorAll('a[href="#order"]');
 
-    const handleNavScroll = (targetProgress: number) => (e: Event) => {
-      e.preventDefault();
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      lenis.scrollTo(targetProgress * max, { duration: 0.8 });
-    };
+    if (navWorks) {
+      navWorks.addEventListener("click", (e) => {
+        e.preventDefault();
+        const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : 0;
+        lenis.scrollTo(trackHeight * 0.05, { duration: 0.8 });
+      });
+    }
 
-    if (navWorks) navWorks.addEventListener("click", handleNavScroll(0.02));
-    if (navAbout) navAbout.addEventListener("click", handleNavScroll(0.50));
+    if (navAbout) {
+      navAbout.addEventListener("click", (e) => {
+        e.preventDefault();
+        const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : 0;
+        lenis.scrollTo(trackHeight * 0.52, { duration: 0.8 });
+      });
+    }
+
+    if (navPossibilities) {
+      navPossibilities.addEventListener("click", (e) => {
+        e.preventDefault();
+        const el = document.getElementById("possibilities");
+        if (el) lenis.scrollTo(el, { duration: 1.1, offset: 0 });
+      });
+    }
+
     navBrief.forEach((el) => {
-      el.addEventListener("click", handleNavScroll(0.95));
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        const target = document.getElementById("possibilities");
+        if (target) lenis.scrollTo(target, { duration: 1.1 });
+      });
     });
+
+    // GSAP ScrollTrigger animation for the new Possibilities Section cards
+    gsap.fromTo(
+      ".glass-card",
+      { y: 50, opacity: 0, scale: 0.95 },
+      {
+        y: 0,
+        opacity: 1,
+        scale: 1,
+        duration: 0.8,
+        stagger: 0.12,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: "#possibilities",
+          start: "top 75%",
+          toggleActions: "play none none reverse",
+        }
+      }
+    );
+
+    gsap.fromTo(
+      ".possibilities-header",
+      { y: 30, opacity: 0 },
+      {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: "#possibilities",
+          start: "top 85%",
+          toggleActions: "play none none reverse",
+        }
+      }
+    );
 
     window.addEventListener("scroll", readScroll, { passive: true });
     window.addEventListener("resize", readScroll);
@@ -267,6 +382,7 @@ export default function Page() {
       cancelAnimationFrame(rafId);
       gsap.ticker.remove(tickerCallback);
       lenis.destroy();
+      ScrollTrigger.getAll().forEach(t => t.kill());
       window.removeEventListener("scroll", readScroll);
       window.removeEventListener("resize", readScroll);
       unlockEvents.forEach((ev) => {
@@ -291,7 +407,7 @@ export default function Page() {
       {/* Scroll Meter */}
       <i className="meter" id="meter"></i>
 
-      {/* Chrome Navigation Header */}
+      {/* Persistent Chrome Navigation Header */}
       <header className="chrome">
         <div className="mark">
           <span className="mark-star" aria-hidden="true">&#10037;</span>
@@ -300,20 +416,21 @@ export default function Page() {
         <nav className="nav">
           <a href="#board">Works</a>
           <a href="#visit">About</a>
-          <a className="pill" href="#order">Start a brief</a>
+          <a href="#possibilities">Possibilities</a>
+          <a className="pill" href="#possibilities">Explore Suite</a>
         </nav>
       </header>
 
-      {/* Main Narrative Text Panels Aligned Bottom-Left Without Glass Wrapper */}
+      {/* Main Narrative Text Panels Over Video */}
       <main className="panels">
         {/* Panel 1 */}
         <section className="panel" data-panel>
           <div className="content-block">
             <div className="eyebrow">Objects studio <span>&middot;</span> No. 112 Render Lane</div>
-            <h1>Built at four.<br />Out by seven.</h1>
+            <h1 className="hero-title">Built at four.<br />Out by seven.</h1>
             <p className="sub">Six kinds of mesh, one render farm, and a queue that starts before the sun does.</p>
             <div className="cta">
-              <a className="pill" href="#board">View the reel</a>
+              <a className="pill" href="#possibilities">View the reel</a>
             </div>
           </div>
         </section>
@@ -322,10 +439,10 @@ export default function Page() {
         <section className="panel" data-panel>
           <div className="content-block">
             <div className="eyebrow">Across the studio</div>
-            <h1>Flat, never bent.</h1>
+            <h1 className="hero-title">Flat, never bent.</h1>
             <p className="sub">The mesh should still be clean when it reaches the viewport. We export to order, never before.</p>
             <div className="cta">
-              <a className="pill" href="#visit">Tour our space</a>
+              <a className="pill" href="#possibilities">Tour our space</a>
             </div>
           </div>
         </section>
@@ -334,20 +451,187 @@ export default function Page() {
         <section className="panel" data-panel>
           <div className="content-block">
             <div className="eyebrow">The surface</div>
-            <h1>Smooth enough to<br />hold a light pass.</h1>
+            <h1 className="hero-title">Smooth enough to<br />hold a light pass.</h1>
             <p className="sub">Custom surface shaders whipped every morning, spread to the edge and weighed by the quarter pound.</p>
             <div className="cta">
-              <a className="pill" href="#order">Start a brief</a>
+              <a className="pill" href="#possibilities">Start a brief</a>
             </div>
           </div>
         </section>
       </main>
 
-      {/* Minimal Corner Footer */}
+      {/* Minimal Corner Footer for Video Hero */}
       <footer className="foot">112 Render Lane &nbsp;&middot;&nbsp; Tue–Sun, 9am till sold out</footer>
 
-      {/* Fast Paced Scroll Track */}
-      <div className="track"></div>
+      {/* Video Hero Scroll Track */}
+      <div className="track" id="heroTrack"></div>
+
+      {/* ============================================================== */}
+      {/* NEW SECTION: "DISCOVER THE POSSIBILITIES — EVERYTHING YOU NEED" */}
+      {/* ============================================================== */}
+      <section id="possibilities" className="possibilities-section">
+        {/* Section Header */}
+        <div className="possibilities-header">
+          <p className="possibilities-eyebrow">DISCOVER THE POSSIBILITIES</p>
+          <h2 className="possibilities-title">Everything You Need</h2>
+          <p className="possibilities-desc">
+            Powerful tools, boundless creativity, and a more beautiful future —all in one place.
+          </p>
+        </div>
+
+        {/* 4 Frosted Glass Cards */}
+        <div className="cards-grid">
+          {/* Card 1: Create */}
+          <div
+            className="glass-card"
+            onClick={() => setActiveModal(CARDS_DATA[0])}
+            role="button"
+            tabIndex={0}
+            aria-label="Create: Bring your ideas to life with intuitive tools."
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveModal(CARDS_DATA[0]); }}
+          >
+            <div className="card-icon-wrap" aria-hidden="true">
+              {/* Lotus flower icon */}
+              <svg viewBox="0 0 32 32" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 5c1.8 3.5 2.5 6.5 2.5 9 0 3-1.2 5.5-2.5 6.5-1.3-1-2.5-3.5-2.5-6.5 0-2.5.7-5.5 2.5-9z" />
+                <path d="M16 14c3.5-1 6.5-1 9 1 2.5 2 3 4.5 2 6.5-2.5 1-6 0-8.5-2" />
+                <path d="M16 14c-3.5-1-6.5-1-9 1-2.5 2-3 4.5-2 6.5 2.5 1 6 0 8.5-2" />
+                <path d="M7 23c4 1.5 14 1.5 18 0" />
+              </svg>
+            </div>
+            <h3 className="card-title">Create</h3>
+            <p className="card-desc">Bring your ideas to life with intuitive tools.</p>
+            <div className="card-btn">
+              <span>&rarr;</span>
+            </div>
+          </div>
+
+          {/* Card 2: Explore */}
+          <div
+            className="glass-card"
+            onClick={() => setActiveModal(CARDS_DATA[1])}
+            role="button"
+            tabIndex={0}
+            aria-label="Explore: Discover new perspectives and endless inspiration."
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveModal(CARDS_DATA[1]); }}
+          >
+            <div className="card-icon-wrap" aria-hidden="true">
+              {/* Mountain icon */}
+              <svg viewBox="0 0 32 32" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 24L14 8l6 11 3-5 5 10H5z" />
+                <path d="M11 19l3 5" />
+                <path d="M21 16l3 8" />
+              </svg>
+            </div>
+            <h3 className="card-title">Explore</h3>
+            <p className="card-desc">Discover new perspectives and endless inspiration.</p>
+            <div className="card-btn">
+              <span>&rarr;</span>
+            </div>
+          </div>
+
+          {/* Card 3: Transform */}
+          <div
+            className="glass-card"
+            onClick={() => setActiveModal(CARDS_DATA[2])}
+            role="button"
+            tabIndex={0}
+            aria-label="Transform: Turn imagination into reality."
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveModal(CARDS_DATA[2]); }}
+          >
+            <div className="card-icon-wrap" aria-hidden="true">
+              {/* Sun icon */}
+              <svg viewBox="0 0 32 32" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="16" cy="16" r="5" />
+                <path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8" />
+              </svg>
+            </div>
+            <h3 className="card-title">Transform</h3>
+            <p className="card-desc">Turn imagination into reality.</p>
+            <div className="card-btn">
+              <span>&rarr;</span>
+            </div>
+          </div>
+
+          {/* Card 4: Grow */}
+          <div
+            className="glass-card"
+            onClick={() => setActiveModal(CARDS_DATA[3])}
+            role="button"
+            tabIndex={0}
+            aria-label="Grow: A brighter, more creative tomorrow awaits."
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setActiveModal(CARDS_DATA[3]); }}
+          >
+            <div className="card-icon-wrap" aria-hidden="true">
+              {/* Leaf icon */}
+              <svg viewBox="0 0 32 32" className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M7 25c2-9 9-16 18-18-2 9-9 16-18 18z" />
+                <path d="M7 25c4-4 9-9 14-14" />
+                <path d="M15 17l4 1" />
+                <path d="M12 20l2 3" />
+              </svg>
+            </div>
+            <h3 className="card-title">Grow</h3>
+            <p className="card-desc">A brighter, more creative tomorrow awaits.</p>
+            <div className="card-btn">
+              <span>&rarr;</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Detail Modal for clicked Card */}
+      <div
+        className={`feature-modal-backdrop ${activeModal ? 'open' : ''}`}
+        onClick={() => setActiveModal(null)}
+        role="dialog"
+        aria-modal="true"
+      >
+        <div className="feature-modal-card" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="modal-close-btn"
+            onClick={() => setActiveModal(null)}
+            aria-label="Close details"
+          >
+            &times;
+          </button>
+          {activeModal && (
+            <div>
+              <p className="possibilities-eyebrow" style={{ color: '#55655d', marginBottom: '8px' }}>
+                POSSIBILITIES &bull; {activeModal.id.toUpperCase()}
+              </p>
+              <h3 className="font-serif" style={{ fontSize: '32px', color: '#172722', marginBottom: '12px', fontWeight: 600 }}>
+                {activeModal.title}
+              </h3>
+              <p style={{ fontSize: '15.5px', lineHeight: 1.6, color: '#3b4c44', marginBottom: '20px' }}>
+                {activeModal.longDesc}
+              </p>
+              <div style={{ marginBottom: '24px' }}>
+                <p style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#172722', marginBottom: '10px' }}>
+                  Key Capabilities
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  {activeModal.features.map((f, idx) => (
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', color: '#2f4239' }}>
+                      <span style={{ color: '#10b981', fontWeight: 'bold' }}>&bull;</span>
+                      <span>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  className="pill"
+                  style={{ background: '#172722', color: '#fff', width: '100%', height: '44px' }}
+                  onClick={() => setActiveModal(null)}
+                >
+                  Launch {activeModal.title} Workspace
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </>
   );
 }
