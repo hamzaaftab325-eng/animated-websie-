@@ -54,15 +54,19 @@ export default function Page() {
 
     gsap.registerPlugin(ScrollTrigger);
 
-    // Fast, responsive Lenis smooth scroll
+    // Device-aware motion tuning: preserve cinematic desktop motion while
+    // keeping touch scrolling native-feeling and responsive on tablets/phones.
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+    const isTablet = window.innerWidth <= 900 && window.innerWidth > 580;
+
     const lenis = new Lenis({
-      duration: 0.75,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -8 * t)),
+      duration: isTouch ? 0.42 : 0.72,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -9 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
-      smoothWheel: true,
-      touchMultiplier: 1.8,
-      wheelMultiplier: 1.1,
+      smoothWheel: !isTouch,
+      touchMultiplier: isTouch ? 1.08 : 1.35,
+      wheelMultiplier: isTablet ? 0.9 : 1.0,
     });
 
     lenis.on('scroll', ScrollTrigger.update);
@@ -90,7 +94,7 @@ export default function Page() {
       [0.40, 0.50, 0.68, 0.78],
       [0.84, 0.92, 1.00, 1.05]
     ];
-    const DRIFT = 20;
+    const DRIFT = isTouch ? 13 : 20;
 
     function clamp(v: number, a: number, b: number) {
       return Math.max(a, Math.min(b, v));
@@ -113,6 +117,9 @@ export default function Page() {
     let started = false;
     let attached = false;
     let rafId: number;
+    let lastVideoSeek = 0;
+    const videoSeekInterval = isTouch ? 48 : 28;
+    const seekLerp = isTouch ? 0.42 : 0.30;
 
     function readScroll() {
       const scrollY = window.pageYOffset;
@@ -156,19 +163,32 @@ export default function Page() {
       }
     }
 
-    // High performance rAF loop
-    function frame() {
+    // High-performance scrub loop. Touch devices seek less often to avoid
+    // decode thrashing while still catching up quickly to the scroll position.
+    function frame(now = 0) {
       if (ready && duration) {
         const gap = seekTo - seekAt;
-        if (Math.abs(gap) > 0.0004) {
-          seekAt += gap * 0.28;
-          if (clip && clip.readyState >= 2 && !clip.seeking) {
+        if (Math.abs(gap) > 0.001) {
+          seekAt += gap * seekLerp;
+
+          if (
+            clip &&
+            clip.readyState >= 2 &&
+            !clip.seeking &&
+            now - lastVideoSeek >= videoSeekInterval
+          ) {
+            lastVideoSeek = now;
             try {
-              clip.currentTime = seekAt;
+              if ('fastSeek' in clip && typeof clip.fastSeek === 'function' && isTouch) {
+                clip.fastSeek(seekAt);
+              } else {
+                clip.currentTime = seekAt;
+              }
             } catch (e) {}
           }
         }
       }
+
       paint();
       rafId = requestAnimationFrame(frame);
     }
@@ -231,6 +251,14 @@ export default function Page() {
     }
 
     function preload() {
+      // Avoid buffering the full MP4 into JavaScript memory on touch devices.
+      // Direct media streaming gives mobile Safari/Chrome much smoother seeking.
+      if (isTouch) {
+        setProgress(0.35);
+        attach(VIDEO_URL);
+        return;
+      }
+
       const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
       const signal = controller ? controller.signal : undefined;
 
@@ -335,40 +363,163 @@ export default function Page() {
       });
     });
 
-    // GSAP ScrollTrigger animation for the new Possibilities Section cards
-    gsap.fromTo(
-      ".glass-card",
-      { y: 50, opacity: 0, scale: 0.95 },
+    // Responsive, device-specific reveal choreography for the floral section.
+    const motion = gsap.matchMedia();
+    const tiltCleanups: Array<() => void> = [];
+
+    motion.add(
       {
-        y: 0,
-        opacity: 1,
-        scale: 1,
-        duration: 0.8,
-        stagger: 0.12,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: "#possibilities",
-          start: "top 75%",
-          toggleActions: "play none none reverse",
+        desktop: "(min-width: 901px) and (prefers-reduced-motion: no-preference)",
+        tablet: "(min-width: 581px) and (max-width: 900px) and (prefers-reduced-motion: no-preference)",
+        mobile: "(max-width: 580px) and (prefers-reduced-motion: no-preference)",
+        reduce: "(prefers-reduced-motion: reduce)",
+      },
+      (context) => {
+        const conditions = (context.conditions || {}) as Record<string, boolean>;
+        const cards = gsap.utils.toArray<HTMLElement>(".glass-card");
+
+        if (conditions.reduce) {
+          gsap.set([".possibilities-header", ".glass-card"], { opacity: 1, y: 0, x: 0, scale: 1 });
+          return;
         }
+
+        gsap.fromTo(
+          ".possibilities-header",
+          { y: conditions.mobile ? 22 : 32, opacity: 0, filter: "blur(8px)" },
+          {
+            y: 0,
+            opacity: 1,
+            filter: "blur(0px)",
+            duration: conditions.mobile ? 0.72 : 0.9,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: "#possibilities",
+              start: conditions.mobile ? "top 90%" : "top 82%",
+              once: true,
+            }
+          }
+        );
+
+        if (conditions.desktop) {
+          gsap.fromTo(
+            cards,
+            { y: 58, opacity: 0, scale: 0.94, rotateX: 7 },
+            {
+              y: 0,
+              opacity: 1,
+              scale: 1,
+              rotateX: 0,
+              duration: 0.92,
+              stagger: 0.10,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: ".cards-grid",
+                start: "top 86%",
+                once: true,
+              }
+            }
+          );
+        } else if (conditions.tablet) {
+          gsap.fromTo(
+            cards,
+            (index) => ({ x: index % 2 === 0 ? -30 : 30, y: 34, opacity: 0, scale: 0.96 }),
+            {
+              x: 0,
+              y: 0,
+              opacity: 1,
+              scale: 1,
+              duration: 0.76,
+              stagger: 0.09,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: ".cards-grid",
+                start: "top 90%",
+                once: true,
+              }
+            }
+          );
+        } else {
+          cards.forEach((card, index) => {
+            gsap.fromTo(
+              card,
+              { y: 34, opacity: 0, scale: 0.97 },
+              {
+                y: 0,
+                opacity: 1,
+                scale: 1,
+                duration: 0.62,
+                delay: Math.min(index * 0.025, 0.08),
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: card,
+                  start: "top 94%",
+                  once: true,
+                }
+              }
+            );
+          });
+        }
+
+        gsap.fromTo(
+          ".possibility-petal",
+          { yPercent: -20, rotation: -8 },
+          {
+            yPercent: 28,
+            rotation: 14,
+            ease: "none",
+            scrollTrigger: {
+              trigger: "#possibilities",
+              start: "top bottom",
+              end: "bottom top",
+              scrub: conditions.mobile ? 0.35 : 0.7,
+            }
+          }
+        );
       }
     );
 
-    gsap.fromTo(
-      ".possibilities-header",
-      { y: 30, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.8,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: "#possibilities",
-          start: "top 85%",
-          toggleActions: "play none none reverse",
-        }
-      }
-    );
+    // Premium cursor-following glass highlight and subtle 3D tilt.
+    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      document.querySelectorAll<HTMLElement>(".glass-card").forEach((card) => {
+        gsap.set(card, { transformPerspective: 900, transformOrigin: "center center" });
+        const rotateX = gsap.quickTo(card, "rotateX", { duration: 0.34, ease: "power3.out" });
+        const rotateY = gsap.quickTo(card, "rotateY", { duration: 0.34, ease: "power3.out" });
+        const lift = gsap.quickTo(card, "y", { duration: 0.34, ease: "power3.out" });
+        const scale = gsap.quickTo(card, "scale", { duration: 0.34, ease: "power3.out" });
+
+        const onMove = (event: PointerEvent) => {
+          const rect = card.getBoundingClientRect();
+          const px = (event.clientX - rect.left) / rect.width;
+          const py = (event.clientY - rect.top) / rect.height;
+
+          card.style.setProperty("--mx", (px * 100) + "%");
+          card.style.setProperty("--my", (py * 100) + "%");
+          rotateX((0.5 - py) * 5);
+          rotateY((px - 0.5) * 6);
+          lift(-7);
+          scale(1.012);
+        };
+
+        const onLeave = () => {
+          card.style.setProperty("--mx", "50%");
+          card.style.setProperty("--my", "0%");
+          rotateX(0);
+          rotateY(0);
+          lift(0);
+          scale(1);
+        };
+
+        card.addEventListener("pointermove", onMove);
+        card.addEventListener("pointerleave", onLeave);
+
+        tiltCleanups.push(() => {
+          card.removeEventListener("pointermove", onMove);
+          card.removeEventListener("pointerleave", onLeave);
+        });
+      });
+    }
+
+    ScrollTrigger.refresh();
 
     window.addEventListener("scroll", readScroll, { passive: true });
     window.addEventListener("resize", readScroll);
@@ -382,6 +533,8 @@ export default function Page() {
       cancelAnimationFrame(rafId);
       gsap.ticker.remove(tickerCallback);
       lenis.destroy();
+      motion.revert();
+      tiltCleanups.forEach((cleanup) => cleanup());
       ScrollTrigger.getAll().forEach(t => t.kill());
       window.removeEventListener("scroll", readScroll);
       window.removeEventListener("resize", readScroll);
@@ -470,6 +623,12 @@ export default function Page() {
       {/* NEW SECTION: "DISCOVER THE POSSIBILITIES — EVERYTHING YOU NEED" */}
       {/* ============================================================== */}
       <section id="possibilities" className="possibilities-section">
+        <span className="possibility-petal petal-1" aria-hidden="true"></span>
+        <span className="possibility-petal petal-2" aria-hidden="true"></span>
+        <span className="possibility-petal petal-3" aria-hidden="true"></span>
+        <span className="possibility-petal petal-4" aria-hidden="true"></span>
+        <span className="possibility-petal petal-5" aria-hidden="true"></span>
+
         {/* Section Header */}
         <div className="possibilities-header">
           <p className="possibilities-eyebrow">DISCOVER THE POSSIBILITIES</p>
