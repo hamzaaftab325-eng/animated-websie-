@@ -4,160 +4,170 @@ import { useEffect, useRef } from 'react';
 import styles from './animation-lab.module.css';
 import { initAnimationLab } from './animations';
 
-type CardItem = {
-  kicker: string;
+type Item = {
+  index: string;
+  label: string;
   title: string;
-  description: string;
-  metric: string;
-  metricLabel: string;
-  chips: string[];
-  icon: 'spark' | 'mountain' | 'sun' | 'leaf';
+  copy: string;
+  stat: string;
+  note: string;
 };
 
-const cards: CardItem[] = [
+const items: Item[] = [
   {
-    kicker: 'CREATE',
-    title: 'Build with intention',
-    description: 'Shape ideas into polished experiences with a system that keeps motion, layout, and hierarchy working together.',
-    metric: '01',
-    metricLabel: 'creative system',
-    chips: ['Motion-ready', 'Responsive'],
-    icon: 'spark',
+    index: '01',
+    label: 'CREATE',
+    title: 'Shape the impossible',
+    copy: 'Motion, material, and hierarchy tuned as one visual system.',
+    stat: '73°',
+    note: 'intentional angle',
   },
   {
-    kicker: 'EXPLORE',
-    title: 'Discover new depth',
-    description: 'Layer perspective, atmosphere, and timing so every scroll feels spatial rather than simply animated.',
-    metric: '02',
-    metricLabel: 'depth language',
-    chips: ['Parallax', 'Perspective'],
-    icon: 'mountain',
+    index: '02',
+    label: 'EXPLORE',
+    title: 'Find another depth',
+    copy: 'Spatial transitions that guide the eye without slowing the story.',
+    stat: '2.4x',
+    note: 'perceived depth',
   },
   {
-    kicker: 'TRANSFORM',
-    title: 'Turn motion into meaning',
-    description: 'Use reveals, focus shifts, and sequence to direct attention without overwhelming the visual composition.',
-    metric: '03',
-    metricLabel: 'motion rhythm',
-    chips: ['GSAP', 'ScrollTrigger'],
-    icon: 'sun',
+    index: '03',
+    label: 'TRANSFORM',
+    title: 'Move with purpose',
+    copy: 'Every reveal earns its place through pacing, focus, and contrast.',
+    stat: '08ms',
+    note: 'motion response',
   },
   {
-    kicker: 'GROW',
-    title: 'Scale the experience',
-    description: 'Keep every effect adaptable across desktop, tablet, and mobile with performance-aware interaction rules.',
-    metric: '04',
-    metricLabel: 'device strategy',
-    chips: ['Touch-safe', 'Adaptive'],
-    icon: 'leaf',
+    index: '04',
+    label: 'GROW',
+    title: 'Scale without noise',
+    copy: 'Desktop drama, tablet balance, and mobile motion that stays fluid.',
+    stat: '4/4',
+    note: 'device states',
   },
 ];
 
-function Icon({ type }: { type: CardItem['icon'] }) {
-  if (type === 'mountain') {
-    return (
-      <svg viewBox="0 0 32 32" aria-hidden="true">
-        <path d="M4 25 13 9l6 10 3-5 6 11H4Z" />
-        <path d="m10 20 3 5M21 17l3 8" />
-      </svg>
-    );
-  }
-
-  if (type === 'sun') {
-    return (
-      <svg viewBox="0 0 32 32" aria-hidden="true">
-        <circle cx="16" cy="16" r="5" />
-        <path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M6.8 25.2l2.8-2.8M22.4 9.6l2.8-2.8" />
-      </svg>
-    );
-  }
-
-  if (type === 'leaf') {
-    return (
-      <svg viewBox="0 0 32 32" aria-hidden="true">
-        <path d="M7 25c2-9 9-16 18-18-2 9-9 16-18 18Z" />
-        <path d="M7 25c4-4 9-9 14-14M15 17l4 1M12 20l2 3" />
-      </svg>
-    );
-  }
-
+function CrackLines() {
   return (
-    <svg viewBox="0 0 32 32" aria-hidden="true">
-      <path d="M16 4c1.7 3.3 2.5 6.3 2.5 8.8 0 3-1.2 5.4-2.5 6.5-1.3-1.1-2.5-3.5-2.5-6.5C13.5 10.3 14.3 7.3 16 4Z" />
-      <path d="M16 14c3.6-1 6.6-.8 9 1.2 2.4 2 2.9 4.5 1.9 6.5-2.6 1-6 .1-8.5-1.9M16 14c-3.6-1-6.6-.8-9 1.2-2.4 2-2.9 4.5-1.9 6.5 2.6 1 6 .1 8.5-1.9M7 24c4 1.5 14 1.5 18 0" />
+    <svg className={styles.cracks} viewBox="0 0 320 430" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M8 64 48 86 32 116 74 132 58 166M270 12l-22 38 30 26-38 34 24 31M10 324l44-22 28 34 32-46M302 344l-46-18-22 36-44-14M90 8l26 38-16 30 38 28M208 428l-18-40 24-34-28-28" />
+      <path d="M40 90 18 104M53 112l24-8M260 50l36-4M246 106l-30 14M72 332l-36 22M238 354l30 26M112 48l24-16M198 390l30 12" />
     </svg>
   );
 }
 
-function Words({ text }: { text: string }) {
-  return (
-    <span className={styles.wordLine}>
-      {text.split(' ').map((word, index) => (
-        <span className={styles.wordClip} key={word + index}>
-          <span className={styles.word} data-word>{word}</span>
-        </span>
-      ))}
-    </span>
-  );
-}
-
-function Characters({ text }: { text: string }) {
-  return (
-    <span className={styles.characterLine} aria-label={text}>
-      {Array.from(text).map((character, index) => (
-        <span
-          key={character + index}
-          className={character === ' ' ? styles.characterSpace : styles.characterClip}
-          aria-hidden="true"
-        >
-          {character === ' ' ? ' ' : <span className={styles.character} data-char>{character}</span>}
-        </span>
-      ))}
-    </span>
-  );
-}
-
-function DetailCard({
-  item,
-  index,
-  stack = false,
-}: {
-  item: CardItem;
-  index: number;
-  stack?: boolean;
-}) {
+function ShardCard({ item, variant }: { item: Item; variant: number }) {
   return (
     <article
-      className={styles.detailCard}
-      data-detail-card
-      data-tilt-card
-      data-stack-card={stack ? '' : undefined}
+      className={styles.shardCard}
+      data-shard-card
+      data-glass-card
+      data-variant={variant}
       tabIndex={0}
     >
-      <div className={styles.cardTop}>
-        <span className={styles.cardKicker}>0{index + 1} / {item.kicker}</span>
-        <span className={styles.cardIcon}>
-          <Icon type={item.icon} />
-        </span>
+      <div className={styles.shardRefraction} aria-hidden="true" />
+      <CrackLines />
+      <div className={styles.shardTop}>
+        <span>{item.label}</span>
+        <small>{item.index}</small>
       </div>
-
-      <div className={styles.cardBody}>
+      <div className={styles.shardCenter}>
+        <strong>{item.stat}</strong>
         <h3>{item.title}</h3>
-        <p>{item.description}</p>
+        <p>{item.copy}</p>
       </div>
-
-      <div className={styles.cardMetric}>
-        <strong>{item.metric}</strong>
-        <span>{item.metricLabel}</span>
+      <div className={styles.shardFooter}>
+        <em>{item.note}</em>
+        <span>↗</span>
       </div>
+    </article>
+  );
+}
 
-      <div className={styles.cardChips}>
-        {item.chips.map((chip) => <span key={chip}>{chip}</span>)}
+function LensCard({ item }: { item: Item }) {
+  return (
+    <article className={styles.lensCard} data-lens-card data-glass-card tabIndex={0}>
+      <div className={styles.lensRail} aria-hidden="true" />
+      <div className={styles.lensDisk} data-lens-disk aria-hidden="true">
+        <span>{item.index}</span>
       </div>
+      <div className={styles.lensMeta}>
+        <span>{item.label}</span>
+        <small>OPTICAL / {item.index}</small>
+      </div>
+      <div className={styles.lensBody}>
+        <h3>{item.title}</h3>
+        <p>{item.copy}</p>
+      </div>
+      <div className={styles.lensFooter}>
+        <span>{item.note}</span>
+        <b>View</b>
+      </div>
+    </article>
+  );
+}
 
-      <div className={styles.cardFooter}>
-        <span>Explore system</span>
-        <span className={styles.cardArrow} aria-hidden="true">↗</span>
+function PrismCard({ item, variant }: { item: Item; variant: number }) {
+  return (
+    <article className={styles.prismCard} data-prism-card data-glass-card data-variant={variant} tabIndex={0}>
+      <div className={styles.prismSweep} data-prism-sweep aria-hidden="true" />
+      <div className={styles.prismNumber}>{item.index}</div>
+      <div className={styles.prismCopy}>
+        <span>{item.label}</span>
+        <h3>{item.title}</h3>
+        <p>{item.copy}</p>
+      </div>
+      <div className={styles.prismFoot}>
+        <strong>{item.stat}</strong>
+        <small>{item.note}</small>
+      </div>
+    </article>
+  );
+}
+
+function LayerCard({ item, variant }: { item: Item; variant: number }) {
+  return (
+    <article className={styles.layerCard} data-layer-card data-glass-card data-variant={variant} tabIndex={0}>
+      <div className={styles.layerPlate + ' ' + styles.layerPlateBack} aria-hidden="true" />
+      <div className={styles.layerPlate + ' ' + styles.layerPlateMid} aria-hidden="true" />
+      <div className={styles.layerFace}>
+        <div className={styles.layerHeader}>
+          <span>{item.index}</span>
+          <small>{item.label}</small>
+        </div>
+        <div className={styles.layerOrb} data-layer-orb aria-hidden="true">
+          <i />
+        </div>
+        <h3>{item.title}</h3>
+        <p>{item.copy}</p>
+        <div className={styles.layerFooter}>
+          <span>{item.stat}</span>
+          <em>{item.note}</em>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function LiquidCard({ item, variant }: { item: Item; variant: number }) {
+  return (
+    <article className={styles.liquidCard} data-liquid-card data-glass-card data-variant={variant} tabIndex={0}>
+      <div className={styles.liquidGlow} aria-hidden="true" />
+      <div className={styles.liquidCore} data-liquid-core aria-hidden="true">
+        <span />
+      </div>
+      <div className={styles.liquidTop}>
+        <span>{item.label}</span>
+        <b>{item.index}</b>
+      </div>
+      <div className={styles.liquidBody}>
+        <h3>{item.title}</h3>
+        <p>{item.copy}</p>
+      </div>
+      <div className={styles.liquidFooter}>
+        <span>{item.note}</span>
+        <strong>{item.stat}</strong>
       </div>
     </article>
   );
@@ -173,184 +183,185 @@ export default function AnimationLabPage() {
 
   return (
     <main ref={rootRef} className={styles.lab}>
-      <div className={styles.progress} data-lab-progress />
+      <svg className={styles.filterDefs} width="0" height="0" aria-hidden="true">
+        <defs>
+          <filter id="lab-glass-warp" x="-25%" y="-25%" width="150%" height="150%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.012 0.022" numOctaves="2" seed="11" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="B" />
+          </filter>
+          <filter id="lab-soft-warp" x="-20%" y="-20%" width="140%" height="140%">
+            <feTurbulence type="turbulence" baseFrequency="0.008 0.014" numOctaves="1" seed="5" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+        </defs>
+      </svg>
 
-      <header className={styles.labHeader}>
-        <a href="/" className={styles.backLink}>← Home</a>
+      <div className={styles.progress} data-progress />
+
+      <header className={styles.header}>
+        <a href="/" className={styles.homeLink}>← HOME</a>
+        <div className={styles.headerTitle}>MOTION LAB / 2026</div>
         <div className={styles.headerMeta}>
-          <span>GSAP</span>
-          <span>ScrollTrigger</span>
+          <span>GSAP 3.15</span>
+          <span>SplitText</span>
           <span>Lenis</span>
         </div>
       </header>
 
-      <section className={styles.intro}>
-        <p className={styles.overline}>MOTION SYSTEM / 10 DIRECTIONS</p>
-        <h1>Animation Lab</h1>
-        <p>
-          Five professional text-scroll systems and five card-motion systems, built as isolated options
-          so you can choose one direction and move it to the homepage without disturbing the current design.
+      <section className={styles.hero}>
+        <div className={styles.heroNoise} aria-hidden="true" />
+        <div className={styles.heroShard} data-hero-shard aria-hidden="true">
+          <div className={styles.heroShardInner} />
+          <CrackLines />
+        </div>
+        <p className={styles.heroEyebrow}>REFRACTION / TYPE / SCROLL / MATERIAL</p>
+        <h1>Not another<br />2024 motion reel.</h1>
+        <p className={styles.heroCopy}>
+          Ten rebuilt studies using modern split typography, scroll velocity, focus transitions,
+          optical glass, broken shards, layered acrylic, and touch-aware motion.
         </p>
-        <div className={styles.introIndex}>
-          <a href="#text-systems">01 — Text systems</a>
-          <a href="#card-systems">02 — Card systems</a>
+        <div className={styles.heroNav}>
+          <a href="#type-01">5 text systems</a>
+          <a href="#glass-01">5 glass systems</a>
         </div>
       </section>
 
-      <div className={styles.sectionMarker} id="text-systems">
+      <div className={styles.chapter}>
         <span>01</span>
-        <p>SCROLL + TEXT ANIMATIONS</p>
+        <p>TYPE / SCROLL SYSTEMS</p>
       </div>
 
-      <section className={styles.textDemo + ' ' + styles.textDemoOne} data-text-demo="1">
-        <div className={styles.demoLabel}>
-          <span>TEXT 01</span>
-          <p>Cinematic word rise</p>
-        </div>
-        <div className={styles.textStage}>
-          <p className={styles.textKicker}>SCENE ONE / CONTROLLED REVEAL</p>
-          <h2><Words text="Ideas should arrive with weight." /></h2>
-          <p className={styles.textCopy} data-fade-copy>
-            Words rise through a clipped baseline with perspective, soft opacity, and a measured stagger.
-          </p>
-          <span className={styles.revealRule} data-reveal-rule />
-        </div>
-      </section>
-
-      <section className={styles.textDemo + ' ' + styles.textDemoTwo} data-text-demo="2">
-        <div className={styles.demoLabel}>
-          <span>TEXT 02</span>
-          <p>Editorial mask wipe</p>
-        </div>
-        <div className={styles.maskGrid}>
-          <div className={styles.maskVisual} data-mask-visual>
-            <span className={styles.maskOrb} />
-          </div>
-          <div className={styles.maskCopy}>
-            <p className={styles.textKicker}>SCENE TWO / MASKED EDITORIAL</p>
-            <div className={styles.maskLine} data-mask-line>
-              <h2>Reveal the idea.</h2>
-            </div>
-            <div className={styles.maskLine} data-mask-line>
-              <h2>Then the detail.</h2>
-            </div>
-            <p data-mask-body>
-              A directional wipe lets typography and imagery share the same visual rhythm without competing.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.textDemo + ' ' + styles.textDemoThree} data-text-demo="3">
-        <div className={styles.demoLabel}>
-          <span>TEXT 03</span>
-          <p>Depth + focus shift</p>
-        </div>
-        <div className={styles.focusStage}>
-          <span className={styles.focusHalo} data-focus-halo />
-          <p className={styles.textKicker}>SCENE THREE / DEPTH OF FIELD</p>
-          <h2 data-focus-title>Move from atmosphere to clarity.</h2>
-          <p data-focus-copy>
-            Blur, scale, and luminance resolve together so the message feels like a camera finding focus.
+      <section className={styles.typeScene + ' ' + styles.typeReveal} id="type-01" data-type-scene="reveal">
+        <div className={styles.sceneIndex}>01 / PRESSURE REVEAL</div>
+        <div className={styles.revealGlass} data-reveal-glass aria-hidden="true" />
+        <div className={styles.typeContent}>
+          <p className={styles.kicker}>SPLITTEXT / LINE MASK / BLUR</p>
+          <h2 data-split-lines>Beautiful motion should feel discovered, not applied.</h2>
+          <p data-copy>
+            The line enters through its own mask, sharpens from optical blur, then settles into a calm editorial composition.
           </p>
         </div>
       </section>
 
-      <section className={styles.textDemo + ' ' + styles.textDemoFour} data-text-demo="4">
-        <div className={styles.demoLabel}>
-          <span>TEXT 04</span>
-          <p>Character wave</p>
+      <section className={styles.typeScene + ' ' + styles.typeVelocity} id="type-02" data-type-scene="velocity">
+        <div className={styles.sceneIndex}>02 / VELOCITY RIBBON</div>
+        <div className={styles.velocityRows} data-velocity-wrap>
+          <div data-velocity-line data-direction="-1"><span>DESIGN</span><i>should move</i></div>
+          <div data-velocity-line data-direction="1"><span>LIKE</span><i>light through</i></div>
+          <div data-velocity-line data-direction="-1"><span>GLASS</span><i>not like slides</i></div>
         </div>
-        <div className={styles.characterStage}>
-          <p className={styles.textKicker}>SCENE FOUR / KINETIC TYPE</p>
-          <h2><Characters text="Motion can feel alive." /></h2>
-          <p data-character-copy>
-            Individual characters move as one coordinated wave, then settle into a clean editorial lockup.
+        <p className={styles.velocityNote}>Scroll speed feeds blur and skew, while direction controls the typography rails.</p>
+      </section>
+
+      <section className={styles.typeScene + ' ' + styles.typeFocus} id="type-03" data-type-scene="focus">
+        <div className={styles.sceneIndex}>03 / OPTICAL FOCUS</div>
+        <div className={styles.focusHalo} data-focus-halo aria-hidden="true" />
+        <div className={styles.focusRing} data-focus-ring aria-hidden="true" />
+        <div className={styles.focusContent}>
+          <p className={styles.kicker}>DEPTH / FOCUS / SCALE</p>
+          <h2 data-split-words>Bring the thought into focus.</h2>
+          <p data-copy>
+            Words resolve from soft depth at different rates, giving the transition the feeling of a lens finding its subject.
           </p>
         </div>
       </section>
 
-      <section className={styles.textDemo + ' ' + styles.textDemoFive} data-text-demo="5">
-        <div className={styles.demoLabel}>
-          <span>TEXT 05</span>
-          <p>Pinned kinetic statement</p>
+      <section className={styles.typeScene + ' ' + styles.typeLens} id="type-04" data-type-scene="lens">
+        <div className={styles.sceneIndex}>04 / REFRACTIVE TYPE</div>
+        <div className={styles.lensBackdrop} aria-hidden="true">
+          <span>FORM</span>
+          <span>LIGHT</span>
+          <span>PACE</span>
         </div>
-        <div className={styles.kineticStage}>
-          <p className={styles.textKicker}>SCENE FIVE / PINNED STORY MOMENT</p>
-          <div className={styles.kineticWindow}>
-            <h2 data-kinetic-line>Design the pause.</h2>
-            <h2 data-kinetic-line>Direct the eye.</h2>
-            <h2 data-kinetic-line>Release the scene.</h2>
-          </div>
-          <p data-kinetic-copy>
-            On desktop this becomes a short pinned moment. On touch screens it converts to a lighter sequential reveal.
-          </p>
+        <div className={styles.typeLensBubble} data-type-lens aria-hidden="true">
+          <div className={styles.typeLensRefraction}>REFRACT</div>
+        </div>
+        <div className={styles.typeLensCopy}>
+          <p className={styles.kicker}>CHARACTER SPLIT / PIN / REFRACTION</p>
+          <h2 data-split-chars>Let the interface bend around the story.</h2>
+          <p data-copy>A moving optical lens crosses split characters while the scene remains pinned for one controlled cinematic beat.</p>
         </div>
       </section>
 
-      <div className={styles.sectionMarker} id="card-systems">
+      <section className={styles.typeScene + ' ' + styles.typeCut} id="type-05" data-type-scene="cut">
+        <div className={styles.sceneIndex}>05 / EDITORIAL CUT</div>
+        <div className={styles.cutShard + ' ' + styles.cutShardOne} data-cut-shard aria-hidden="true" />
+        <div className={styles.cutShard + ' ' + styles.cutShardTwo} data-cut-shard aria-hidden="true" />
+        <div className={styles.cutCopy}>
+          <p className={styles.kicker}>MASK / OFFSET / COMPOSITION</p>
+          <div className={styles.cutLine}><h2 data-cut-line>Make space.</h2></div>
+          <div className={styles.cutLine}><h2 data-cut-line>Break the grid.</h2></div>
+          <div className={styles.cutLine}><h2 data-cut-line>Keep the rhythm.</h2></div>
+          <p data-copy>Typography and translucent fragments enter from different axes, then lock into a single editorial frame.</p>
+        </div>
+      </section>
+
+      <div className={styles.chapter + ' ' + styles.chapterGlass}>
         <span>02</span>
-        <p>CARD ANIMATION SYSTEMS</p>
+        <p>GLASS / CARD SYSTEMS</p>
       </div>
 
-      <section className={styles.cardDemo + ' ' + styles.cardDemoOne} data-card-demo="1">
-        <div className={styles.cardDemoIntro}>
-          <p>CARDS 01 / CASCADE LIFT</p>
-          <h2>Elegant depth, one card at a time.</h2>
-          <span>Staggered elevation + perspective settle + premium hover response.</span>
+      <section className={styles.cardScene + ' ' + styles.shardScene} id="glass-01" data-card-scene="shard">
+        <div className={styles.cardIntro}>
+          <p>GLASS 01 / BROKEN REFRACTION</p>
+          <h2>Not rounded rectangles.<br />Actual shards.</h2>
+          <span>Irregular silhouettes, crack geometry, internal refraction, sharp specular edges, and perspective entry.</span>
         </div>
-        <div className={styles.cardGrid}>
-          {cards.map((item, index) => <DetailCard key={item.title} item={item} index={index} />)}
-        </div>
-      </section>
-
-      <section className={styles.cardDemo + ' ' + styles.cardDemoTwo} data-card-demo="2">
-        <div className={styles.cardDemoIntro}>
-          <p>CARDS 02 / PERSPECTIVE FAN</p>
-          <h2>Cards enter as a spatial composition.</h2>
-          <span>Alternating 3D angles resolve into a perfectly balanced grid.</span>
-        </div>
-        <div className={styles.cardGrid}>
-          {cards.map((item, index) => <DetailCard key={item.title} item={item} index={index} />)}
+        <div className={styles.shardGrid}>
+          {items.map((item, index) => <ShardCard key={item.index} item={item} variant={index + 1} />)}
         </div>
       </section>
 
-      <section className={styles.cardDemo + ' ' + styles.cardDemoThree} data-card-demo="3">
-        <div className={styles.cardDemoIntro}>
-          <p>CARDS 03 / GLASS SPOTLIGHT</p>
-          <h2>Light travels through the interface.</h2>
-          <span>Masked reveal, directional sheen, and cursor-following glass highlights.</span>
+      <section className={styles.cardScene + ' ' + styles.lensScene} id="glass-02" data-card-scene="lens">
+        <div className={styles.cardIntro + ' ' + styles.lightIntro}>
+          <p>GLASS 02 / OPTICAL LENS</p>
+          <h2>Clearer. Thicker. More physical.</h2>
+          <span>A floating optical disk, edge caustics, internal rails, and pointer-following light create a camera-lens feel.</span>
         </div>
-        <div className={styles.cardGrid}>
-          {cards.map((item, index) => <DetailCard key={item.title} item={item} index={index} />)}
-        </div>
-      </section>
-
-      <section className={styles.cardDemo + ' ' + styles.cardDemoFour} data-card-demo="4">
-        <div className={styles.cardDemoIntro}>
-          <p>CARDS 04 / STACKED STORY</p>
-          <h2>One stack. Four progressive ideas.</h2>
-          <span>Desktop uses a pinned deck transition; tablet and mobile use an efficient sequential version.</span>
-        </div>
-        <div className={styles.cardGrid + ' ' + styles.stackGrid} data-stack-grid>
-          {cards.map((item, index) => <DetailCard key={item.title} item={item} index={index} stack />)}
+        <div className={styles.lensGrid}>
+          {items.map((item) => <LensCard key={item.index} item={item} />)}
         </div>
       </section>
 
-      <section className={styles.cardDemo + ' ' + styles.cardDemoFive} data-card-demo="5">
-        <div className={styles.cardDemoIntro}>
-          <p>CARDS 05 / MAGNETIC FLOW</p>
-          <h2>A softer, more organic arrival.</h2>
-          <span>Cards drift from opposing directions, settle with spring-like timing, then respond subtly to pointer movement.</span>
+      <section className={styles.cardScene + ' ' + styles.prismScene} id="glass-03" data-card-scene="prism">
+        <div className={styles.cardIntro + ' ' + styles.darkIntro}>
+          <p>GLASS 03 / CHROMATIC PRISM</p>
+          <h2>Glass can carry color without becoming neon.</h2>
+          <span>Controlled spectral edges, dark optical depth, and a travelling prism sweep keep the material premium.</span>
         </div>
-        <div className={styles.cardGrid}>
-          {cards.map((item, index) => <DetailCard key={item.title} item={item} index={index} />)}
+        <div className={styles.prismGrid}>
+          {items.map((item, index) => <PrismCard key={item.index} item={item} variant={index + 1} />)}
         </div>
       </section>
 
-      <footer className={styles.labFooter}>
-        <p>Animation Lab — choose a system, then move only that system into the homepage.</p>
-        <a href="#text-systems">Back to top ↑</a>
+      <section className={styles.cardScene + ' ' + styles.layerScene} id="glass-04" data-card-scene="layer">
+        <div className={styles.cardIntro + ' ' + styles.lightIntro}>
+          <p>GLASS 04 / LAYERED ACRYLIC</p>
+          <h2>Depth through material,<br />not extra decoration.</h2>
+          <span>Three physical layers separate, settle, and re-stack while the central optical orb carries the motion.</span>
+        </div>
+        <div className={styles.layerGrid}>
+          {items.map((item, index) => <LayerCard key={item.index} item={item} variant={index + 1} />)}
+        </div>
+      </section>
+
+      <section className={styles.cardScene + ' ' + styles.liquidScene} id="glass-05" data-card-scene="liquid">
+        <div className={styles.cardIntro + ' ' + styles.darkIntro}>
+          <p>GLASS 05 / LIQUID OBJECTS</p>
+          <h2>Soft geometry with a hard motion system.</h2>
+          <span>Organic silhouettes, moving internal cores, magnetic pointer response, and restrained blur for touch performance.</span>
+        </div>
+        <div className={styles.liquidGrid}>
+          {items.map((item, index) => <LiquidCard key={item.index} item={item} variant={index + 1} />)}
+        </div>
+      </section>
+
+      <footer className={styles.footer}>
+        <div>
+          <small>ANIMATION LAB / 2026</small>
+          <p>Choose one text system and one glass system. They are intentionally isolated from the homepage.</p>
+        </div>
+        <a href="#type-01">Back to studies ↑</a>
       </footer>
     </main>
   );
