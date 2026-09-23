@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
 
 interface CardInfo {
@@ -52,7 +53,7 @@ export default function Page() {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    gsap.registerPlugin(ScrollTrigger);
+    gsap.registerPlugin(ScrollTrigger, SplitText);
 
     // Device-aware motion tuning: preserve cinematic desktop motion while
     // keeping touch scrolling native-feeling and responsive on tablets/phones.
@@ -84,6 +85,37 @@ export default function Page() {
     const bootPct = document.getElementById("bootPct");
     const meter = document.getElementById("meter");
     const panels = [].slice.call(document.querySelectorAll("[data-panel]")) as HTMLElement[];
+    const textSplits: Array<ReturnType<typeof SplitText.create>> = [];
+    const panelTitleChars: HTMLElement[][] = [];
+    const panelSubtitleWords: HTMLElement[][] = [];
+
+    panels.forEach((panel) => {
+      const title = panel.querySelector<HTMLElement>(".hero-title");
+      const subtitle = panel.querySelector<HTMLElement>(".sub");
+
+      if (title) {
+        const split = SplitText.create(title, {
+          type: "chars",
+          charsClass: "hero-char",
+        });
+        textSplits.push(split);
+        panelTitleChars.push(split.chars as HTMLElement[]);
+      } else {
+        panelTitleChars.push([]);
+      }
+
+      if (subtitle) {
+        const split = SplitText.create(subtitle, {
+          type: "words",
+          wordsClass: "sub-word",
+        });
+        textSplits.push(split);
+        panelSubtitleWords.push(split.words as HTMLElement[]);
+      } else {
+        panelSubtitleWords.push([]);
+      }
+    });
+
     const heroTrack = document.getElementById("heroTrack");
     const chromeHeader = document.querySelector(".chrome");
     const footNote = document.querySelector(".foot") as HTMLElement | null;
@@ -148,18 +180,45 @@ export default function Page() {
       if (meter) {
         meter.style.transform = `scaleX(${progress})`;
       }
+
       for (let i = 0; i < panels.length; i++) {
         const c = CUES[i];
         const el = panels[i];
         if (!c || !el) continue;
+
         const enter = ramp(progress, c[0], c[1]);
         const leave = ramp(progress, c[2], c[3]);
         const o = enter * (1 - leave);
         const y = (1 - enter) * DRIFT - leave * DRIFT;
-        
+
         el.style.opacity = o.toString();
         el.style.transform = `translate3d(0, ${y}px, 0)`;
         el.style.pointerEvents = o > 0.5 ? "auto" : "none";
+
+        const chars = panelTitleChars[i] || [];
+        chars.forEach((char, index) => {
+          const stagger = Math.min(index * (isTouch ? 0.035 : 0.045), 0.34);
+          const reveal = smooth(clamp((enter - stagger) / Math.max(0.001, 1 - stagger), 0, 1));
+          const blur = (1 - reveal) * (isTouch ? 15 : 25) + leave * (isTouch ? 7 : 12);
+          const scale = 1 + (1 - reveal) * (isTouch ? 0.10 : 0.20);
+          const charY = (1 - reveal) * (isTouch ? 12 : 22) - leave * 8;
+
+          char.style.opacity = reveal.toString();
+          char.style.filter = `blur(${blur.toFixed(2)}px)`;
+          char.style.transform = `translate3d(0, ${charY.toFixed(2)}px, 0) scale(${scale.toFixed(3)})`;
+        });
+
+        const words = panelSubtitleWords[i] || [];
+        words.forEach((word, index) => {
+          const stagger = Math.min(index * 0.035, 0.22);
+          const reveal = smooth(clamp((enter - 0.12 - stagger) / Math.max(0.001, 0.88 - stagger), 0, 1));
+          const blur = (1 - reveal) * (isTouch ? 8 : 13) + leave * 6;
+          const wordY = (1 - reveal) * (isTouch ? 8 : 14);
+
+          word.style.opacity = reveal.toString();
+          word.style.filter = `blur(${blur.toFixed(2)}px)`;
+          word.style.transform = `translate3d(0, ${wordY.toFixed(2)}px, 0)`;
+        });
       }
     }
 
@@ -359,7 +418,7 @@ export default function Page() {
       });
     });
 
-    // Responsive, device-specific reveal choreography for the floral section.
+    // Final homepage motion: compact header + stacked glass cards that resolve into the grid.
     const motion = gsap.matchMedia();
     const tiltCleanups: Array<() => void> = [];
 
@@ -373,91 +432,162 @@ export default function Page() {
       (context) => {
         const conditions = (context.conditions || {}) as Record<string, boolean>;
         const cards = gsap.utils.toArray<HTMLElement>(".glass-card");
+        const grid = document.querySelector<HTMLElement>(".cards-grid");
 
         if (conditions.reduce) {
-          gsap.set([".possibilities-header", ".glass-card"], { opacity: 1, y: 0, x: 0, scale: 1 });
+          gsap.set([".possibilities-header", ".glass-card"], {
+            opacity: 1,
+            x: 0,
+            y: 0,
+            scale: 1,
+            rotateX: 0,
+            rotateY: 0,
+            rotateZ: 0,
+            filter: "none",
+          });
           return;
         }
 
-        gsap.fromTo(
-          ".possibilities-header",
-          { y: conditions.mobile ? 22 : 32, opacity: 0, filter: "blur(8px)" },
-          {
-            y: 0,
-            opacity: 1,
-            filter: "blur(0px)",
-            duration: conditions.mobile ? 0.72 : 0.9,
-            ease: "power3.out",
+        if (conditions.desktop && grid && cards.length) {
+          const stackOffsetX = (index: number, target: HTMLElement) => {
+            const gridRect = grid.getBoundingClientRect();
+            const rect = target.getBoundingClientRect();
+            return gridRect.left + gridRect.width / 2 - (rect.left + rect.width / 2);
+          };
+
+          const stackY = [-16, -5, 6, 17];
+          const stackRotate = [-7, -2.5, 2.5, 7];
+          const stackScale = [0.93, 0.955, 0.98, 1];
+
+          gsap.set(cards, {
+            zIndex: (index: number) => cards.length - index,
+          });
+
+          const stackTimeline = gsap.timeline({
             scrollTrigger: {
               trigger: "#possibilities",
-              start: conditions.mobile ? "top 90%" : "top 82%",
-              once: true,
-            }
-          }
-        );
+              start: "top top",
+              end: "+=118%",
+              scrub: 1,
+              pin: true,
+              anticipatePin: 1,
+              invalidateOnRefresh: true,
+            },
+          });
 
-        if (conditions.desktop) {
-          gsap.fromTo(
-            cards,
-            { y: 58, opacity: 0, scale: 0.94, rotateX: 7 },
-            {
-              y: 0,
-              opacity: 1,
-              scale: 1,
-              rotateX: 0,
-              duration: 0.92,
-              stagger: 0.10,
-              ease: "power3.out",
-              scrollTrigger: {
-                trigger: ".cards-grid",
-                start: "top 86%",
-                once: true,
-              }
-            }
-          );
-        } else if (conditions.tablet) {
-          cards.forEach((card, index) => {
-            gsap.fromTo(
-              card,
+          stackTimeline
+            .fromTo(
+              ".possibilities-header",
               {
-                x: index % 2 === 0 ? -30 : 30,
-                y: 34,
+                y: -10,
                 opacity: 0,
-                scale: 0.96
+                filter: "blur(14px)",
+              },
+              {
+                y: 0,
+                opacity: 1,
+                filter: "blur(0px)",
+                duration: 0.32,
+                ease: "power3.out",
+              },
+              0
+            )
+            .fromTo(
+              cards,
+              {
+                x: (index: number, target: HTMLElement) => stackOffsetX(index, target),
+                y: (index: number) => stackY[index] ?? 0,
+                rotateY: (index: number) => (index - 1.5) * 4.5,
+                rotateZ: (index: number) => stackRotate[index] ?? 0,
+                scale: (index: number) => stackScale[index] ?? 1,
+                filter: "blur(5px)",
+                opacity: 0.94,
               },
               {
                 x: 0,
                 y: 0,
-                opacity: 1,
+                rotateY: 0,
+                rotateZ: 0,
                 scale: 1,
-                duration: 0.76,
-                delay: index * 0.07,
-                ease: "power3.out",
-                scrollTrigger: {
-                  trigger: ".cards-grid",
-                  start: "top 90%",
-                  once: true,
-                }
-              }
+                filter: "blur(0px)",
+                opacity: 1,
+                duration: 0.92,
+                stagger: {
+                  each: 0.035,
+                  from: "center",
+                },
+                ease: "power3.inOut",
+              },
+              0.12
+            )
+            .to(
+              cards,
+              {
+                y: -7,
+                duration: 0.14,
+                stagger: 0.02,
+                ease: "power2.out",
+              },
+              0.87
+            )
+            .to(
+              cards,
+              {
+                y: 0,
+                duration: 0.2,
+                stagger: 0.02,
+                ease: "back.out(1.6)",
+              },
+              0.98
             );
-          });
         } else {
+          gsap.fromTo(
+            ".possibilities-header",
+            {
+              y: conditions.mobile ? 18 : 24,
+              opacity: 0,
+              filter: "blur(10px)",
+            },
+            {
+              y: 0,
+              opacity: 1,
+              filter: "blur(0px)",
+              duration: conditions.mobile ? 0.62 : 0.76,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: "#possibilities",
+                start: conditions.mobile ? "top 91%" : "top 87%",
+                once: true,
+              },
+            }
+          );
+
           cards.forEach((card, index) => {
             gsap.fromTo(
               card,
-              { y: 34, opacity: 0, scale: 0.97 },
               {
+                x: conditions.tablet ? (index % 2 === 0 ? -28 : 28) : (index % 2 === 0 ? -14 : 14),
+                y: conditions.mobile ? 26 : 34,
+                rotateZ: conditions.mobile ? (index % 2 === 0 ? -1.5 : 1.5) : 0,
+                opacity: 0,
+                scale: conditions.mobile ? 0.975 : 0.96,
+                filter: conditions.mobile ? "blur(5px)" : "blur(7px)",
+              },
+              {
+                x: 0,
                 y: 0,
+                rotateZ: 0,
                 opacity: 1,
                 scale: 1,
-                duration: 0.62,
-                delay: Math.min(index * 0.025, 0.08),
+                filter: "blur(0px)",
+                duration: conditions.mobile ? 0.58 : 0.72,
+                delay: conditions.mobile ? 0 : index * 0.06,
                 ease: "power3.out",
                 scrollTrigger: {
                   trigger: card,
-                  start: "top 94%",
+                  start: conditions.mobile ? "top 94%" : "top 91%",
                   once: true,
-                }
+                },
               }
             );
           });
@@ -465,17 +595,17 @@ export default function Page() {
 
         gsap.fromTo(
           ".possibility-petal",
-          { yPercent: -20, rotation: -8 },
+          { yPercent: -18, rotation: -7 },
           {
-            yPercent: 28,
-            rotation: 14,
+            yPercent: 24,
+            rotation: 12,
             ease: "none",
             scrollTrigger: {
               trigger: "#possibilities",
               start: "top bottom",
               end: "bottom top",
-              scrub: conditions.mobile ? 0.35 : 0.7,
-            }
+              scrub: conditions.mobile ? 0.3 : 0.6,
+            },
           }
         );
       }
@@ -537,6 +667,7 @@ export default function Page() {
       gsap.ticker.remove(tickerCallback);
       lenis.destroy();
       motion.revert();
+      textSplits.forEach((split) => split.revert());
       tiltCleanups.forEach((cleanup) => cleanup());
       ScrollTrigger.getAll().forEach(t => t.kill());
       window.removeEventListener("scroll", readScroll);
@@ -579,39 +710,27 @@ export default function Page() {
 
       {/* Main Narrative Text Panels Over Video */}
       <main className="panels">
-        {/* Panel 1 */}
         <section className="panel" data-panel>
           <div className="content-block">
-            <div className="eyebrow">Objects studio <span>&middot;</span> No. 112 Render Lane</div>
-            <h1 className="hero-title">Built at four.<br />Out by seven.</h1>
-            <p className="sub">Six kinds of mesh, one render farm, and a queue that starts before the sun does.</p>
-            <div className="cta">
-              <a className="pill" href="#possibilities">View the reel</a>
-            </div>
+            <div className="eyebrow">CREATE <span>/ 01</span></div>
+            <h1 className="hero-title">CREATE</h1>
+            <p className="sub">Where your <em>vision</em> becomes reality.</p>
           </div>
         </section>
 
-        {/* Panel 2 */}
         <section className="panel" data-panel>
           <div className="content-block">
-            <div className="eyebrow">Across the studio</div>
-            <h1 className="hero-title">Flat, never bent.</h1>
-            <p className="sub">The mesh should still be clean when it reaches the viewport. We export to order, never before.</p>
-            <div className="cta">
-              <a className="pill" href="#possibilities">Tour our space</a>
-            </div>
+            <div className="eyebrow">EXPLORE <span>/ 02</span></div>
+            <h1 className="hero-title">EXPLORE</h1>
+            <p className="sub">See every idea from a new perspective.</p>
           </div>
         </section>
 
-        {/* Panel 3 */}
         <section className="panel" data-panel>
           <div className="content-block">
-            <div className="eyebrow">The surface</div>
-            <h1 className="hero-title">Smooth enough to<br />hold a light pass.</h1>
-            <p className="sub">Custom surface shaders whipped every morning, spread to the edge and weighed by the quarter pound.</p>
-            <div className="cta">
-              <a className="pill" href="#possibilities">Start a brief</a>
-            </div>
+            <div className="eyebrow">TRANSFORM <span>/ 03</span></div>
+            <h1 className="hero-title">TRANSFORM</h1>
+            <p className="sub">Turn imagination into something real.</p>
           </div>
         </section>
       </main>
@@ -634,10 +753,10 @@ export default function Page() {
 
         {/* Section Header */}
         <div className="possibilities-header">
-          <p className="possibilities-eyebrow">DISCOVER THE POSSIBILITIES</p>
+          <p className="possibilities-eyebrow">DISCOVER WHAT&apos;S POSSIBLE</p>
           <h2 className="possibilities-title">Everything You Need</h2>
           <p className="possibilities-desc">
-            Powerful tools, boundless creativity, and a more beautiful future —all in one place.
+            Create, explore, transform, and grow — all in one place.
           </p>
         </div>
 

@@ -260,30 +260,39 @@ body {
   justify-content: flex-end;
   align-items: flex-start;
   text-align: left;
-  padding: clamp(24px, 4vw, 56px) clamp(24px, 5vw, 64px) clamp(50px, 7vh, 80px);
+  padding: clamp(24px, 4vw, 56px) clamp(24px, 5vw, 64px) clamp(54px, 8vh, 92px);
   opacity: 0;
   will-change: opacity, transform;
 }
 
 .content-block {
-  max-width: 680px;
+  width: min(560px, 86vw);
+  max-width: 560px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
 }
 
+.content-block::after {
+  content: "";
+  width: min(100%, 520px);
+  height: 1px;
+  margin-top: clamp(18px, 2.4vh, 26px);
+  background: linear-gradient(90deg, rgba(255,255,255,0.52), rgba(255,255,255,0.08));
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13.5px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  gap: 7px;
+  margin-bottom: 9px;
+  font-size: clamp(9px, 0.72vw, 11px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #ffffff;
-  margin-bottom: 12px;
-  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.8), 0 2px 10px rgba(0, 0, 0, 0.5);
+  color: rgba(255,255,255,0.72);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.38);
 }
 .eyebrow span {
   opacity: 0.6;
@@ -291,27 +300,43 @@ body {
 
 /* HERO HEADING (CLEAN, HIGH IMPACT) */
 .hero-title {
-  font-weight: 600;
-  font-size: clamp(38px, 6.2vw, 84px);
-  line-height: 1.04;
-  letter-spacing: -0.035em;
-  max-width: 14ch;
+  max-width: 11ch;
+  margin: 0;
+  font-size: clamp(52px, 5vw, 76px);
+  line-height: 0.94;
+  font-weight: 400;
+  letter-spacing: 0.055em;
   color: #ffffff;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85), 0 4px 24px rgba(0, 0, 0, 0.6);
+  text-shadow: 0 2px 16px rgba(0,0,0,0.40), 0 8px 28px rgba(0,0,0,0.22);
   text-wrap: balance;
+  perspective: 900px;
+}
+
+.hero-char,
+.sub-word {
+  display: inline-block;
+  will-change: transform, opacity, filter;
+  transform-origin: 50% 50%;
 }
 
 /* HERO SUBHEADING */
 .sub {
-  margin-top: clamp(14px, 1.8vw, 22px);
-  font-size: clamp(17px, 1.35vw, 22px);
-  font-weight: 600;
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-  color: rgba(255, 255, 255, 0.95);
-  max-width: 44ch;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85), 0 2px 14px rgba(0, 0, 0, 0.6);
+  margin-top: 12px;
+  max-width: 34ch;
+  font-size: clamp(15px, 1.18vw, 18px);
+  line-height: 1.42;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: rgba(255,255,255,0.80);
+  text-shadow: 0 1px 10px rgba(0,0,0,0.38);
   text-wrap: pretty;
+}
+
+.sub em {
+  font-family: var(--font-serif), Playfair Display, Georgia, serif;
+  font-size: 1.08em;
+  font-weight: 500;
+  color: #ffffff;
 }
 
 .cta {
@@ -1217,5 +1242,56 @@ body {
   .card-btn,
   .card-btn span {
     transition-duration: 0.001ms !important;
+  }
+}
+
+
+/* FINAL HOMEPAGE TEXT + STACK MOTION TUNING */
+@media (min-width: 581px) and (max-width: 900px) {
+  .content-block {
+    width: min(520px, 78vw);
+    max-width: 520px;
+  }
+
+  .hero-title {
+    font-size: clamp(48px, 8vw, 64px);
+    letter-spacing: 0.05em;
+  }
+
+  .sub {
+    max-width: 32ch;
+    font-size: clamp(15px, 2.1vw, 17px);
+  }
+}
+
+@media (max-width: 580px) {
+  .content-block {
+    width: min(360px, 88vw);
+    max-width: 360px;
+  }
+
+  .content-block::after {
+    width: min(100%, 330px);
+    margin-top: 17px;
+  }
+
+  .eyebrow {
+    margin-bottom: 8px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+  }
+
+  .hero-title {
+    max-width: 10ch;
+    font-size: clamp(42px, 13vw, 58px);
+    line-height: 0.95;
+    letter-spacing: 0.045em;
+  }
+
+  .sub {
+    margin-top: 10px;
+    max-width: 29ch;
+    font-size: 14px;
+    line-height: 1.4;
   }
 }
