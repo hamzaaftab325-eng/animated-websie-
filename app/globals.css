@@ -456,6 +456,28 @@ body {
   gap: clamp(12px, 1.3vw, 18px);
   align-items: stretch;
   perspective: 1100px;
+  /* Ground the cards visually on the stone terrace instead of floating above it. */
+  transform: translateY(clamp(20px, 2.8vh, 32px));
+}
+
+.cards-grid::after {
+  content: "";
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: -10px;
+  height: 34px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(91, 49, 45, 0.28) 0%,
+    rgba(139, 78, 72, 0.13) 42%,
+    rgba(139, 78, 72, 0) 74%
+  );
+  filter: blur(10px);
+  opacity: 0.9;
 }
 
 .glass-card {
@@ -483,7 +505,8 @@ body {
   -webkit-backdrop-filter: blur(25px) saturate(150%);
   backdrop-filter: blur(25px) saturate(150%);
   box-shadow:
-    0 24px 55px rgba(72, 39, 39, 0.20),
+    0 9px 18px rgba(72, 39, 39, 0.22),
+    0 26px 58px rgba(72, 39, 39, 0.18),
     0 4px 14px rgba(255, 191, 193, 0.10),
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     inset 0 -1px 0 rgba(255, 255, 255, 0.16);
@@ -776,6 +799,7 @@ body {
   .cards-grid {
     width: min(960px, 76vw);
     gap: 12px;
+    transform: translateY(24px);
   }
 
   .glass-card {
@@ -824,6 +848,7 @@ body {
   .cards-grid {
     width: min(920px, 74vw);
     gap: 11px;
+    transform: translateY(18px);
   }
 
   .glass-card {
@@ -931,6 +956,7 @@ body {
     width: min(700px, 100%);
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 16px;
+    transform: translateY(12px);
   }
 
   .glass-card {
@@ -1080,6 +1106,11 @@ body {
     width: min(360px, 100%);
     grid-template-columns: 1fr;
     gap: 16px;
+    transform: none;
+  }
+
+  .cards-grid::after {
+    display: none;
   }
 
   .glass-card {
@@ -1153,7 +1184,8 @@ body {
   .glass-card:hover {
     border-color: rgba(255, 255, 255, 0.68);
     box-shadow:
-      0 24px 55px rgba(72, 39, 39, 0.20),
+      0 9px 18px rgba(72, 39, 39, 0.22),
+      0 26px 58px rgba(72, 39, 39, 0.18),
       0 4px 14px rgba(255, 191, 193, 0.10),
       inset 0 1px 0 rgba(255, 255, 255, 0.72),
       inset 0 -1px 0 rgba(255, 255, 255, 0.16);
