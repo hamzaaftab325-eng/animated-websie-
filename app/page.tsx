@@ -179,11 +179,7 @@ export default function Page() {
           ) {
             lastVideoSeek = now;
             try {
-              if ('fastSeek' in clip && typeof clip.fastSeek === 'function' && isTouch) {
-                clip.fastSeek(seekAt);
-              } else {
-                clip.currentTime = seekAt;
-              }
+              clip.currentTime = seekAt;
             } catch (e) {}
           }
         }
@@ -420,24 +416,31 @@ export default function Page() {
             }
           );
         } else if (conditions.tablet) {
-          gsap.fromTo(
-            cards,
-            (index) => ({ x: index % 2 === 0 ? -30 : 30, y: 34, opacity: 0, scale: 0.96 }),
-            {
-              x: 0,
-              y: 0,
-              opacity: 1,
-              scale: 1,
-              duration: 0.76,
-              stagger: 0.09,
-              ease: "power3.out",
-              scrollTrigger: {
-                trigger: ".cards-grid",
-                start: "top 90%",
-                once: true,
+          cards.forEach((card, index) => {
+            gsap.fromTo(
+              card,
+              {
+                x: index % 2 === 0 ? -30 : 30,
+                y: 34,
+                opacity: 0,
+                scale: 0.96
+              },
+              {
+                x: 0,
+                y: 0,
+                opacity: 1,
+                scale: 1,
+                duration: 0.76,
+                delay: index * 0.07,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: ".cards-grid",
+                  start: "top 90%",
+                  once: true,
+                }
               }
-            }
-          );
+            );
+          });
         } else {
           cards.forEach((card, index) => {
             gsap.fromTo(
