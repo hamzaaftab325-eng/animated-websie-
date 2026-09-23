@@ -335,220 +335,356 @@ body {
 }
 
 /* ============================================================== */
-/* NEW SECTION: "DISCOVER THE POSSIBILITIES — EVERYTHING YOU NEED" */
+/* FLORAL GLASS SECTION — RESPONSIVE CINEMATIC SYSTEM               */
 /* ============================================================== */
 .possibilities-section {
   position: relative;
   z-index: 30;
-  min-height: 100vh;
+  isolation: isolate;
   width: 100%;
-  background-image: url('https://res.cloudinary.com/diometfe9/image/upload/v1790183196/download_enkn9u.png');
-  background-size: cover;
-  background-position: center bottom;
-  background-repeat: no-repeat;
+  min-height: 100svh;
+  height: 100svh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: max(110px, calc(env(safe-area-inset-top, 0px) + 95px)) clamp(20px, 4vw, 56px) max(60px, calc(env(safe-area-inset-bottom, 0px) + 50px));
-  box-shadow: 0 -25px 60px rgba(0, 0, 0, 0.45);
-  overflow: hidden;
+  justify-content: center;
+  gap: clamp(18px, 3.4vh, 38px);
+  padding: clamp(24px, 4.2vh, 54px) 0 clamp(26px, 4.8vh, 60px);
+  background:
+    linear-gradient(180deg, rgba(255, 247, 242, 0.02), rgba(75, 32, 31, 0.08)),
+    url('https://res.cloudinary.com/diometfe9/image/upload/v1790183196/download_enkn9u.png') center center / cover no-repeat;
+  box-shadow: 0 -25px 60px rgba(0, 0, 0, 0.28);
 }
 
-/* Subtle atmospheric lighting shimmer */
 .possibilities-section::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 68% 30%, rgba(255, 220, 180, 0.22) 0%, rgba(255, 255, 255, 0) 55%);
+  z-index: -1;
   pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 250, 240, 0.11), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 30%, rgba(45, 18, 22, 0.08));
+}
+
+.possibilities-section::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 110px rgba(32, 18, 12, 0.10),
+    inset 0 -80px 120px rgba(25, 13, 13, 0.08);
 }
 
 .possibilities-header {
   position: relative;
   z-index: 2;
+  width: min(800px, 78vw);
+  max-width: 800px;
+  margin: 0;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 860px;
-  margin: 0 auto clamp(30px, 4vh, 60px);
+  transform: translateY(-0.5vh);
+  will-change: transform, opacity, filter;
 }
 
 .possibilities-eyebrow {
-  font-size: clamp(12px, 0.85vw, 14px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 7px;
+  font-size: clamp(9px, 0.68vw, 12px);
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: #24362f;
-  margin-bottom: 10px;
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.85), 0 2px 10px rgba(255, 230, 210, 0.5);
+  color: rgba(29, 62, 53, 0.82);
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.18);
+}
+
+.possibilities-eyebrow::before,
+.possibilities-eyebrow::after {
+  content: "";
+  width: clamp(28px, 3.4vw, 54px);
+  height: 1px;
+}
+
+.possibilities-eyebrow::before {
+  background: linear-gradient(90deg, transparent, rgba(53, 75, 67, 0.52));
+}
+
+.possibilities-eyebrow::after {
+  background: linear-gradient(90deg, rgba(53, 75, 67, 0.52), transparent);
 }
 
 .possibilities-title {
   font-family: var(--font-serif), Playfair Display, Georgia, serif;
-  font-size: clamp(38px, 4.6vw, 68px);
-  font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: -0.015em;
-  color: #172722;
-  margin-bottom: 14px;
+  font-size: clamp(46px, 4.9vw, 72px);
+  line-height: 0.95;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  color: #12332b;
+  margin: 0;
   text-wrap: balance;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.9), 0 2px 12px rgba(255, 225, 210, 0.6);
+  text-shadow: 0 1px 18px rgba(255, 244, 235, 0.24);
 }
 
 .possibilities-desc {
-  font-size: clamp(15.5px, 1.25vw, 19px);
+  width: min(640px, 74vw);
+  max-width: 640px;
+  margin: 10px auto 0;
+  font-size: clamp(13px, 1.05vw, 17px);
+  line-height: 1.5;
   font-weight: 400;
-  line-height: 1.55;
-  color: #2f4239;
-  max-width: 58ch;
+  color: rgba(34, 62, 55, 0.70);
   text-wrap: pretty;
-  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.18);
 }
 
-/* 4 GLOWING FROSTED GLASS CARDS CONTAINER */
 .cards-grid {
   position: relative;
   z-index: 2;
-  width: 100%;
-  max-width: 1220px;
+  width: min(1060px, 84vw);
+  max-width: 1060px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: clamp(16px, 1.8vw, 24px);
-  margin-top: auto;
-  padding-bottom: clamp(10px, 2vh, 30px);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(12px, 1.3vw, 18px);
+  align-items: stretch;
+  perspective: 1100px;
 }
 
-/* INDIVIDUAL FROSTED GLASS CARD */
 .glass-card {
+  --mx: 50%;
+  --my: 0%;
   position: relative;
+  min-width: 0;
+  height: clamp(248px, 37vh, 318px);
+  min-height: 0;
+  padding: clamp(20px, 2.35vh, 28px) clamp(15px, 1.45vw, 22px) clamp(17px, 2.25vh, 24px);
+  border-radius: clamp(23px, 2vw, 30px);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   text-align: center;
-  justify-content: space-between;
-  min-height: clamp(300px, 32vw, 340px);
-  padding: clamp(26px, 2.5vw, 34px) clamp(18px, 1.8vw, 24px) clamp(22px, 2.2vw, 28px);
-  border-radius: 26px;
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.16) 100%);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1.5px solid rgba(255, 255, 255, 0.72);
-  box-shadow:
-    0 24px 50px -12px rgba(160, 70, 60, 0.3),
-    0 0 32px rgba(255, 205, 185, 0.35),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.85),
-    inset 0 -2px 14px rgba(255, 170, 150, 0.3);
-  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
+  color: #ffffff;
   cursor: pointer;
-  overflow: hidden;
+  touch-action: pan-y;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  background:
+    radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.34), transparent 34%),
+    linear-gradient(150deg, rgba(255, 242, 239, 0.40) 0%, rgba(246, 185, 186, 0.26) 52%, rgba(189, 116, 112, 0.30) 100%);
+  -webkit-backdrop-filter: blur(25px) saturate(150%);
+  backdrop-filter: blur(25px) saturate(150%);
+  box-shadow:
+    0 24px 55px rgba(72, 39, 39, 0.20),
+    0 4px 14px rgba(255, 191, 193, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.16);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform, opacity;
+  transition:
+    box-shadow 0.45s var(--ease),
+    border-color 0.45s var(--ease),
+    background 0.45s var(--ease);
 }
 
-/* Warm radiant light bloom under each card */
 .glass-card::before {
   content: "";
   position: absolute;
-  bottom: -35px;
-  left: 20%;
-  right: 20%;
-  height: 60px;
-  background: radial-gradient(ellipse at center, rgba(255, 180, 150, 0.6) 0%, rgba(255, 180, 150, 0) 75%);
-  filter: blur(14px);
-  opacity: 0.7;
-  pointer-events: none;
-  transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
-}
-
-.glass-card:hover {
-  transform: translateY(-8px) scale(1.02);
-  border-color: rgba(255, 255, 255, 0.95);
-  background: linear-gradient(155deg, rgba(255, 255, 255, 0.52) 0%, rgba(255, 255, 255, 0.22) 100%);
-  box-shadow:
-    0 32px 68px -12px rgba(160, 70, 60, 0.42),
-    0 0 45px rgba(255, 220, 200, 0.5),
-    inset 0 1.5px 2px rgba(255, 255, 255, 1),
-    inset 0 -2px 16px rgba(255, 170, 150, 0.4);
-}
-.glass-card:hover::before {
-  opacity: 1;
-  transform: scale(1.15);
-}
-
-/* CIRCULAR ICON WRAPPER */
-.card-icon-wrap {
-  width: clamp(54px, 4.8vw, 64px);
-  height: clamp(54px, 4.8vw, 64px);
+  left: 10%;
+  right: 10%;
+  top: -26%;
+  height: 50%;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.82);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.30);
+  filter: blur(28px);
+  opacity: 0.68;
+  transform: translateZ(1px);
+}
+
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 34%,
+      rgba(255, 255, 255, 0.20) 43%,
+      rgba(255, 255, 255, 0.04) 53%,
+      transparent 62%,
+      transparent 100%
+    );
+  background-size: 240% 100%;
+  background-position: 120% 0;
+  box-shadow:
+    inset 0 0 30px rgba(255, 222, 218, 0.14),
+    inset 0 0 1px rgba(255, 255, 255, 0.90);
+  opacity: 0.72;
+  transition: background-position 0.8s var(--ease), opacity 0.35s ease;
+}
+
+.glass-card:hover,
+.glass-card:focus-visible {
+  border-color: rgba(255, 255, 255, 0.86);
+  box-shadow:
+    0 31px 75px rgba(65, 34, 38, 0.28),
+    0 0 42px rgba(245, 161, 174, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.20);
+  outline: none;
+}
+
+.glass-card:hover::after,
+.glass-card:focus-visible::after {
+  background-position: -35% 0;
+  opacity: 1;
+}
+
+.card-icon-wrap {
+  position: relative;
+  z-index: 2;
+  width: clamp(60px, 8vh, 78px);
+  aspect-ratio: 1;
+  flex: none;
+  margin-bottom: clamp(14px, 2vh, 20px);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.48), transparent 37%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(238, 161, 168, 0.18));
+  box-shadow:
+    0 10px 24px rgba(91, 49, 51, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.70),
+    inset 0 -8px 18px rgba(220, 137, 147, 0.08);
   transition: transform 0.4s var(--ease), border-color 0.3s var(--ease), background 0.3s var(--ease);
 }
-.glass-card:hover .card-icon-wrap {
-  transform: scale(1.08) rotate(4deg);
-  border-color: #ffffff;
-  background: rgba(255, 255, 255, 0.22);
+
+.card-icon-wrap svg {
+  width: 45%;
+  height: 45%;
+  filter: drop-shadow(0 2px 7px rgba(91, 45, 48, 0.16));
 }
 
-/* CARD TITLE */
+.glass-card:hover .card-icon-wrap,
+.glass-card:focus-visible .card-icon-wrap {
+  transform: translateY(-2px) scale(1.06);
+  border-color: rgba(255, 255, 255, 0.88);
+}
+
 .card-title {
+  position: relative;
+  z-index: 2;
   font-family: var(--font-serif), Playfair Display, Georgia, serif;
-  font-size: clamp(22px, 1.85vw, 27px);
-  font-weight: 500;
+  font-size: clamp(25px, 2vw, 31px);
+  line-height: 1;
+  font-weight: 600;
   color: #ffffff;
-  margin-top: clamp(14px, 1.5vw, 18px);
-  margin-bottom: 6px;
-  letter-spacing: -0.01em;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 1px 3px rgba(0, 0, 0, 0.35);
+  margin: 0;
+  letter-spacing: -0.02em;
+  text-shadow: 0 1px 14px rgba(68, 35, 38, 0.20);
 }
 
-/* CARD DESCRIPTION */
 .card-desc {
-  font-size: clamp(13px, 0.95vw, 14.5px);
-  line-height: 1.45;
-  color: rgba(255, 255, 255, 0.94);
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 205px;
+  margin: 10px auto 0;
+  font-size: clamp(11.5px, 0.89vw, 14px);
+  line-height: 1.5;
   font-weight: 400;
-  max-width: 26ch;
-  margin-bottom: clamp(16px, 1.8vw, 22px);
+  color: rgba(255, 255, 255, 0.93);
   text-wrap: balance;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 9px rgba(71, 37, 40, 0.16);
 }
 
-/* PILL BUTTON WITH ARROW */
 .card-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 38px;
-  width: 90px;
+  position: relative;
+  z-index: 2;
+  width: clamp(80px, 7vw, 106px);
+  height: clamp(36px, 5.2vh, 44px);
+  flex: none;
+  margin-top: auto;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.24);
-  border: 1.5px solid rgba(255, 255, 255, 0.76);
+  display: grid;
+  place-items: center;
   color: #ffffff;
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.19), rgba(255, 255, 255, 0.07)),
+    rgba(235, 151, 164, 0.17);
   -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.6);
-  transition: background 0.25s var(--ease), transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 8px 20px rgba(83, 45, 47, 0.16);
+  transition: transform 0.28s ease, background 0.28s ease, box-shadow 0.28s ease;
 }
+
 .card-btn span {
   display: inline-block;
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
-  transition: transform 0.25s var(--ease);
+  transition: transform 0.28s ease;
 }
-.glass-card:hover .card-btn {
-  background: rgba(255, 255, 255, 0.42);
-  border-color: #ffffff;
-  transform: scale(1.05);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+
+.glass-card:hover .card-btn,
+.glass-card:focus-visible .card-btn {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.68),
+    0 12px 24px rgba(83, 45, 47, 0.22);
 }
-.glass-card:hover .card-btn span {
+
+.glass-card:hover .card-btn span,
+.glass-card:focus-visible .card-btn span {
   transform: translateX(4px);
+}
+
+.possibility-petal {
+  position: absolute;
+  top: -7%;
+  z-index: 3;
+  width: 13px;
+  height: 9px;
+  border-radius: 75% 25% 72% 28%;
+  background: linear-gradient(135deg, #f6acb9, #d56d83);
+  opacity: 0.65;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 6px rgba(105, 43, 56, 0.12));
+  animation: possibilityPetalFall 13s linear infinite;
+  will-change: transform;
+}
+
+.petal-1 { left: 8%; animation-delay: -2s; animation-duration: 15s; }
+.petal-2 { left: 27%; animation-delay: -8s; animation-duration: 13s; scale: 0.8; }
+.petal-3 { left: 61%; animation-delay: -4s; animation-duration: 17s; scale: 0.9; }
+.petal-4 { left: 83%; animation-delay: -10s; animation-duration: 14s; scale: 1.1; }
+.petal-5 { left: 94%; animation-delay: -6s; animation-duration: 16s; scale: 0.7; }
+
+@keyframes possibilityPetalFall {
+  0%   { translate: 0 -8vh; rotate: 0deg; }
+  35%  { translate: 3vw 35vh; rotate: 130deg; }
+  70%  { translate: -2vw 72vh; rotate: 270deg; }
+  100% { translate: 2vw 110vh; rotate: 430deg; }
 }
 
 /* INTERACTIVE MODAL FOR CARDS */
@@ -608,81 +744,446 @@ body {
 }
 
 /* RESPONSIVE OPTIMIZATIONS FOR ALL SCREEN SIZES */
-@media (max-width: 1080px) {
+
+/* Short laptop screens: make 100% browser zoom match the spacious 75% reference. */
+@media (min-width: 1100px) and (max-height: 820px) {
+  .possibilities-section {
+    gap: 18px;
+    padding: 20px 0 24px;
+  }
+
+  .possibilities-header {
+    width: min(760px, 72vw);
+    transform: none;
+  }
+
+  .possibilities-eyebrow {
+    font-size: 9px;
+    margin-bottom: 5px;
+  }
+
+  .possibilities-title {
+    font-size: clamp(46px, 4.1vw, 58px);
+  }
+
+  .possibilities-desc {
+    width: min(590px, 68vw);
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.38;
+  }
+
   .cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    max-width: 640px;
+    width: min(960px, 76vw);
+    gap: 12px;
+  }
+
+  .glass-card {
+    height: clamp(228px, 35.5vh, 254px);
+    padding: 17px 15px 15px;
+    border-radius: 25px;
+  }
+
+  .card-icon-wrap {
+    width: 58px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 26px;
+  }
+
+  .card-desc {
+    max-width: 185px;
+    margin-top: 7px;
+    font-size: 11.5px;
+    line-height: 1.42;
+  }
+
+  .card-btn {
+    width: 82px;
+    height: 35px;
   }
 }
 
+@media (min-width: 1000px) and (max-height: 690px) {
+  .possibilities-section {
+    gap: 13px;
+    padding: 14px 0 18px;
+  }
+
+  .possibilities-title {
+    font-size: 48px;
+  }
+
+  .possibilities-desc {
+    margin-top: 5px;
+    font-size: 12px;
+  }
+
+  .cards-grid {
+    width: min(920px, 74vw);
+    gap: 11px;
+  }
+
+  .glass-card {
+    height: 225px;
+    padding: 15px 14px 13px;
+  }
+
+  .card-icon-wrap {
+    width: 52px;
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-size: 24px;
+  }
+
+  .card-desc {
+    font-size: 10.5px;
+    line-height: 1.38;
+  }
+
+  .card-btn {
+    width: 76px;
+    height: 32px;
+  }
+}
+
+/* Small desktop / large laptop widths */
+@media (min-width: 901px) and (max-width: 1250px) {
+  .cards-grid {
+    width: 92vw;
+    gap: 11px;
+  }
+
+  .glass-card {
+    padding-inline: 13px;
+  }
+
+  .card-desc {
+    max-width: 175px;
+  }
+}
+
+/* Tablet: preserve cinematic hero, but reduce scrub distance and render cost. */
+@media (min-width: 581px) and (max-width: 900px) {
+  .track {
+    height: 230svh;
+    min-height: 0;
+  }
+
+  .panel {
+    min-height: 100svh;
+    padding:
+      max(24px, env(safe-area-inset-top))
+      clamp(26px, 5vw, 44px)
+      max(58px, calc(env(safe-area-inset-bottom) + 44px));
+  }
+
+  .content-block {
+    max-width: min(620px, 82vw);
+  }
+
+  .hero-title {
+    font-size: clamp(42px, 7.4vw, 60px);
+    max-width: 12ch;
+  }
+
+  .sub {
+    font-size: clamp(16px, 2.2vw, 18px);
+    max-width: 38ch;
+  }
+
+  .stage video {
+    transform: translate3d(-50%, -50%, 0);
+    object-position: 50% center;
+  }
+
+  .possibilities-section {
+    height: auto;
+    min-height: 100svh;
+    overflow: hidden;
+    gap: 30px;
+    padding:
+      max(92px, calc(env(safe-area-inset-top) + 78px))
+      24px
+      max(70px, calc(env(safe-area-inset-bottom) + 52px));
+    background-position: 50% center;
+  }
+
+  .possibilities-header {
+    width: min(700px, 100%);
+    transform: none;
+  }
+
+  .possibilities-title {
+    font-size: clamp(46px, 8vw, 62px);
+  }
+
+  .possibilities-desc {
+    width: min(590px, 92%);
+    font-size: 15px;
+  }
+
+  .cards-grid {
+    width: min(700px, 100%);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .glass-card {
+    height: 278px;
+    border-radius: 27px;
+    -webkit-backdrop-filter: blur(20px) saturate(145%);
+    backdrop-filter: blur(20px) saturate(145%);
+  }
+
+  .possibility-petal {
+    opacity: 0.54;
+  }
+}
+
+/* Navigation + touch hero optimizations */
 @media (max-width: 768px) {
   .nav a:not(.pill) {
     display: none;
   }
+
+  .chrome {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
   .mark {
     font-size: 15px;
   }
+
   .nav .pill {
     height: 38px;
-    padding: 0 18px;
-    font-size: 13.5px;
+    padding: 0 17px;
+    font-size: 13px;
   }
-  .panel {
-    padding: 24px 24px clamp(50px, 8vh, 70px);
-  }
-  .hero-title {
-    max-width: 12ch;
-    font-size: clamp(32px, 8.5vw, 48px);
-  }
-  .sub {
-    font-size: 16px;
-    font-weight: 500;
-    max-width: 32ch;
-  }
+
   .foot {
     display: none;
   }
-  .possibilities-section {
-    padding: 90px 20px 50px;
-  }
-  .possibilities-title {
-    font-size: clamp(32px, 8vw, 44px);
-  }
-  .possibilities-desc {
-    font-size: 15px;
-  }
-}
 
-@media (max-width: 620px) {
-  .cards-grid {
-    grid-template-columns: 1fr;
-    max-width: 340px;
-    gap: 16px;
+  .panel {
+    justify-content: flex-end;
   }
-  .glass-card {
-    min-height: 240px;
-    padding: 24px 20px 20px;
-  }
-  .card-desc {
-    margin-bottom: 14px;
-  }
-}
 
-@media (max-width: 480px) {
-  .mark-star {
-    display: none;
+  .cta {
+    margin-top: 19px;
   }
-  .hero-title {
-    font-size: clamp(28px, 9vw, 38px);
-  }
-  .eyebrow {
-    font-size: 12px;
-    letter-spacing: 0.05em;
-  }
+
   .cta .pill {
     height: 44px;
     padding: 0 24px;
-    font-size: 14.5px;
+    font-size: 14px;
+  }
+}
+
+/* Mobile: one-card flow, native-feeling scroll, lighter blur and clean reveal rhythm. */
+@media (max-width: 580px) {
+  .track {
+    height: 220svh;
+    min-height: 0;
+  }
+
+  .stage video {
+    transform: translate3d(-50%, -50%, 0);
+    object-position: 50% center;
+  }
+
+  .panel {
+    min-height: 100svh;
+    padding:
+      max(22px, env(safe-area-inset-top))
+      20px
+      max(48px, calc(env(safe-area-inset-bottom) + 34px));
+  }
+
+  .content-block {
+    width: min(100%, 440px);
+    max-width: 92vw;
+  }
+
+  .eyebrow {
+    margin-bottom: 9px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+  }
+
+  .hero-title {
+    max-width: 11ch;
+    font-size: clamp(34px, 10.7vw, 48px);
+    line-height: 1.02;
+  }
+
+  .sub {
+    margin-top: 12px;
+    max-width: 31ch;
+    font-size: clamp(14px, 4vw, 16px);
+    font-weight: 500;
+    line-height: 1.45;
+  }
+
+  .possibilities-section {
+    height: auto;
+    min-height: 100svh;
+    overflow: hidden;
+    gap: 28px;
+    padding:
+      max(74px, calc(env(safe-area-inset-top) + 64px))
+      14px
+      max(64px, calc(env(safe-area-inset-bottom) + 48px));
+    background-position: 50% top;
+  }
+
+  .possibilities-section::after {
+    box-shadow:
+      inset 0 0 68px rgba(32, 18, 12, 0.08),
+      inset 0 -55px 90px rgba(25, 13, 13, 0.07);
+  }
+
+  .possibilities-header {
+    width: min(390px, 100%);
+    transform: none;
+  }
+
+  .possibilities-eyebrow {
+    gap: 9px;
+    font-size: 9px;
+    letter-spacing: 0.19em;
+  }
+
+  .possibilities-eyebrow::before,
+  .possibilities-eyebrow::after {
+    width: 30px;
+  }
+
+  .possibilities-title {
+    font-size: clamp(43px, 13vw, 56px);
+    line-height: 0.98;
+  }
+
+  .possibilities-desc {
+    width: 94%;
+    margin-top: 9px;
+    font-size: 14px;
+    line-height: 1.48;
+  }
+
+  .cards-grid {
+    width: min(360px, 100%);
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .glass-card {
+    height: 265px;
+    padding: 22px 20px 19px;
+    border-radius: 27px;
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    backdrop-filter: blur(18px) saturate(140%);
+    box-shadow:
+      0 20px 44px rgba(72, 39, 39, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  .glass-card:active {
+    transform: scale(0.985);
+  }
+
+  .card-icon-wrap {
+    width: 64px;
+    margin-bottom: 14px;
+  }
+
+  .card-title {
+    font-size: 28px;
+  }
+
+  .card-desc {
+    max-width: 215px;
+    font-size: 13px;
+  }
+
+  .card-btn {
+    width: 90px;
+    height: 38px;
+  }
+
+  .possibility-petal {
+    opacity: 0.46;
+  }
+
+  .feature-modal-backdrop {
+    align-items: flex-end;
+    padding: 10px;
+  }
+
+  .feature-modal-card {
+    max-width: 100%;
+    max-height: min(84svh, 720px);
+    overflow-y: auto;
+    border-radius: 24px 24px 18px 18px;
+    padding: 30px 22px 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mark-star {
+    display: none;
+  }
+
+  .chrome .pill {
+    padding-inline: 14px;
+  }
+
+  .possibilities-title {
+    font-size: clamp(40px, 12vw, 50px);
+  }
+}
+
+@media (hover: none) {
+  .glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.68);
+    box-shadow:
+      0 24px 55px rgba(72, 39, 39, 0.20),
+      0 4px 14px rgba(255, 191, 193, 0.10),
+      inset 0 1px 0 rgba(255, 255, 255, 0.72),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  .glass-card:hover::after {
+    background-position: 120% 0;
+    opacity: 0.72;
+  }
+
+  .glass-card:hover .card-icon-wrap,
+  .glass-card:hover .card-btn,
+  .glass-card:hover .card-btn span {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .possibility-petal {
+    animation: none;
+  }
+
+  .glass-card,
+  .card-icon-wrap,
+  .card-btn,
+  .card-btn span {
+    transition-duration: 0.001ms !important;
   }
 }
