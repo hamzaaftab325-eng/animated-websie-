@@ -235,29 +235,46 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
 
       const focusScene = one(root, '[data-type-scene="focus"]');
       const focusHeading = focusScene ? one(focusScene, '[data-split-words]') : null;
-      const focusCopy = focusScene ? one(focusScene, '[data-copy]') : null;
+      const focusSubtitle = focusScene ? one(focusScene, '[data-focus-subtitle]') : null;
+      const focusRule = focusScene ? one(focusScene, '[data-focus-rule]') : null;
+      const focusBottom = focusScene ? one(focusScene, '[data-focus-bottom]') : null;
       const focusHalo = focusScene ? one(focusScene, '[data-focus-halo]') : null;
       const focusRing = focusScene ? one(focusScene, '[data-focus-ring]') : null;
 
       if (focusScene && focusHeading) {
-        const split = splitWords(focusHeading);
+        const split = SplitText.create(focusHeading, {
+          type: 'chars',
+          charsClass: 'lab-focus-char',
+        });
+        splitInstances.push(split);
+
+        const subtitleSplit = focusSubtitle
+          ? SplitText.create(focusSubtitle, {
+              type: 'words',
+              wordsClass: 'lab-focus-sub-word',
+            })
+          : null;
+
+        if (subtitleSplit) splitInstances.push(subtitleSplit);
+
         const timeline = gsap.timeline({
           scrollTrigger: {
             trigger: focusScene,
-            start: 'top 74%',
-            end: 'center 40%',
-            scrub: 0.95,
+            start: 'top 76%',
+            end: 'center 38%',
+            scrub: 1,
           },
         });
 
         timeline.fromTo(
-          split.words,
+          split.chars,
           {
-            y: 34,
-            scale: 1.22,
-            opacity: 0.08,
-            rotateX: 16,
-            filter: 'blur(22px)',
+            y: 28,
+            scale: 1.36,
+            opacity: 0,
+            rotateX: 18,
+            filter: 'blur(32px)',
+            transformOrigin: '50% 50%',
           },
           {
             y: 0,
@@ -265,7 +282,10 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
             opacity: 1,
             rotateX: 0,
             filter: 'blur(0px)',
-            stagger: 0.055,
+            stagger: {
+              each: 0.055,
+              from: 'center',
+            },
             ease: 'power4.out',
           },
           0
@@ -274,8 +294,8 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
         if (focusHalo) {
           timeline.fromTo(
             focusHalo,
-            { scale: 0.42, opacity: 0.18, filter: 'blur(38px)' },
-            { scale: 1.05, opacity: 0.86, filter: 'blur(12px)', ease: 'power3.out' },
+            { scale: 0.34, opacity: 0.12, filter: 'blur(56px)' },
+            { scale: 1.08, opacity: 0.92, filter: 'blur(14px)', ease: 'power3.out' },
             0
           );
         }
@@ -283,18 +303,48 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
         if (focusRing) {
           timeline.fromTo(
             focusRing,
-            { scale: 1.65, opacity: 0, rotateZ: -12 },
-            { scale: 1, opacity: 1, rotateZ: 0, ease: 'power3.out' },
-            0.1
+            { scale: 1.75, opacity: 0, rotateZ: -16, filter: 'blur(10px)' },
+            { scale: 1, opacity: 0.82, rotateZ: 0, filter: 'blur(0px)', ease: 'power4.out' },
+            0.08
           );
         }
 
-        if (focusCopy) {
+        if (subtitleSplit) {
           timeline.fromTo(
-            focusCopy,
-            { y: 24, opacity: 0 },
-            { y: 0, opacity: 1, ease: 'power2.out' },
-            0.32
+            subtitleSplit.words,
+            { y: 16, opacity: 0, filter: 'blur(15px)' },
+            {
+              y: 0,
+              opacity: 1,
+              filter: 'blur(0px)',
+              stagger: 0.045,
+              ease: 'power3.out',
+            },
+            0.25
+          );
+        }
+
+        if (focusRule) {
+          timeline.fromTo(
+            focusRule,
+            { scaleX: 0, opacity: 0 },
+            { scaleX: 1, opacity: 1, ease: 'power3.inOut' },
+            0.34
+          );
+        }
+
+        if (focusBottom) {
+          timeline.fromTo(
+            Array.from(focusBottom.children),
+            { y: 14, opacity: 0, filter: 'blur(8px)' },
+            {
+              y: 0,
+              opacity: 1,
+              filter: 'blur(0px)',
+              stagger: 0.08,
+              ease: 'power3.out',
+            },
+            0.42
           );
         }
       }
@@ -434,40 +484,89 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
       }
 
       const shardScene = one(root, '[data-card-scene="shard"]');
+      const shardGrid = shardScene ? one(shardScene, '[data-stack-grid]') : null;
       const shardCards = shardScene ? all(shardScene, '[data-shard-card]') : [];
 
-      if (shardScene && shardCards.length) {
-        gsap.set(shardCards, { transformPerspective: 1100, transformOrigin: '50% 50%' });
+      if (shardScene && shardGrid && shardCards.length) {
+        gsap.set(shardCards, {
+          transformPerspective: 1200,
+          transformOrigin: '50% 50%',
+          zIndex: (index: number) => shardCards.length - index,
+        });
 
-        gsap.fromTo(
-          shardCards,
-          {
-            y: 110,
-            x: (index: number) => (index - 1.5) * 38,
-            opacity: 0,
-            scale: 0.82,
-            rotateX: 16,
-            rotateZ: (index: number) => (index - 1.5) * 6,
-            filter: 'blur(10px)',
+        const stackX = [150, 50, -50, -150];
+        const stackY = [26, 12, -2, -16];
+        const stackR = [-7, -2.5, 2.5, 7];
+
+        gsap.set(shardCards, {
+          xPercent: (index: number) => stackX[index] ?? 0,
+          y: (index: number) => stackY[index] ?? 0,
+          rotateZ: (index: number) => stackR[index] ?? 0,
+          rotateY: (index: number) => (index - 1.5) * 4,
+          scale: (index: number) => 0.92 + index * 0.018,
+          opacity: 1,
+        });
+
+        const stackTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: shardScene,
+            start: 'top top',
+            end: '+=145%',
+            scrub: 1,
+            pin: true,
+            anticipatePin: 1,
           },
-          {
-            y: 0,
-            x: 0,
-            opacity: 1,
-            scale: 1,
-            rotateX: 0,
-            rotateZ: 0,
-            filter: 'blur(0px)',
-            duration: 1.1,
-            stagger: 0.09,
-            ease: 'power4.out',
-            scrollTrigger: {
-              trigger: shardScene,
-              start: 'top 70%',
-              once: true,
+        });
+
+        stackTimeline
+          .to(
+            shardCards,
+            {
+              xPercent: 0,
+              y: 0,
+              rotateZ: 0,
+              rotateY: 0,
+              scale: 1,
+              duration: 1,
+              stagger: {
+                each: 0.035,
+                from: 'center',
+              },
+              ease: 'power3.inOut',
             },
-          }
-        );
+            0
+          )
+          .fromTo(
+            shardCards,
+            { filter: 'blur(8px)' },
+            {
+              filter: 'blur(0px)',
+              duration: 0.68,
+              stagger: 0.035,
+              ease: 'power3.out',
+            },
+            0.06
+          )
+          .to(
+            shardCards,
+            {
+              y: -8,
+              duration: 0.18,
+              stagger: 0.025,
+              ease: 'power2.out',
+            },
+            0.78
+          )
+          .to(
+            shardCards,
+            {
+              y: 0,
+              duration: 0.24,
+              stagger: 0.025,
+              ease: 'back.out(1.7)',
+            },
+            0.92
+          );
 
         shardCards.forEach((card, index) => {
           const paths = Array.from(card.querySelectorAll<SVGPathElement>('path'));
@@ -480,13 +579,13 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
 
           gsap.to(paths, {
             strokeDashoffset: 0,
-            duration: 1.35,
-            delay: 0.18 + index * 0.08,
-            stagger: 0.025,
+            duration: 1.2,
+            delay: index * 0.06,
+            stagger: 0.02,
             ease: 'power2.inOut',
             scrollTrigger: {
-              trigger: card,
-              start: 'top 78%',
+              trigger: shardScene,
+              start: 'top 70%',
               once: true,
             },
           });
@@ -722,7 +821,7 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
     });
 
     mm.add('(min-width: 581px) and (max-width: 900px)', () => {
-      const splitTargets = all(root, '[data-split-lines], [data-split-words], [data-split-chars]');
+      const splitTargets = all(root, '[data-split-lines], [data-split-chars]');
 
       splitTargets.forEach((target) => {
         const split = SplitText.create(target, {
@@ -769,7 +868,80 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
         );
       });
 
-      all(root, '[data-glass-card]').forEach((card, index) => {
+      const tabletFocusScene = one(root, '[data-type-scene="focus"]');
+      const tabletFocusHeading = tabletFocusScene ? one(tabletFocusScene, '[data-split-words]') : null;
+      const tabletFocusSubtitle = tabletFocusScene ? one(tabletFocusScene, '[data-focus-subtitle]') : null;
+
+      if (tabletFocusScene && tabletFocusHeading) {
+        const split = SplitText.create(tabletFocusHeading, { type: 'chars' });
+        splitInstances.push(split);
+
+        gsap.fromTo(
+          split.chars,
+          { y: 20, scale: 1.18, opacity: 0, filter: 'blur(20px)' },
+          {
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            filter: 'blur(0px)',
+            duration: 0.78,
+            stagger: { each: 0.045, from: 'center' },
+            ease: 'power4.out',
+            scrollTrigger: { trigger: tabletFocusScene, start: 'top 86%', once: true },
+          }
+        );
+
+        if (tabletFocusSubtitle) {
+          gsap.fromTo(
+            tabletFocusSubtitle,
+            { y: 14, opacity: 0, filter: 'blur(10px)' },
+            {
+              y: 0,
+              opacity: 1,
+              filter: 'blur(0px)',
+              duration: 0.62,
+              delay: 0.18,
+              ease: 'power3.out',
+              scrollTrigger: { trigger: tabletFocusScene, start: 'top 86%', once: true },
+            }
+          );
+        }
+      }
+
+      const tabletShardScene = one(root, '[data-card-scene="shard"]');
+      const tabletShardCards = tabletShardScene ? all(tabletShardScene, '[data-shard-card]') : [];
+
+      if (tabletShardScene && tabletShardCards.length) {
+        tabletShardCards.forEach((card, index) => {
+          gsap.fromTo(
+            card,
+            {
+              xPercent: index % 2 === 0 ? 36 : -36,
+              y: 30 - index * 5,
+              rotateZ: index % 2 === 0 ? -3 : 3,
+              opacity: 0.2,
+              scale: 0.94,
+            },
+            {
+              xPercent: 0,
+              y: 0,
+              rotateZ: 0,
+              opacity: 1,
+              scale: 1,
+              duration: 0.82,
+              delay: index * 0.07,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: tabletShardScene,
+                start: 'top 86%',
+                once: true,
+              },
+            }
+          );
+        });
+      }
+
+      all(root, '[data-glass-card]:not([data-shard-card])').forEach((card, index) => {
         gsap.fromTo(
           card,
           {
@@ -796,7 +968,7 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
     });
 
     mm.add('(max-width: 580px)', () => {
-      const splitTargets = all(root, '[data-split-lines], [data-split-words], [data-split-chars]');
+      const splitTargets = all(root, '[data-split-lines], [data-split-chars]');
 
       splitTargets.forEach((target) => {
         const split = SplitText.create(target, {
@@ -842,7 +1014,60 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
         );
       });
 
-      all(root, '[data-glass-card]').forEach((card) => {
+      const mobileFocusScene = one(root, '[data-type-scene="focus"]');
+      const mobileFocusHeading = mobileFocusScene ? one(mobileFocusScene, '[data-split-words]') : null;
+
+      if (mobileFocusScene && mobileFocusHeading) {
+        const split = SplitText.create(mobileFocusHeading, { type: 'chars' });
+        splitInstances.push(split);
+
+        gsap.fromTo(
+          split.chars,
+          { y: 16, scale: 1.12, opacity: 0, filter: 'blur(14px)' },
+          {
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            filter: 'blur(0px)',
+            duration: 0.62,
+            stagger: { each: 0.04, from: 'center' },
+            ease: 'power4.out',
+            scrollTrigger: { trigger: mobileFocusScene, start: 'top 90%', once: true },
+          }
+        );
+      }
+
+      const mobileShardScene = one(root, '[data-card-scene="shard"]');
+      const mobileShardCards = mobileShardScene ? all(mobileShardScene, '[data-shard-card]') : [];
+
+      mobileShardCards.forEach((card, index) => {
+        gsap.fromTo(
+          card,
+          {
+            y: 34,
+            x: index % 2 === 0 ? -18 : 18,
+            opacity: 0,
+            scale: 0.965,
+            rotateZ: index % 2 === 0 ? -2 : 2,
+          },
+          {
+            y: 0,
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            rotateZ: 0,
+            duration: 0.62,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: card,
+              start: 'top 93%',
+              once: true,
+            },
+          }
+        );
+      });
+
+      all(root, '[data-glass-card]:not([data-shard-card])').forEach((card) => {
         gsap.fromTo(
           card,
           { y: 30, opacity: 0, scale: 0.975 },

@@ -254,15 +254,21 @@ export default function AnimationLabPage() {
       </section>
 
       <section className={styles.typeScene + ' ' + styles.typeFocus} id="type-03" data-type-scene="focus">
-        <div className={styles.sceneIndex}>03 / OPTICAL FOCUS</div>
+        <div className={styles.sceneIndex}>03 / SOFT FOCUS</div>
         <div className={styles.focusHalo} data-focus-halo aria-hidden="true" />
         <div className={styles.focusRing} data-focus-ring aria-hidden="true" />
         <div className={styles.focusContent}>
-          <p className={styles.kicker}>DEPTH / FOCUS / SCALE</p>
-          <h2 data-split-words>Bring the thought into focus.</h2>
-          <p data-copy>
-            Words resolve from soft depth at different rates, giving the transition the feeling of a lens finding its subject.
+          <p className={styles.kicker}>VISION / MOTION / POSSIBILITY</p>
+          <h2 data-split-words>CREATE</h2>
+          <p className={styles.focusSubtitle} data-focus-subtitle>
+            Where your <em>Vision</em> becomes Reality
           </p>
+          <span className={styles.focusRule} data-focus-rule aria-hidden="true" />
+          <div className={styles.focusBottom} data-focus-bottom>
+            <span>Explore your creativity</span>
+            <span>Beautiful ideas, shaped through motion.</span>
+            <a href="#glass-01">Discover <b>→</b></a>
+          </div>
         </div>
       </section>
 
@@ -303,11 +309,11 @@ export default function AnimationLabPage() {
 
       <section className={styles.cardScene + ' ' + styles.shardScene} id="glass-01" data-card-scene="shard">
         <div className={styles.cardIntro}>
-          <p>GLASS 01 / BROKEN REFRACTION</p>
-          <h2>Not rounded rectangles.<br />Actual shards.</h2>
-          <span>Irregular silhouettes, crack geometry, internal refraction, sharp specular edges, and perspective entry.</span>
+          <p>GLASS 01 / STACK → REVEAL</p>
+          <h2>Four layers become<br />one balanced system.</h2>
+          <span>The cards begin as a tactile glass stack, then separate into their final layout with depth, weight, and controlled spring.</span>
         </div>
-        <div className={styles.shardGrid}>
+        <div className={styles.shardGrid} data-stack-grid>
           {items.map((item, index) => <ShardCard key={item.index} item={item} variant={index + 1} />)}
         </div>
       </section>
