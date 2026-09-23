@@ -61,13 +61,13 @@ export default function Page() {
     const isTablet = window.innerWidth <= 900 && window.innerWidth > 580;
 
     const lenis = new Lenis({
-      duration: isTouch ? 0.42 : 0.72,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -9 * t)),
+      duration: isTouch ? 0.48 : 1.05,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: !isTouch,
-      touchMultiplier: isTouch ? 1.08 : 1.35,
-      wheelMultiplier: isTablet ? 0.9 : 1.0,
+      touchMultiplier: isTouch ? 1.04 : 1.2,
+      wheelMultiplier: isTablet ? 0.88 : 0.92,
     });
 
     lenis.on('scroll', ScrollTrigger.update);
@@ -122,11 +122,11 @@ export default function Page() {
 
     // 3 narrative cue zones within hero track (0..1)
     const CUES = [
-      [0.00, 0.00, 0.22, 0.32],
-      [0.40, 0.50, 0.68, 0.78],
-      [0.84, 0.92, 1.00, 1.05]
+      [0.00, 0.00, 0.25, 0.34],
+      [0.34, 0.44, 0.64, 0.74],
+      [0.72, 0.82, 1.00, 1.06]
     ];
-    const DRIFT = isTouch ? 13 : 20;
+    const DRIFT = isTouch ? 11 : 18;
 
     function clamp(v: number, a: number, b: number) {
       return Math.max(a, Math.min(b, v));
@@ -181,6 +181,15 @@ export default function Page() {
         meter.style.transform = `scaleX(${progress})`;
       }
 
+      if (clip) {
+        const parallaxY = (progress - 0.5) * (isTouch ? 12 : 30);
+        const parallaxX = Math.sin(progress * Math.PI) * (isTouch ? 1.5 : 5);
+        const scale = 1.035 + progress * (isTouch ? 0.018 : 0.035);
+
+        clip.style.transform =
+          `translate3d(calc(-50% + ${parallaxX.toFixed(2)}px), calc(-50% + ${parallaxY.toFixed(2)}px), 0) scale(${scale.toFixed(4)})`;
+      }
+
       for (let i = 0; i < panels.length; i++) {
         const c = CUES[i];
         const el = panels[i];
@@ -189,31 +198,45 @@ export default function Page() {
         const enter = ramp(progress, c[0], c[1]);
         const leave = ramp(progress, c[2], c[3]);
         const o = enter * (1 - leave);
-        const y = (1 - enter) * DRIFT - leave * DRIFT;
+        const cueCenter = (c[1] + c[2]) * 0.5;
+        const sceneParallax = (progress - cueCenter) * (isTouch ? -10 : -22) * o;
+        const y = (1 - enter) * DRIFT - leave * DRIFT + sceneParallax;
 
         el.style.opacity = o.toString();
-        el.style.transform = `translate3d(0, ${y}px, 0)`;
+        el.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
         el.style.pointerEvents = o > 0.5 ? "auto" : "none";
 
         const chars = panelTitleChars[i] || [];
+        const charMiddle = Math.max(1, (chars.length - 1) / 2);
+
         chars.forEach((char, index) => {
-          const stagger = Math.min(index * (isTouch ? 0.035 : 0.045), 0.34);
-          const reveal = smooth(clamp((enter - stagger) / Math.max(0.001, 1 - stagger), 0, 1));
-          const blur = (1 - reveal) * (isTouch ? 15 : 25) + leave * (isTouch ? 7 : 12);
-          const scale = 1 + (1 - reveal) * (isTouch ? 0.10 : 0.20);
-          const charY = (1 - reveal) * (isTouch ? 12 : 22) - leave * 8;
+          const distance = Math.abs(index - charMiddle) / charMiddle;
+          const stagger = distance * (isTouch ? 0.12 : 0.18);
+          const reveal = smooth(
+            clamp((enter - stagger) / Math.max(0.001, 1 - stagger), 0, 1)
+          );
+          const blur = (1 - reveal) * (isTouch ? 16 : 30) + leave * (isTouch ? 6 : 10);
+          const scale = 1 + (1 - reveal) * (isTouch ? 0.12 : 0.26);
+          const charY = (1 - reveal) * (isTouch ? 10 : 22) - leave * 7;
+          const rotateX = (1 - reveal) * (isTouch ? 4 : 8);
 
           char.style.opacity = reveal.toString();
           char.style.filter = `blur(${blur.toFixed(2)}px)`;
-          char.style.transform = `translate3d(0, ${charY.toFixed(2)}px, 0) scale(${scale.toFixed(3)})`;
+          char.style.transform =
+            `translate3d(0, ${charY.toFixed(2)}px, 0) scale(${scale.toFixed(3)}) rotateX(${rotateX.toFixed(2)}deg)`;
         });
 
         const words = panelSubtitleWords[i] || [];
+        const wordMiddle = Math.max(1, (words.length - 1) / 2);
+
         words.forEach((word, index) => {
-          const stagger = Math.min(index * 0.035, 0.22);
-          const reveal = smooth(clamp((enter - 0.12 - stagger) / Math.max(0.001, 0.88 - stagger), 0, 1));
-          const blur = (1 - reveal) * (isTouch ? 8 : 13) + leave * 6;
-          const wordY = (1 - reveal) * (isTouch ? 8 : 14);
+          const distance = Math.abs(index - wordMiddle) / wordMiddle;
+          const stagger = 0.10 + distance * 0.09;
+          const reveal = smooth(
+            clamp((enter - stagger) / Math.max(0.001, 0.9 - stagger), 0, 1)
+          );
+          const blur = (1 - reveal) * (isTouch ? 8 : 14) + leave * 5;
+          const wordY = (1 - reveal) * (isTouch ? 7 : 13);
 
           word.style.opacity = reveal.toString();
           word.style.filter = `blur(${blur.toFixed(2)}px)`;
@@ -418,7 +441,8 @@ export default function Page() {
       });
     });
 
-    // Final homepage motion: compact header + stacked glass cards that resolve into the grid.
+    // Advanced card choreography: rise from the bottom into one merged glass stack,
+    // then separate and settle down into the final floor-aligned layout.
     const motion = gsap.matchMedia();
     const tiltCleanups: Array<() => void> = [];
 
@@ -443,32 +467,34 @@ export default function Page() {
             rotateX: 0,
             rotateY: 0,
             rotateZ: 0,
-            filter: "none",
           });
           return;
         }
 
         if (conditions.desktop && grid && cards.length) {
-          const stackOffsetX = (index: number, target: HTMLElement) => {
+          const centerOffset = (_index: number, target: HTMLElement) => {
             const gridRect = grid.getBoundingClientRect();
             const rect = target.getBoundingClientRect();
             return gridRect.left + gridRect.width / 2 - (rect.left + rect.width / 2);
           };
 
-          const stackY = [-16, -5, 6, 17];
-          const stackRotate = [-7, -2.5, 2.5, 7];
-          const stackScale = [0.93, 0.955, 0.98, 1];
+          const layerX = [-16, -6, 6, 16];
+          const layerY = [-28, -12, 4, 20];
+          const layerRotate = [-7, -2.4, 2.4, 7];
+          const layerScale = [0.93, 0.955, 0.978, 1];
 
           gsap.set(cards, {
             zIndex: (index: number) => cards.length - index,
+            transformPerspective: 1100,
+            transformOrigin: "50% 50%",
           });
 
           const stackTimeline = gsap.timeline({
             scrollTrigger: {
               trigger: "#possibilities",
               start: "top top",
-              end: "+=118%",
-              scrub: 1,
+              end: "+=155%",
+              scrub: 1.05,
               pin: true,
               anticipatePin: 1,
               invalidateOnRefresh: true,
@@ -478,100 +504,102 @@ export default function Page() {
           stackTimeline
             .fromTo(
               ".possibilities-header",
-              {
-                y: -10,
-                opacity: 0,
-                filter: "blur(14px)",
-              },
-              {
-                y: 0,
-                opacity: 1,
-                filter: "blur(0px)",
-                duration: 0.32,
-                ease: "power3.out",
-              },
+              { y: -12, opacity: 0, filter: "blur(14px)" },
+              { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.28, ease: "power3.out" },
               0
             )
             .fromTo(
               cards,
               {
-                x: (index: number, target: HTMLElement) => stackOffsetX(index, target),
-                y: (index: number) => stackY[index] ?? 0,
-                rotateY: (index: number) => (index - 1.5) * 4.5,
-                rotateZ: (index: number) => stackRotate[index] ?? 0,
-                scale: (index: number) => stackScale[index] ?? 1,
-                filter: "blur(5px)",
-                opacity: 0.94,
+                x: (index: number, target: HTMLElement) => centerOffset(index, target),
+                y: (index: number) => 280 + index * 18,
+                rotateY: (index: number) => (index - 1.5) * 7,
+                rotateZ: (index: number) => (layerRotate[index] ?? 0) * 1.5,
+                scale: 0.84,
+                opacity: 0,
               },
+              {
+                x: (index: number, target: HTMLElement) =>
+                  centerOffset(index, target) + (layerX[index] ?? 0),
+                y: (index: number) => (layerY[index] ?? 0) - 34,
+                rotateY: (index: number) => (index - 1.5) * 3.5,
+                rotateZ: (index: number) => layerRotate[index] ?? 0,
+                scale: (index: number) => layerScale[index] ?? 1,
+                opacity: 1,
+                duration: 0.48,
+                stagger: { each: 0.025, from: "center" },
+                ease: "power4.out",
+              },
+              0.08
+            )
+            .to(
+              cards,
               {
                 x: 0,
                 y: 0,
+                rotateX: 0,
                 rotateY: 0,
                 rotateZ: 0,
                 scale: 1,
-                filter: "blur(0px)",
-                opacity: 1,
-                duration: 0.92,
-                stagger: {
-                  each: 0.035,
-                  from: "center",
-                },
+                duration: 0.72,
+                stagger: { each: 0.03, from: "center" },
                 ease: "power3.inOut",
               },
-              0.12
+              0.52
             )
             .to(
               cards,
               {
-                y: -7,
-                duration: 0.14,
-                stagger: 0.02,
+                y: 7,
+                scaleY: 0.992,
+                duration: 0.12,
+                stagger: 0.018,
                 ease: "power2.out",
               },
-              0.87
+              1.12
             )
             .to(
               cards,
               {
                 y: 0,
-                duration: 0.2,
-                stagger: 0.02,
-                ease: "back.out(1.6)",
+                scaleY: 1,
+                duration: 0.20,
+                stagger: 0.018,
+                ease: "back.out(1.65)",
               },
-              0.98
+              1.23
             );
         } else {
           gsap.fromTo(
             ".possibilities-header",
-            {
-              y: conditions.mobile ? 18 : 24,
-              opacity: 0,
-              filter: "blur(10px)",
-            },
+            { y: conditions.mobile ? 18 : 22, opacity: 0, filter: "blur(9px)" },
             {
               y: 0,
               opacity: 1,
               filter: "blur(0px)",
-              duration: conditions.mobile ? 0.62 : 0.76,
+              duration: conditions.mobile ? 0.60 : 0.72,
               ease: "power3.out",
               scrollTrigger: {
                 trigger: "#possibilities",
-                start: conditions.mobile ? "top 91%" : "top 87%",
+                start: conditions.mobile ? "top 91%" : "top 88%",
                 once: true,
               },
             }
           );
 
           cards.forEach((card, index) => {
+            const horizontal = conditions.tablet
+              ? (index % 2 === 0 ? 34 : -34)
+              : (index % 2 === 0 ? 18 : -18);
+
             gsap.fromTo(
               card,
               {
-                x: conditions.tablet ? (index % 2 === 0 ? -28 : 28) : (index % 2 === 0 ? -14 : 14),
-                y: conditions.mobile ? 26 : 34,
-                rotateZ: conditions.mobile ? (index % 2 === 0 ? -1.5 : 1.5) : 0,
+                x: horizontal,
+                y: conditions.mobile ? 42 : 54,
+                rotateZ: index % 2 === 0 ? -2 : 2,
                 opacity: 0,
-                scale: conditions.mobile ? 0.975 : 0.96,
-                filter: conditions.mobile ? "blur(5px)" : "blur(7px)",
+                scale: conditions.mobile ? 0.965 : 0.95,
               },
               {
                 x: 0,
@@ -579,9 +607,8 @@ export default function Page() {
                 rotateZ: 0,
                 opacity: 1,
                 scale: 1,
-                filter: "blur(0px)",
-                duration: conditions.mobile ? 0.58 : 0.72,
-                delay: conditions.mobile ? 0 : index * 0.06,
+                duration: conditions.mobile ? 0.60 : 0.72,
+                delay: Math.min(index * 0.055, 0.16),
                 ease: "power3.out",
                 scrollTrigger: {
                   trigger: card,
@@ -714,7 +741,7 @@ export default function Page() {
           <div className="content-block">
             <div className="eyebrow">CREATE <span>/ 01</span></div>
             <h1 className="hero-title">CREATE</h1>
-            <p className="sub">Where your <em>vision</em> becomes reality.</p>
+            <p className="sub">Where your <em>Vision</em> becomes Reality.</p>
           </div>
         </section>
 
@@ -734,9 +761,6 @@ export default function Page() {
           </div>
         </section>
       </main>
-
-      {/* Minimal Corner Footer for Video Hero */}
-      <footer className="foot">112 Render Lane &nbsp;&middot;&nbsp; Tue–Sun, 9am till sold out</footer>
 
       {/* Video Hero Scroll Track */}
       <div className="track" id="heroTrack"></div>

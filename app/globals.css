@@ -93,7 +93,8 @@ body {
   left: 50%;
   width: 100%;
   height: 100%;
-  transform: translate(-50%, -50%);
+  transform: translate3d(-50%, -50%, 0) scale(1.035);
+  transform-origin: 50% 50%;
   object-fit: cover;
   filter: none;
   image-rendering: -webkit-optimize-contrast;
@@ -266,20 +267,35 @@ body {
 }
 
 .content-block {
-  width: min(560px, 86vw);
-  max-width: 560px;
+  position: relative;
+  width: min(500px, 84vw);
+  max-width: 500px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
 }
 
+.content-block::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 130%;
+  height: 185%;
+  left: -15%;
+  bottom: -38%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(18,34,28,0.18), rgba(18,34,28,0) 68%);
+  filter: blur(22px);
+  pointer-events: none;
+}
+
 .content-block::after {
   content: "";
-  width: min(100%, 520px);
+  width: min(100%, 460px);
   height: 1px;
-  margin-top: clamp(18px, 2.4vh, 26px);
-  background: linear-gradient(90deg, rgba(255,255,255,0.52), rgba(255,255,255,0.08));
+  margin-top: clamp(17px, 2.2vh, 23px);
+  background: linear-gradient(90deg, rgba(255,255,255,0.48), rgba(255,255,255,0.06));
 }
 
 .eyebrow {
@@ -302,12 +318,12 @@ body {
 .hero-title {
   max-width: 11ch;
   margin: 0;
-  font-size: clamp(52px, 5vw, 76px);
-  line-height: 0.94;
+  font-size: clamp(44px, 4.15vw, 62px);
+  line-height: 0.96;
   font-weight: 400;
-  letter-spacing: 0.055em;
+  letter-spacing: 0.075em;
   color: #ffffff;
-  text-shadow: 0 2px 16px rgba(0,0,0,0.40), 0 8px 28px rgba(0,0,0,0.22);
+  text-shadow: 0 2px 16px rgba(0,0,0,0.34), 0 8px 28px rgba(0,0,0,0.18);
   text-wrap: balance;
   perspective: 900px;
 }
@@ -321,14 +337,14 @@ body {
 
 /* HERO SUBHEADING */
 .sub {
-  margin-top: 12px;
+  margin-top: 11px;
   max-width: 34ch;
-  font-size: clamp(15px, 1.18vw, 18px);
-  line-height: 1.42;
+  font-size: clamp(14px, 1.08vw, 17px);
+  line-height: 1.38;
   font-weight: 400;
-  letter-spacing: 0.01em;
-  color: rgba(255,255,255,0.80);
-  text-shadow: 0 1px 10px rgba(0,0,0,0.38);
+  letter-spacing: 0.012em;
+  color: rgba(255,255,255,0.82);
+  text-shadow: 0 1px 10px rgba(0,0,0,0.34);
   text-wrap: pretty;
 }
 
@@ -355,8 +371,8 @@ body {
 .track {
   position: relative;
   z-index: 1;
-  height: 250vh;
-  min-height: 1900px;
+  height: 275vh;
+  min-height: 2050px;
 }
 
 /* ============================================================== */
@@ -539,6 +555,7 @@ body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   will-change: transform, opacity;
+  filter: none;
   transition:
     box-shadow 0.45s var(--ease),
     border-color 0.45s var(--ease),
@@ -920,7 +937,7 @@ body {
 /* Tablet: preserve cinematic hero, but reduce scrub distance and render cost. */
 @media (min-width: 581px) and (max-width: 900px) {
   .track {
-    height: 230svh;
+    height: 235svh;
     min-height: 0;
   }
 
@@ -1039,7 +1056,7 @@ body {
 /* Mobile: one-card flow, native-feeling scroll, lighter blur and clean reveal rhythm. */
 @media (max-width: 580px) {
   .track {
-    height: 220svh;
+    height: 225svh;
     min-height: 0;
   }
 
@@ -1254,8 +1271,8 @@ body {
   }
 
   .hero-title {
-    font-size: clamp(48px, 8vw, 64px);
-    letter-spacing: 0.05em;
+    font-size: clamp(43px, 7vw, 56px);
+    letter-spacing: 0.06em;
   }
 
   .sub {
@@ -1283,9 +1300,9 @@ body {
 
   .hero-title {
     max-width: 10ch;
-    font-size: clamp(42px, 13vw, 58px);
-    line-height: 0.95;
-    letter-spacing: 0.045em;
+    font-size: clamp(38px, 11.8vw, 52px);
+    line-height: 0.96;
+    letter-spacing: 0.055em;
   }
 
   .sub {
