@@ -1,4 +1,7 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { useEffect, useRef, type ReactNode } from 'react';
+import Image from 'next/image';
 
 type LiquidSectionProps = {
   id: string;
@@ -15,8 +18,22 @@ export default function LiquidSection({
   ariaLabelledby,
   children,
 }: LiquidSectionProps) {
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+    // A public ES module keeps the optional WebGL dependency out of the React bundle.
+    const moduleUrl = '/liquid-shared.js';
+    import(/* webpackIgnore: true */ moduleUrl)
+      .then(module => { if (!cancelled) cleanup = module.mountLiquidSection(section); })
+      .catch(() => { section.classList.remove('is-liquid-ready'); });
+    return () => { cancelled = true; cleanup?.(); };
+  }, []);
   return (
     <section
+      ref={sectionRef}
       id={id}
       className={`liquid-section ${className}`}
       data-liquid-surface
@@ -24,10 +41,12 @@ export default function LiquidSection({
       aria-labelledby={ariaLabelledby}
     >
       <div className="liquid-media" data-liquid-bg aria-hidden="true">
-        <img
+        <Image
           className="liquid-image"
           src={imageSrc}
           alt=""
+          fill
+          sizes="100vw"
           draggable={false}
         />
       </div>

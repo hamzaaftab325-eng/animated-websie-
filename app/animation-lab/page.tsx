@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import Link from 'next/link';
 import styles from './animation-lab.module.css';
 import { initAnimationLab } from './animations';
 
@@ -178,7 +179,12 @@ export default function AnimationLabPage() {
 
   useEffect(() => {
     if (!rootRef.current) return;
-    return initAnimationLab(rootRef.current);
+    const root = rootRef.current;
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let cleanup = initAnimationLab(root);
+    const sync = () => { cleanup(); cleanup = initAnimationLab(root); };
+    preference.addEventListener('change', sync);
+    return () => { preference.removeEventListener('change', sync); cleanup(); };
   }, []);
 
   return (
@@ -199,7 +205,7 @@ export default function AnimationLabPage() {
       <div className={styles.progress} data-progress />
 
       <header className={styles.header}>
-        <a href="/" className={styles.homeLink}>← HOME</a>
+        <Link href="/" className={styles.homeLink}>← HOME</Link>
         <div className={styles.headerTitle}>MOTION LAB / 2026</div>
         <div className={styles.headerMeta}>
           <span>GSAP 3.15</span>

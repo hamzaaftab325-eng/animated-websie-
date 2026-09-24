@@ -25,15 +25,20 @@ const shippori = Shippori_Mincho({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://animated-websie.vercel.app'),
+  alternates: { canonical: '/' },
   title: 'Cast & Render — 3D Object Studio & Endless Possibilities',
   description: 'A scroll-scrubbed cinematic 3D experience and boundless possibilities suite with GSAP and Lenis smooth scrolling.',
   openGraph: {
     title: 'Cast & Render — 3D Object Studio & Endless Possibilities',
     description: 'A scroll-scrubbed cinematic 3D experience with GSAP and Lenis smooth scrolling.',
     type: 'website',
+    url: '/',
+    images: [{ url: '/opengraph-image', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
+    images: ['/opengraph-image'],
     title: 'Cast & Render — 3D Object Studio & Endless Possibilities',
     description: 'A scroll-scrubbed cinematic 3D experience with GSAP and Lenis smooth scrolling.',
   },
@@ -53,7 +58,7 @@ export default function RootLayout({children}: {children: React.ReactNode}) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body suppressHydrationWarning>{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
