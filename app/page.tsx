@@ -63,14 +63,14 @@ export default function Page() {
     const isTablet = window.innerWidth <= 900 && window.innerWidth > 580;
 
     const lenis = new Lenis({
-      duration: isTouch ? 0.52 : 1.0,
+      duration: isTouch ? 0.5 : 1.12,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: !isTouch,
       syncTouch: false,
       touchMultiplier: isTouch ? 1.02 : 1.15,
-      wheelMultiplier: isTablet ? 0.86 : 0.9,
+      wheelMultiplier: isTablet ? 0.88 : 0.94,
       overscroll: false,
     });
 
@@ -699,6 +699,45 @@ export default function Page() {
         } as gsap.TweenVars
       );
     }
+
+
+    // Shared Lenis-driven background parallax. The image and WebGL liquid
+    // canvas live in the same .liquid-visual wrapper, so they stay perfectly
+    // aligned while moving.
+    const liquidParallaxSections =
+      gsap.utils.toArray<HTMLElement>("[data-liquid-surface]");
+
+    liquidParallaxSections.forEach((section) => {
+      const visual =
+        section.querySelector<HTMLElement>("[data-liquid-visual]");
+
+      if (!visual) return;
+
+      const travel = isTouch ? 2.4 : 4.6;
+      const visualScale = isTouch ? 1.015 : 1.025;
+
+      gsap.fromTo(
+        visual,
+        {
+          yPercent: -travel,
+          scale: visualScale,
+          force3D: true,
+        },
+        {
+          yPercent: travel,
+          scale: visualScale,
+          ease: "none",
+          force3D: true,
+          scrollTrigger: {
+            trigger: section,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: isTouch ? 0.55 : 0.85,
+            invalidateOnRefresh: true,
+          },
+        }
+      );
+    });
 
 
     // Uploaded Izanami-style projects section: same text reveal and parallax
@@ -1362,7 +1401,12 @@ export default function Page() {
       renderScrollState();
     };
 
+    const syncLenisSize = () => {
+      lenis.resize();
+    };
+
     lenis.on("scroll", onLenisScroll);
+    ScrollTrigger.addEventListener("refresh", syncLenisSize);
     ScrollTrigger.refresh();
 
     window.addEventListener("resize", renderScrollState);
@@ -1377,6 +1421,7 @@ export default function Page() {
       textSplits.forEach((split) => split.revert());
       tiltCleanups.forEach((cleanup) => cleanup());
       ScrollTrigger.getAll().forEach(t => t.kill());
+      ScrollTrigger.removeEventListener("refresh", syncLenisSize);
       window.removeEventListener("resize", renderScrollState);
       unlockEvents.forEach((ev) => {
         window.removeEventListener(ev, unlock);

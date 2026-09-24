@@ -1789,9 +1789,9 @@ body {
   }
 }
 
-
 /* ================================================================
-   SHARED LIQUID SURFACE — ONE GEOMETRY FOR BOTH SECTIONS
+   SHARED LIQUID SURFACE
+   Image + liquid canvas remain pixel-locked inside one parallax layer.
    ================================================================ */
 .liquid-section {
   position: relative;
@@ -1799,21 +1799,33 @@ body {
   overflow: hidden;
 }
 
-.liquid-section > .liquid-media,
-.liquid-section > .liquid-canvas {
+.liquid-section > .liquid-visual {
+  position: absolute;
+  inset: -6% -3%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  transform: translate3d(0, 0, 0) scale(1.025);
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+.liquid-visual > .liquid-media,
+.liquid-visual > .liquid-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
-.liquid-section > .liquid-media {
+.liquid-visual > .liquid-media {
   z-index: 0;
   overflow: hidden;
-  pointer-events: none;
 }
 
-.liquid-section > .liquid-media > .liquid-image {
+.liquid-visual > .liquid-media > .liquid-image {
   position: absolute;
   inset: 0;
   display: block;
@@ -1825,31 +1837,41 @@ body {
   object-position: 50% 50%;
   transform: none;
   filter: none;
+  user-select: none;
 }
 
-.liquid-section > .liquid-canvas {
+.liquid-visual > .liquid-canvas {
   z-index: 1;
   display: block;
-  contain: layout paint;
   opacity: 0;
-  pointer-events: none;
   transform: none;
-  transition: opacity 0.5s cubic-bezier(.16, 1, .3, 1);
+  contain: layout paint;
+  transition: opacity 0.32s cubic-bezier(.16, 1, .3, 1);
   mix-blend-mode: normal;
 }
 
-.liquid-section.is-liquid-ready > .liquid-canvas {
+.liquid-section.is-liquid-ready .liquid-visual > .liquid-canvas {
   opacity: 1;
 }
 
 @media (hover: none), (pointer: coarse), (max-width: 767px) {
-  .liquid-section > .liquid-canvas {
+  .liquid-visual > .liquid-canvas {
     display: none;
+  }
+
+  .liquid-section > .liquid-visual {
+    inset: -4% -2%;
+    transform: translate3d(0, 0, 0) scale(1.015);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .liquid-section > .liquid-canvas {
+  .liquid-section > .liquid-visual {
+    inset: 0;
+    transform: none !important;
+  }
+
+  .liquid-visual > .liquid-canvas {
     display: none !important;
   }
 }

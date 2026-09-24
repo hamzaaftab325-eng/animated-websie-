@@ -9,7 +9,7 @@ const initializedLiquidSections = new WeakSet();
 function initLiquidSection(section) {
   if (!section || initializedLiquidSections.has(section)) return;
 
-  const bgWrap = section;
+  const bgWrap = section.querySelector("[data-liquid-visual]");
   const canvas = section.querySelector("[data-liquid-canvas]");
   const sourceImage = section.querySelector("[data-liquid-image-element]");
 
@@ -344,11 +344,11 @@ function initLiquidSection(section) {
         section.classList.add("is-liquid-ready");
       }
 
-      if (sourceImage.complete && sourceImage.naturalWidth) {
-        activateTexture();
-      } else {
-        sourceImage.addEventListener("load", activateTexture, { once: true });
+      function onTextureError() {
+        section.classList.remove("is-liquid-ready");
+        initializedLiquidSections.delete(section);
       }
+
 
       function createRT(width, height) {
         return new THREE.WebGLRenderTarget(width, height, {
@@ -621,6 +621,19 @@ function initLiquidSection(section) {
 
       resize();
 
+      const activateWhenReady = () => {
+        requestAnimationFrame(() => {
+          activateTexture();
+        });
+      };
+
+      if (sourceImage.complete && sourceImage.naturalWidth) {
+        activateWhenReady();
+      } else {
+        sourceImage.addEventListener("load", activateWhenReady, { once: true });
+        sourceImage.addEventListener("error", onTextureError, { once: true });
+      }
+
       function loop() {
         if (active && textureReady) {
           stepFluid();
@@ -634,7 +647,16 @@ function initLiquidSection(section) {
 
 function bootLiquidSections() {
   const sections = document.querySelectorAll("[data-liquid-surface]");
-  sections.forEach((section) => initLiquidSection(section));
+
+  sections.forEach((section) => {
+    try {
+      initLiquidSection(section);
+    } catch (error) {
+      initializedLiquidSections.delete(section);
+      section.classList.remove("is-liquid-ready");
+      console.warn("[liquid] section initialization failed", error);
+    }
+  });
 }
 
 if (document.readyState === "loading") {

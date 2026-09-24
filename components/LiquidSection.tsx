@@ -23,22 +23,24 @@ export default function LiquidSection({
       data-liquid-image={imageSrc}
       aria-labelledby={ariaLabelledby}
     >
-      <div className="liquid-media" data-liquid-bg aria-hidden="true">
-        <img
-          className="liquid-image"
-          data-liquid-image-element
-          src={imageSrc}
-          alt=""
-          crossOrigin="anonymous"
-          draggable={false}
+      <div className="liquid-visual" data-liquid-visual aria-hidden="true">
+        <div className="liquid-media" data-liquid-bg>
+          <img
+            className="liquid-image"
+            data-liquid-image-element
+            src={imageSrc}
+            alt=""
+            crossOrigin="anonymous"
+            draggable={false}
+          />
+        </div>
+
+        <canvas
+          className="liquid-canvas"
+          data-liquid-canvas
+          aria-hidden="true"
         />
       </div>
-
-      <canvas
-        className="liquid-canvas"
-        data-liquid-canvas
-        aria-hidden="true"
-      />
 
       {children}
     </section>
