@@ -431,8 +431,7 @@ body {
   gap: clamp(18px, 3.4vh, 38px);
   padding: clamp(24px, 4.2vh, 54px) 0 clamp(26px, 4.8vh, 60px);
   background:
-    linear-gradient(180deg, rgba(255, 247, 242, 0.02), rgba(75, 32, 31, 0.08)),
-    url('https://res.cloudinary.com/diometfe9/image/upload/v1790183196/download_enkn9u.png') center center / cover no-repeat;
+    linear-gradient(180deg, #b99497 0%, #d7b9b5 50%, #9b7477 100%);
   box-shadow: 0 -25px 60px rgba(0, 0, 0, 0.28);
 }
 
@@ -779,21 +778,22 @@ body {
   opacity: 0.65;
   pointer-events: none;
   filter: drop-shadow(0 3px 6px rgba(105, 43, 56, 0.12));
-  animation: possibilityPetalFall 13s linear infinite;
+  animation: possibilityPetalDrift 16s cubic-bezier(.37, 0, .63, 1) infinite;
   will-change: transform;
 }
 
-.petal-1 { left: 8%; animation-delay: -2s; animation-duration: 15s; }
-.petal-2 { left: 27%; animation-delay: -8s; animation-duration: 13s; scale: 0.8; }
-.petal-3 { left: 61%; animation-delay: -4s; animation-duration: 17s; scale: 0.9; }
-.petal-4 { left: 83%; animation-delay: -10s; animation-duration: 14s; scale: 1.1; }
-.petal-5 { left: 94%; animation-delay: -6s; animation-duration: 16s; scale: 0.7; }
+.petal-1 { left: 8%; animation-delay: -3s; animation-duration: 18s; }
+.petal-2 { left: 27%; animation-delay: -11s; animation-duration: 20s; scale: 0.8; }
+.petal-3 { left: 61%; animation-delay: -6s; animation-duration: 22s; scale: 0.9; }
+.petal-4 { left: 83%; animation-delay: -14s; animation-duration: 19s; scale: 1.1; }
+.petal-5 { left: 94%; animation-delay: -9s; animation-duration: 21s; scale: 0.7; }
 
-@keyframes possibilityPetalFall {
-  0%   { translate: 0 -8vh; rotate: 0deg; }
-  35%  { translate: 3vw 35vh; rotate: 130deg; }
-  70%  { translate: -2vw 72vh; rotate: 270deg; }
-  100% { translate: 2vw 110vh; rotate: 430deg; }
+@keyframes possibilityPetalDrift {
+  0% { translate: 0 -10vh; rotate: 0deg; }
+  25% { translate: 1.2vw 20vh; rotate: 70deg; }
+  55% { translate: -0.8vw 55vh; rotate: 170deg; }
+  80% { translate: 1vw 84vh; rotate: 260deg; }
+  100% { translate: 0 112vh; rotate: 340deg; }
 }
 
 /* INTERACTIVE MODAL FOR CARDS */
@@ -1407,16 +1407,6 @@ body {
   z-index: 1;
 }
 
-.possibilities-title,
-.possibilities-desc,
-.possibilities-eyebrow {
-  will-change: transform, opacity, filter;
-  transform-origin: 50% 50%;
-}
-
-
-
-
 /* ================================================================
    UPLOADED IZANAMI LIQUID PROJECTS SECTION
    ================================================================ */
@@ -1435,10 +1425,7 @@ body {
   padding-block-start: 1.875vw;
   overflow: clip;
   isolation: isolate;
-  background:
-    var(--projects-dark)
-    url("https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp")
-    center center / cover no-repeat;
+  background: var(--projects-dark);
   color: var(--projects-ink);
 }
 
@@ -1488,7 +1475,6 @@ body {
   padding-inline-start: 45vw;
   padding-inline-end: 5vw;
   pointer-events: auto;
-  will-change: transform;
 }
 
 .projects-liquid-title {
@@ -1764,11 +1750,11 @@ body {
 
 .liquid-section > .liquid-visual {
   position: absolute;
-  inset: -6% -3%;
+  inset: -5% -2.5%;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  transform: translate3d(0, 0, 0) scale(1.025);
+  transform: translate3d(0, 0, 0) scale(1.028);
   transform-origin: 50% 50%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -1836,5 +1822,51 @@ body {
 
   .liquid-visual > .liquid-canvas {
     display: none !important;
+  }
+}
+
+
+/* ================================================================
+   CLEAN MOTION SYSTEM
+   Lenis owns smoothing; GSAP maps motion without secondary easing layers.
+   ================================================================ */
+.panel,
+.content-block,
+.possibilities-header,
+.glass-card,
+.projects-liquid-title-line,
+.projects-liquid-desc-line,
+.projects-liquid-button-char,
+.liquid-visual {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.panel,
+.content-block,
+.possibilities-header,
+.glass-card,
+.liquid-visual {
+  transform: translateZ(0);
+}
+
+@media (min-width: 901px) {
+  .cards-grid.is-card-motion .glass-card {
+    -webkit-backdrop-filter: blur(6px) saturate(116%);
+    backdrop-filter: blur(6px) saturate(116%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .content-block,
+  .possibilities-header,
+  .glass-card,
+  .projects-liquid-title-line,
+  .projects-liquid-desc-line,
+  .projects-liquid-button-char,
+  .liquid-visual {
+    transform: none !important;
+    filter: none !important;
   }
 }

@@ -57,1335 +57,781 @@ export default function Page() {
 
     gsap.registerPlugin(ScrollTrigger, SplitText);
 
-    // Device-aware motion tuning: preserve cinematic desktop motion while
-    // keeping touch scrolling native-feeling and responsive on tablets/phones.
-    const isTouch = window.matchMedia('(pointer: coarse)').matches;
-    const isTablet = window.innerWidth <= 900 && window.innerWidth > 580;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const isTouch = window.matchMedia("(pointer: coarse)").matches;
 
-    const lenis = new Lenis({
-      duration: isTouch ? 0.5 : 1.12,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: !isTouch,
-      syncTouch: false,
-      touchMultiplier: isTouch ? 1.02 : 1.1,
-      wheelMultiplier: isTablet ? 0.88 : 0.92,
-      overscroll: false,
-    });
-
-    const tickerCallback = (time: number) => {
-      lenis.raf(time * 1000);
-    };
-    gsap.ticker.add(tickerCallback);
-    gsap.ticker.lagSmoothing(500, 33);
-
-    const VIDEO_URL = "https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4";
+    const VIDEO_URL =
+      "https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4";
 
     const clip = document.getElementById("clip") as HTMLVideoElement | null;
     const boot = document.getElementById("boot");
     const bootBar = document.getElementById("bootBar");
     const bootPct = document.getElementById("bootPct");
     const meter = document.getElementById("meter");
-    const panels = [].slice.call(document.querySelectorAll("[data-panel]")) as HTMLElement[];
+    const heroTrack = document.getElementById("heroTrack");
+    const chromeHeader = document.querySelector<HTMLElement>(".chrome");
+    const possibilitiesSection = document.getElementById("possibilities");
+    const projectsSection = document.getElementById("projectsSection");
+
     const textSplits: Array<ReturnType<typeof SplitText.create>> = [];
-    const panelTitleChars: HTMLElement[][] = [];
-    const panelSubtitleWords: HTMLElement[][] = [];
+    const cleanupFns: Array<() => void> = [];
+    const motion = gsap.matchMedia();
 
-    panels.forEach((panel) => {
-      const title = panel.querySelector<HTMLElement>(".hero-title");
-      const subtitle = panel.querySelector<HTMLElement>(".sub");
+    const clamp = (value: number, min: number, max: number) =>
+      Math.max(min, Math.min(max, value));
 
-      if (title) {
-        const split = SplitText.create(title, {
-          type: "chars",
-          charsClass: "hero-char",
-        });
-        textSplits.push(split);
-        panelTitleChars.push(split.chars as HTMLElement[]);
-      } else {
-        panelTitleChars.push([]);
-      }
+    const smoothstep = (edge0: number, edge1: number, value: number) => {
+      const t = clamp(
+        (value - edge0) / Math.max(0.0001, edge1 - edge0),
+        0,
+        1
+      );
+      return t * t * (3 - 2 * t);
+    };
 
-      if (subtitle) {
-        const split = SplitText.create(subtitle, {
-          type: "words",
-          wordsClass: "sub-word",
-        });
-        textSplits.push(split);
-        panelSubtitleWords.push(split.words as HTMLElement[]);
-      } else {
-        panelSubtitleWords.push([]);
-      }
+    const lenis = new Lenis({
+      duration: isTouch ? 0.56 : 1.02,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: "vertical",
+      gestureOrientation: "vertical",
+      smoothWheel: !isTouch,
+      syncTouch: false,
+      touchMultiplier: 1,
+      wheelMultiplier: isTouch ? 1 : 0.94,
+      overscroll: false,
     });
 
-    const heroTrack = document.getElementById("heroTrack");
-    const chromeHeader = document.querySelector(".chrome");
-    const footNote = document.querySelector(".foot") as HTMLElement | null;
+    const ticker = (time: number) => lenis.raf(time * 1000);
+    gsap.ticker.add(ticker);
+    gsap.ticker.lagSmoothing(500, 33);
 
-    // 3 narrative cue zones within hero track (0..1)
-    const CUES = [
-      [0.00, 0.00, 0.25, 0.34],
-      [0.34, 0.44, 0.64, 0.74],
-      [0.72, 0.82, 1.00, 1.06]
+    const panels = gsap.utils.toArray<HTMLElement>("[data-panel]");
+    const panelStates = panels.map((panel) => ({
+      panel,
+      content: panel.querySelector<HTMLElement>(".content-block"),
+    }));
+
+    const heroScenes = [
+      { enter: 0.0, enterEnd: 0.025, leave: 0.255, leaveEnd: 0.35 },
+      { enter: 0.31, enterEnd: 0.405, leave: 0.615, leaveEnd: 0.715 },
+      { enter: 0.68, enterEnd: 0.775, leave: 1.01, leaveEnd: 1.08 },
     ];
-    const DRIFT = isTouch ? 11 : 18;
 
-    function clamp(v: number, a: number, b: number) {
-      return Math.max(a, Math.min(b, v));
-    }
+    let heroEnd = 1;
+    let possibilitiesTop = Number.POSITIVE_INFINITY;
+    let possibilitiesBottom = Number.POSITIVE_INFINITY;
+    let projectsTop = Number.POSITIVE_INFINITY;
+    let projectsBottom = Number.POSITIVE_INFINITY;
+    let projectsHeight = 1;
 
-    function smooth(t: number) {
-      return t * t * (3 - 2 * t);
-    }
+    const measureLayout = () => {
+      const scrollY = lenis.scroll;
 
-    function ramp(p: number, a: number, b: number) {
-      if (b <= a) return p >= b ? 1 : 0;
-      return smooth(clamp((p - a) / (b - a), 0, 1));
-    }
+      heroEnd = heroTrack
+        ? Math.max(1, heroTrack.offsetHeight - window.innerHeight)
+        : Math.max(1, window.innerHeight * 1.75);
 
-    let progress = 0;
-    let duration = 0;
-    let ready = false;
-    let started = false;
-    let attached = false;
-    let lastVideoSeek = 0;
-    let videoSeekQueued = false;
-    const assumedFps = isTouch ? 24 : 30;
-    const minSeekDelta = 0.75 / assumedFps;
-
-    function readScroll(scrollY = lenis.scroll) {
-      const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : (window.innerHeight * 1.5);
-      
-      // Lenis already provides the smoothing. Keep one authoritative progress
-      // value so video, text and ScrollTrigger remain phase-locked.
-      progress = trackHeight > 0 ? clamp(scrollY / trackHeight, 0, 1) : 0;
-
-      // Header adapt style when scrolled into possibilities section
-      if (chromeHeader) {
-        if (scrollY > trackHeight - 40) {
-          chromeHeader.classList.add("over-possibilities");
-        } else {
-          chromeHeader.classList.remove("over-possibilities");
-        }
+      if (possibilitiesSection) {
+        const rect = possibilitiesSection.getBoundingClientRect();
+        possibilitiesTop = rect.top + scrollY;
+        possibilitiesBottom = possibilitiesTop + rect.height;
       }
 
-      // Hide hero corner foot note once past hero
-      if (footNote) {
-        footNote.style.opacity = scrollY > trackHeight * 0.9 ? "0" : "1";
+      if (projectsSection) {
+        const rect = projectsSection.getBoundingClientRect();
+        projectsTop = rect.top + scrollY;
+        projectsHeight = Math.max(1, rect.height);
+        projectsBottom = projectsTop + projectsHeight;
       }
-    }
+    };
 
-    function paint() {
-      if (meter) {
-        meter.style.transform = `scaleX(${progress})`;
-      }
+    let videoDuration = 0;
+    let videoReady = false;
+    let seekFrame = 0;
+    let seekTarget = 0;
+    let lastSeekAt = 0;
 
-      for (let i = 0; i < panels.length; i++) {
-        const c = CUES[i];
-        const el = panels[i];
-        if (!c || !el) continue;
+    const setBootProgress = (value: number) => {
+      const progress = clamp(value, 0, 1);
+      if (bootBar) bootBar.style.transform = `scaleX(${progress})`;
+      if (bootPct) bootPct.textContent = `LOADING ${Math.round(progress * 100)}%`;
+    };
 
-        const enter = ramp(progress, c[0], c[1]);
-        const leave = ramp(progress, c[2], c[3]);
-        const o = enter * (1 - leave);
+    const hideBoot = () => {
+      if (!boot || boot.classList.contains("done")) return;
+      gsap.to(boot, {
+        opacity: 0,
+        duration: 0.55,
+        ease: "power2.out",
+        onComplete: () => boot.classList.add("done"),
+      });
+    };
 
-        // Do no expensive descendant work for fully hidden scenes.
-        if (o <= 0.0005) {
-          if (el.style.opacity !== "0") {
-            el.style.opacity = "0";
-            el.style.pointerEvents = "none";
-          }
-          continue;
-        }
-
-        const cueCenter = (c[1] + c[2]) * 0.5;
-        const sceneParallax = (progress - cueCenter) * (isTouch ? -5 : -10) * o;
-        const y = (1 - enter) * DRIFT - leave * DRIFT + sceneParallax;
-
-        el.style.opacity = o.toFixed(4);
-        el.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
-        el.style.pointerEvents = o > 0.5 ? "auto" : "none";
-
-        const title = el.querySelector<HTMLElement>(".hero-title");
-        const subtitle = el.querySelector<HTMLElement>(".sub");
-
-        if (title) {
-          const titleBlur = (1 - enter) * (isTouch ? 5 : 8) + leave * 3;
-          title.style.filter = titleBlur < 0.12 ? "none" : `blur(${titleBlur.toFixed(2)}px)`;
-        }
-
-        if (subtitle) {
-          const subtitleBlur = (1 - enter) * (isTouch ? 3 : 5) + leave * 2;
-          subtitle.style.filter = subtitleBlur < 0.12 ? "none" : `blur(${subtitleBlur.toFixed(2)}px)`;
-        }
-
-        const chars = panelTitleChars[i] || [];
-        const charMiddle = Math.max(1, (chars.length - 1) / 2);
-
-        chars.forEach((char, index) => {
-          const distance = Math.abs(index - charMiddle) / charMiddle;
-          const stagger = distance * (isTouch ? 0.08 : 0.11);
-          const reveal = smooth(
-            clamp((enter - stagger) / Math.max(0.001, 1 - stagger), 0, 1)
-          );
-          const scale = 1 + (1 - reveal) * (isTouch ? 0.045 : 0.075);
-          const charY = (1 - reveal) * (isTouch ? 5 : 8) - leave * 4;
-
-          char.style.opacity = reveal.toFixed(4);
-          char.style.transform =
-            `translate3d(0, ${charY.toFixed(2)}px, 0) scale(${scale.toFixed(3)})`;
-        });
-
-        const words = panelSubtitleWords[i] || [];
-        const wordMiddle = Math.max(1, (words.length - 1) / 2);
-
-        words.forEach((word, index) => {
-          const distance = Math.abs(index - wordMiddle) / wordMiddle;
-          const stagger = 0.06 + distance * 0.045;
-          const reveal = smooth(
-            clamp((enter - stagger) / Math.max(0.001, 0.94 - stagger), 0, 1)
-          );
-          const wordY = (1 - reveal) * (isTouch ? 3 : 5);
-
-          word.style.opacity = reveal.toFixed(4);
-          word.style.transform = `translate3d(0, ${wordY.toFixed(2)}px, 0)`;
-        });
-      }
-    }
-
-    function updateVideoSeek() {
-      if (!ready || !duration || !clip || clip.readyState < 2) return;
-
-      const frameDuration = 1 / assumedFps;
-      const desired = Math.round((progress * duration) / frameDuration) * frameDuration;
-      const difference = desired - clip.currentTime;
-
-      if (Math.abs(difference) < minSeekDelta) {
-        videoSeekQueued = false;
-        return;
-      }
-
-      if (clip.seeking) {
-        videoSeekQueued = true;
-        return;
-      }
+    const flushVideoSeek = () => {
+      seekFrame = 0;
+      if (!clip || !videoReady || !videoDuration || clip.readyState < 2) return;
 
       const now = performance.now();
-      const minInterval = isTouch ? 50 : 34;
-      if (now - lastVideoSeek < minInterval) {
-        videoSeekQueued = true;
-        return;
-      }
+      const minInterval = isTouch ? 48 : 34;
 
-      lastVideoSeek = now;
-      videoSeekQueued = false;
+      if (now - lastSeekAt < minInterval || clip.seeking) return;
+      if (Math.abs(clip.currentTime - seekTarget) < 0.018) return;
+
+      lastSeekAt = now;
 
       try {
-        clip.currentTime = clamp(desired, 0, Math.max(0, duration - frameDuration));
-      } catch (e) {}
-    }
+        clip.currentTime = clamp(
+          seekTarget,
+          0,
+          Math.max(0, videoDuration - 0.02)
+        );
+      } catch {}
+    };
 
-    function renderScrollState(scrollY = lenis.scroll) {
-      readScroll(scrollY);
-      paint();
-      updateVideoSeek();
-      ScrollTrigger.update();
-    }
+    const queueVideoSeek = (heroProgress: number) => {
+      if (!videoReady || !videoDuration) return;
+      seekTarget = clamp(heroProgress, 0, 1) * videoDuration;
+      if (!seekFrame) seekFrame = requestAnimationFrame(flushVideoSeek);
+    };
 
-    function setProgress(f: number) {
-      if (bootBar) {
-        bootBar.style.transform = `scaleX(${f})`;
-      }
-      if (bootPct) {
-        bootPct.textContent = `LOADING ${Math.round(f * 100)}%`;
-      }
-    }
+    const renderHero = (scrollY: number) => {
+      const progress = clamp(scrollY / heroEnd, 0, 1);
 
-    function start() {
-      if (started) return;
-      started = true;
-      ready = true;
-      if (boot) {
-        gsap.to(boot, {
-          opacity: 0,
-          duration: 0.5,
-          ease: "power2.out",
-          onComplete: () => {
-            boot.classList.add("done");
-          }
-        });
-      }
-      renderScrollState();
-      if (clip && duration) {
-        updateVideoSeek();
-      }
-    }
+      if (meter) meter.style.transform = `scaleX(${progress})`;
 
-    function attach(src: string) {
-      if (attached) return;
-      attached = true;
-      if (!clip) return;
+      panelStates.forEach((state, index) => {
+        const scene = heroScenes[index];
+        if (!scene) return;
 
-      clip.addEventListener("loadedmetadata", function() {
-        if (!clip) return;
-        duration = clip.duration || 0;
-        clip.pause();
-        renderScrollState();
-        updateVideoSeek();
-      });
+        const enter =
+          index === 0
+            ? 1
+            : smoothstep(scene.enter, scene.enterEnd, progress);
 
-      clip.addEventListener("loadeddata", start);
-      clip.addEventListener("canplaythrough", start);
-      clip.addEventListener("error", start);
-      clip.addEventListener("seeked", () => {
-        if (videoSeekQueued) updateVideoSeek();
-      });
+        const leave =
+          scene.leave > 1
+            ? 0
+            : smoothstep(scene.leave, scene.leaveEnd, progress);
 
-      clip.src = src;
-      clip.load();
-      setTimeout(start, 8000);
-    }
+        const opacity = enter * (1 - leave);
+        const local = clamp(
+          (progress - scene.enter) /
+            Math.max(0.001, scene.leaveEnd - scene.enter),
+          0,
+          1
+        );
 
-    function preload() {
-      // Avoid buffering the full MP4 into JavaScript memory on touch devices.
-      // Direct media streaming gives mobile Safari/Chrome much smoother seeking.
-      if (isTouch) {
-        setProgress(0.35);
-        attach(VIDEO_URL);
-        return;
-      }
+        const y = (1 - enter) * 26 - leave * 20 + (local - 0.5) * -8;
 
-      const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
-      const signal = controller ? controller.signal : undefined;
+        state.panel.style.opacity = opacity.toFixed(4);
+        state.panel.style.pointerEvents = opacity > 0.55 ? "auto" : "none";
+        state.panel.style.transform =
+          `translate3d(0,${y.toFixed(2)}px,0)`;
 
-      const bail = setTimeout(() => {
-        if (!attached) {
-          if (controller) controller.abort();
-          setProgress(1);
-          attach(VIDEO_URL);
+        if (state.content) {
+          const scale = 0.986 + opacity * 0.014;
+          state.content.style.transform =
+            `translate3d(0,0,0) scale(${scale.toFixed(4)})`;
         }
-      }, 12000);
+      });
 
-      fetch(VIDEO_URL, { signal: signal })
-        .then((res) => {
-          if (!res.ok || !res.body) throw new Error("Fetch failed");
-          const contentLength = res.headers.get("content-length");
-          const total = contentLength ? parseInt(contentLength, 10) : 0;
-          const reader = res.body.getReader();
-          const chunks: BlobPart[] = [];
-          let got = 0;
-
-          function pump(): Promise<Blob> {
-            return reader.read().then((result) => {
-              if (result.done) {
-                return new Blob(chunks, { type: "video/mp4" });
-              }
-              if (result.value) {
-                chunks.push(result.value);
-                got += result.value.length;
-              }
-              const frac = total ? (got / total) : Math.min(got / 11000000, 0.95);
-              setProgress(frac);
-              return pump();
-            });
-          }
-
-          return pump();
-        })
-        .then((blob) => {
-          clearTimeout(bail);
-          setProgress(1);
-          attach(URL.createObjectURL(blob));
-        })
-        .catch(() => {
-          clearTimeout(bail);
-          setProgress(1);
-          attach(VIDEO_URL);
-        });
-    }
-
-    function unlock() {
-      if (!clip) return;
-      const p = clip.play();
-      if (p && p.then) {
-        p.then(() => {
-          if (clip) clip.pause();
-        }).catch(() => {});
-      } else {
-        clip.pause();
+      if (clip) {
+        const scale = 1.045 + progress * 0.018;
+        clip.style.transform =
+          `translate3d(-50%,-50%,0) scale(${scale.toFixed(4)})`;
       }
-    }
 
-    const unlockEvents = ["touchstart", "pointerdown", "wheel", "keydown"];
-    unlockEvents.forEach((ev) => {
-      window.addEventListener(ev, unlock, { once: true, passive: true });
-    });
+      queueVideoSeek(progress);
+    };
 
-    // Nav smooth scroll handlers
-    const navWorks = document.querySelector('a[href="#board"]');
-    const navAbout = document.querySelector('a[href="#visit"]');
-    const navPossibilities = document.querySelector('a[href="#possibilities"]');
-    const navBrief = document.querySelectorAll('a[href="#order"]');
+    if (clip) {
+      const onLoadedMetadata = () => {
+        videoDuration = Number.isFinite(clip.duration) ? clip.duration : 0;
+        clip.pause();
+        setBootProgress(0.72);
+        queueVideoSeek(clamp(lenis.scroll / heroEnd, 0, 1));
+      };
 
-    if (navWorks) {
-      navWorks.addEventListener("click", (e) => {
-        e.preventDefault();
-        const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : 0;
-        lenis.scrollTo(trackHeight * 0.05, { duration: 0.8 });
+      const onCanPlay = () => {
+        videoReady = true;
+        setBootProgress(1);
+        hideBoot();
+        queueVideoSeek(clamp(lenis.scroll / heroEnd, 0, 1));
+      };
+
+      const onVideoError = () => {
+        setBootProgress(1);
+        hideBoot();
+      };
+
+      clip.addEventListener("loadedmetadata", onLoadedMetadata);
+      clip.addEventListener("loadeddata", onCanPlay);
+      clip.addEventListener("canplaythrough", onCanPlay);
+      clip.addEventListener("error", onVideoError);
+      clip.src = VIDEO_URL;
+      clip.load();
+
+      cleanupFns.push(() => {
+        clip.removeEventListener("loadedmetadata", onLoadedMetadata);
+        clip.removeEventListener("loadeddata", onCanPlay);
+        clip.removeEventListener("canplaythrough", onCanPlay);
+        clip.removeEventListener("error", onVideoError);
       });
+
+      const bootFallback = window.setTimeout(() => {
+        setBootProgress(1);
+        hideBoot();
+      }, 6500);
+
+      cleanupFns.push(() => window.clearTimeout(bootFallback));
+    } else {
+      setBootProgress(1);
+      hideBoot();
     }
-
-    if (navAbout) {
-      navAbout.addEventListener("click", (e) => {
-        e.preventDefault();
-        const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : 0;
-        lenis.scrollTo(trackHeight * 0.52, { duration: 0.8 });
-      });
-    }
-
-    if (navPossibilities) {
-      navPossibilities.addEventListener("click", (e) => {
-        e.preventDefault();
-        const el = document.getElementById("possibilities");
-        if (el) lenis.scrollTo(el, { duration: 1.1, offset: 0 });
-      });
-    }
-
-    navBrief.forEach((el) => {
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        const target = document.getElementById("possibilities");
-        if (target) lenis.scrollTo(target, { duration: 1.1 });
-      });
-    });
-
-    // Advanced card choreography: rise from the bottom into one merged glass stack,
-    // then separate and settle down into the final floor-aligned layout.
-    const motion = gsap.matchMedia();
-    const tiltCleanups: Array<() => void> = [];
 
     motion.add(
       {
-        desktop: "(min-width: 901px) and (prefers-reduced-motion: no-preference)",
-        tablet: "(min-width: 581px) and (max-width: 900px) and (prefers-reduced-motion: no-preference)",
-        mobile: "(max-width: 580px) and (prefers-reduced-motion: no-preference)",
+        desktop:
+          "(min-width: 901px) and (prefers-reduced-motion: no-preference)",
+        compact:
+          "(max-width: 900px) and (prefers-reduced-motion: no-preference)",
         reduce: "(prefers-reduced-motion: reduce)",
       },
       (context) => {
-        const conditions = (context.conditions || {}) as Record<string, boolean>;
+        const conditions =
+          (context.conditions || {}) as Record<string, boolean>;
         const cards = gsap.utils.toArray<HTMLElement>(".glass-card");
         const grid = document.querySelector<HTMLElement>(".cards-grid");
+        const header =
+          document.querySelector<HTMLElement>(".possibilities-header");
+        const visual =
+          possibilitiesSection?.querySelector<HTMLElement>(
+            "[data-liquid-visual]"
+          );
+
+        if (!possibilitiesSection || !grid || !cards.length) return;
 
         if (conditions.reduce) {
-          gsap.set([".possibilities-header", ".glass-card"], {
+          gsap.set([header, ...cards], {
             opacity: 1,
             x: 0,
             y: 0,
             scale: 1,
-            rotateX: 0,
-            rotateY: 0,
             rotateZ: 0,
           });
           return;
         }
 
-        if (conditions.desktop && grid && cards.length) {
-          const finalCenters = cards.map((card) => {
-            const rect = card.getBoundingClientRect();
-            return rect.left + rect.width / 2;
-          });
+        if (conditions.desktop) {
+          let stackedX = cards.map(() => 0);
 
-          const gridRect = grid.getBoundingClientRect();
-          const gridCenter = gridRect.left + gridRect.width / 2;
+          const measureStack = () => {
+            const gridRect = grid.getBoundingClientRect();
+            const center = gridRect.left + gridRect.width * 0.5;
+            stackedX = cards.map((card) => {
+              const rect = card.getBoundingClientRect();
+              return center - (rect.left + rect.width * 0.5);
+            });
+          };
 
-          // Exact overlap: every card shares one center position so the
-          // rising deck reads visually as a single card.
-          const stackedX = finalCenters.map((center) => gridCenter - center);
+          measureStack();
 
           gsap.set(cards, {
             zIndex: (index: number) => cards.length - index,
-            transformOrigin: "50% 92%",
+            transformOrigin: "50% 90%",
             force3D: true,
           });
 
-          let motionActive = true;
           grid.classList.add("is-card-motion");
 
-          const stackTimeline = gsap.timeline({
+          const timeline = gsap.timeline({
+            defaults: { ease: "none" },
             scrollTrigger: {
-              trigger: "#possibilities",
+              trigger: possibilitiesSection,
               start: "top top",
-              end: "+=145%",
+              end: "+=138%",
               scrub: true,
               pin: true,
               anticipatePin: 1,
               invalidateOnRefresh: true,
-              onRefreshInit: () => {
-                gsap.set(cards, { clearProps: "x,y,rotation,scale" });
-              },
-              onUpdate: (self) => {
-                const nextActive = self.progress < 0.992;
-                if (nextActive !== motionActive) {
-                  motionActive = nextActive;
-                  grid.classList.toggle("is-card-motion", motionActive);
-                }
-              },
-              onLeaveBack: () => {
-                motionActive = true;
-                grid.classList.add("is-card-motion");
-              },
-              onLeave: () => {
-                motionActive = false;
-                grid.classList.remove("is-card-motion");
-              },
+              onRefreshInit: measureStack,
+              onLeave: () => grid.classList.remove("is-card-motion"),
+              onEnterBack: () => grid.classList.add("is-card-motion"),
+              onLeaveBack: () => grid.classList.add("is-card-motion"),
             },
           });
 
-          stackTimeline
-            .fromTo(
-              ".possibilities-header",
-              { y: 14, opacity: 0 },
-              { y: 0, opacity: 1, duration: 0.14, ease: "none" },
+          if (header) {
+            timeline.fromTo(
+              header,
+              { y: 22, opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.15 },
               0
-            )
-            // 01 — one-card illusion: exact same X/Y/rotation/scale while rising.
-            // Only the top card is visible during the rise so transparent glass
-            // layers do not become darker from stacking.
+            );
+          }
+
+          timeline
             .fromTo(
               cards,
               {
                 x: (index: number) => stackedX[index] ?? 0,
-                y: 330,
-                rotation: 0,
-                scale: 0.94,
+                y: () => window.innerHeight * 0.42,
+                scale: 0.92,
                 opacity: (index: number) => (index === 0 ? 1 : 0),
               },
               {
                 x: (index: number) => stackedX[index] ?? 0,
                 y: 0,
-                rotation: 0,
                 scale: 1,
                 opacity: (index: number) => (index === 0 ? 1 : 0),
-                duration: 0.38,
-                ease: "none",
+                duration: 0.34,
               },
-              0.06
+              0.08
             )
-            // 02 — at dead center the hidden cards become part of the same deck.
             .to(
               cards,
-              {
-                opacity: 1,
-                duration: 0.08,
-                ease: "none",
-              },
-              0.44
+              { opacity: 1, duration: 0.08 },
+              0.42
             )
-            // 03 — only after reaching center do the cards begin separating.
-            .to(
-              cards,
-              {
-                x: (index: number) => (stackedX[index] ?? 0) * 0.48,
-                y: 0,
-                rotation: 0,
-                scale: 0.992,
-                duration: 0.30,
-                ease: "none",
-              },
-              0.52
-            )
-            // 04 — finish in the exact designed row.
             .to(
               cards,
               {
                 x: 0,
                 y: 0,
-                rotation: 0,
                 scale: 1,
-                duration: 0.42,
-                stagger: {
-                  each: 0.014,
-                  from: "center",
-                },
-                ease: "none",
+                duration: 0.56,
+                stagger: { each: 0.014, from: "center" },
               },
-              0.82
+              0.5
             );
-        } else {
-          gsap.fromTo(
-            ".possibilities-header",
-            { y: conditions.mobile ? 18 : 22, opacity: 0, filter: "blur(9px)" },
+
+          if (visual) {
+            timeline.fromTo(
+              visual,
+              { yPercent: -1.4, scale: 1.028 },
+              { yPercent: 1.4, scale: 1.028, duration: 1 },
+              0
+            );
+          }
+        }
+
+        if (conditions.compact) {
+          const entrance = gsap.timeline({
+            scrollTrigger: {
+              trigger: possibilitiesSection,
+              start: "top 84%",
+              once: true,
+            },
+          });
+
+          if (header) {
+            entrance.fromTo(
+              header,
+              { y: 24, opacity: 0 },
+              {
+                y: 0,
+                opacity: 1,
+                duration: 0.72,
+                ease: "power3.out",
+              },
+              0
+            );
+          }
+
+          entrance.fromTo(
+            cards,
+            { y: 58, opacity: 0, scale: 0.965 },
             {
               y: 0,
               opacity: 1,
-              filter: "blur(0px)",
-              duration: conditions.mobile ? 0.60 : 0.72,
+              scale: 1,
+              duration: 0.78,
+              stagger: 0.09,
               ease: "power3.out",
-              scrollTrigger: {
-                trigger: "#possibilities",
-                start: conditions.mobile ? "top 91%" : "top 88%",
-                once: true,
-              },
-            }
-          );
-
-          cards.forEach((card, index) => {
-            const horizontal = conditions.tablet
-              ? (index % 2 === 0 ? 34 : -34)
-              : (index % 2 === 0 ? 18 : -18);
-
-            gsap.fromTo(
-              card,
-              {
-                x: horizontal,
-                y: conditions.mobile ? 86 : 110,
-                rotateZ: index % 2 === 0 ? -2 : 2,
-                opacity: 0,
-                scale: conditions.mobile ? 0.95 : 0.93,
-              },
-              {
-                x: 0,
-                y: 0,
-                rotateZ: 0,
-                opacity: 1,
-                scale: 1,
-                duration: conditions.mobile ? 0.60 : 0.72,
-                delay: Math.min(index * 0.055, 0.16),
-                ease: "power3.out",
-                scrollTrigger: {
-                  trigger: card,
-                  start: conditions.mobile ? "top 94%" : "top 91%",
-                  once: true,
-                },
-              }
-            );
-          });
-        }
-
-        gsap.fromTo(
-          ".possibility-petal",
-          { yPercent: -18, rotation: -7 },
-          {
-            yPercent: 24,
-            rotation: 12,
-            ease: "none",
-            scrollTrigger: {
-              trigger: "#possibilities",
-              start: "top bottom",
-              end: "bottom top",
-              scrub: true,
+              clearProps: "transform",
             },
-          }
-        );
+            0.12
+          );
+        }
       }
     );
 
-    const possibilitiesSection = document.getElementById("possibilities");
+    const cardsGrid = document.querySelector<HTMLElement>(".cards-grid");
 
-    // One parallax layer only: Lenis supplies the smoothing, and these setters
-    // simply map the already-smoothed scroll position to the visual background.
-    type LiquidParallaxScene = {
-      section: HTMLElement;
-      setY: (value: number) => void;
-      travel: number;
-      top: number;
-      height: number;
-    };
+    const onCardPointerMove = (event: PointerEvent) => {
+      const card = (event.target as HTMLElement | null)?.closest(
+        ".glass-card"
+      ) as HTMLElement | null;
 
-    const liquidParallaxScenes: LiquidParallaxScene[] = [];
+      if (!card) return;
 
-    gsap.utils
-      .toArray<HTMLElement>("[data-liquid-surface]")
-      .forEach((section) => {
-        const visual =
-          section.querySelector<HTMLElement>("[data-liquid-visual]");
-
-        if (!visual) return;
-
-        liquidParallaxScenes.push({
-          section,
-          setY: gsap.quickSetter(
-            visual,
-            "yPercent"
-          ) as (value: number) => void,
-          travel: isTouch ? 1.4 : 2.8,
-          top: 0,
-          height: 1,
-        });
-      });
-
-    const measureLiquidParallax = () => {
-      const scrollY = lenis.scroll;
-
-      liquidParallaxScenes.forEach((scene) => {
-        const rect = scene.section.getBoundingClientRect();
-        scene.top = rect.top + scrollY;
-        scene.height = Math.max(1, rect.height);
-      });
-    };
-
-    const updateLiquidParallax = (scrollY: number) => {
-      const viewportHeight = Math.max(1, window.innerHeight);
-      const viewportCenter = scrollY + viewportHeight * 0.5;
-
-      liquidParallaxScenes.forEach((scene) => {
-        const sceneCenter = scene.top + scene.height * 0.5;
-        const range = Math.max(
-          1,
-          (scene.height + viewportHeight) * 0.5
-        );
-        const normalized = clamp(
-          (viewportCenter - sceneCenter) / range,
-          -1,
-          1
-        );
-
-        scene.setY(normalized * scene.travel);
-      });
-    };
-
-    // Uploaded Izanami-style projects section: same text reveal and parallax
-    // as the approved standalone file, driven by the homepage Lenis instance.
-    const projectsLiquidSection = document.getElementById("projectsSection");
-    if (projectsLiquidSection) {
-      const liquidTitleLines = gsap.utils.toArray<HTMLElement>(
-        ".projects-liquid-title-line",
-        projectsLiquidSection
+      const rect = card.getBoundingClientRect();
+      const x = clamp(
+        (event.clientX - rect.left) / Math.max(1, rect.width),
+        0,
+        1
       );
-      const liquidDescription =
-        projectsLiquidSection.querySelector<HTMLElement>(
+      const y = clamp(
+        (event.clientY - rect.top) / Math.max(1, rect.height),
+        0,
+        1
+      );
+
+      card.style.setProperty("--mx", `${x * 100}%`);
+      card.style.setProperty("--my", `${y * 100}%`);
+    };
+
+    const onCardPointerLeave = () => {
+      document
+        .querySelectorAll<HTMLElement>(".glass-card")
+        .forEach((card) => {
+          card.style.setProperty("--mx", "50%");
+          card.style.setProperty("--my", "0%");
+        });
+    };
+
+    if (
+      cardsGrid &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches
+    ) {
+      cardsGrid.addEventListener("pointermove", onCardPointerMove);
+      cardsGrid.addEventListener("pointerleave", onCardPointerLeave);
+
+      cleanupFns.push(() => {
+        cardsGrid.removeEventListener("pointermove", onCardPointerMove);
+        cardsGrid.removeEventListener("pointerleave", onCardPointerLeave);
+      });
+    }
+
+    const projectsVisual =
+      projectsSection?.querySelector<HTMLElement>("[data-liquid-visual]");
+
+    const setProjectsParallax =
+      projectsVisual && !reduceMotion
+        ? (gsap.quickSetter(
+            projectsVisual,
+            "yPercent"
+          ) as (value: number) => void)
+        : null;
+
+    const renderProjectsParallax = (scrollY: number) => {
+      if (!setProjectsParallax || !projectsSection) return;
+
+      const viewportCenter = scrollY + window.innerHeight * 0.5;
+      const sectionCenter = projectsTop + projectsHeight * 0.5;
+      const range = (projectsHeight + window.innerHeight) * 0.5;
+      const normalized = clamp(
+        (viewportCenter - sectionCenter) / Math.max(1, range),
+        -1,
+        1
+      );
+
+      setProjectsParallax(normalized * (isTouch ? 1.5 : 3.2));
+    };
+
+    if (projectsSection) {
+      const titleLines =
+        gsap.utils.toArray<HTMLElement>(
+          ".projects-liquid-title-line",
+          projectsSection
+        );
+      const description =
+        projectsSection.querySelector<HTMLElement>(
           ".projects-liquid-description"
         );
-      const liquidButtonText =
-        projectsLiquidSection.querySelector<HTMLElement>(
+      const buttonText =
+        projectsSection.querySelector<HTMLElement>(
           ".projects-liquid-button-text"
         );
-      const liquidButton =
-        projectsLiquidSection.querySelector<HTMLAnchorElement>(
-          ".projects-liquid-button"
-        );
-      const liquidFirstLine =
-        projectsLiquidSection.querySelector<HTMLElement>(
+      const firstLine =
+        projectsSection.querySelector<HTMLElement>(
           ".projects-liquid-button-line-first"
         );
-      const liquidLastLine =
-        projectsLiquidSection.querySelector<HTMLElement>(
+      const lastLine =
+        projectsSection.querySelector<HTMLElement>(
           ".projects-liquid-button-line-last"
         );
-      let liquidDescriptionSplit:
+
+      let descriptionSplit:
         | ReturnType<typeof SplitText.create>
         | null = null;
-      let liquidButtonSplit:
+      let buttonSplit:
         | ReturnType<typeof SplitText.create>
         | null = null;
 
-      if (liquidDescription) {
-        liquidDescriptionSplit = SplitText.create(liquidDescription, {
+      if (description) {
+        descriptionSplit = SplitText.create(description, {
           type: "lines",
           linesClass: "projects-liquid-desc-line",
           mask: "lines",
         });
-        textSplits.push(liquidDescriptionSplit);
+        textSplits.push(descriptionSplit);
       }
 
-      if (liquidButtonText) {
-        liquidButtonSplit = SplitText.create(liquidButtonText, {
+      if (buttonText) {
+        buttonSplit = SplitText.create(buttonText, {
           type: "chars",
           charsClass: "projects-liquid-button-char",
         });
-        textSplits.push(liquidButtonSplit);
+        textSplits.push(buttonSplit);
       }
 
-      gsap.set(liquidTitleLines, {
-        yPercent: 118,
-        opacity: 0,
-        rotateX: 7,
-        scale: 0.985,
-        filter: "blur(9px)",
-        transformOrigin: "0% 100%",
-        force3D: true,
-      });
-
-      if (liquidDescriptionSplit) {
-        gsap.set(liquidDescriptionSplit.lines, {
-          yPercent: 115,
-          opacity: 0,
-          filter: "blur(7px)",
-          force3D: true,
+      if (reduceMotion) {
+        gsap.set(titleLines, {
+          yPercent: 0,
+          opacity: 1,
+          rotateX: 0,
+          filter: "none",
         });
-      }
 
-      if (liquidButtonSplit) {
-        gsap.set(liquidButtonSplit.chars, {
-          y: 10,
-          opacity: 0,
-          force3D: true,
-        });
-      }
-
-      const playProjectsLiquidReveal = () => {
-        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-          gsap.set(liquidTitleLines, {
+        if (descriptionSplit) {
+          gsap.set(descriptionSplit.lines, {
             yPercent: 0,
             opacity: 1,
-            rotateX: 0,
-            scale: 1,
             filter: "none",
-            visibility: "visible",
           });
+        }
 
-          if (liquidDescriptionSplit) {
-            gsap.set(liquidDescriptionSplit.lines, {
-              yPercent: 0,
-              opacity: 1,
-              filter: "none",
-            });
-          }
+        if (buttonSplit) {
+          gsap.set(buttonSplit.chars, {
+            y: 0,
+            opacity: 1,
+          });
+        }
+      } else {
+        gsap.set(titleLines, {
+          yPercent: 112,
+          opacity: 0,
+          rotateX: 6,
+          filter: "blur(8px)",
+          transformOrigin: "0% 100%",
+          force3D: true,
+        });
 
-          if (liquidButtonSplit) {
-            gsap.set(liquidButtonSplit.chars, {
-              y: 0,
-              opacity: 1,
-            });
-          }
+        if (descriptionSplit) {
+          gsap.set(descriptionSplit.lines, {
+            yPercent: 105,
+            opacity: 0,
+            filter: "blur(6px)",
+            force3D: true,
+          });
+        }
 
-          return;
+        if (buttonSplit) {
+          gsap.set(buttonSplit.chars, {
+            y: 8,
+            opacity: 0,
+            force3D: true,
+          });
         }
 
         const reveal = gsap.timeline({
+          paused: true,
           defaults: { overwrite: "auto" },
-          onComplete: () => {
-            gsap.set(liquidTitleLines, {
-              opacity: 1,
-              yPercent: 0,
-              rotateX: 0,
-              scale: 1,
-              filter: "none",
-              visibility: "visible",
-            });
-
-            if (liquidDescriptionSplit) {
-              gsap.set(liquidDescriptionSplit.lines, {
-                opacity: 1,
-                yPercent: 0,
-                filter: "none",
-              });
-            }
-          },
         });
 
         reveal.to(
-          liquidTitleLines,
+          titleLines,
           {
             yPercent: 0,
             opacity: 1,
             rotateX: 0,
-            scale: 1,
             filter: "blur(0px)",
-            duration: 1.18,
+            duration: 1.08,
             stagger: 0.075,
             ease: "expo.out",
-            force3D: true,
           },
           0
         );
 
-        if (liquidDescriptionSplit) {
+        if (descriptionSplit) {
           reveal.to(
-            liquidDescriptionSplit.lines,
+            descriptionSplit.lines,
             {
               yPercent: 0,
               opacity: 1,
               filter: "blur(0px)",
-              duration: 1.08,
+              duration: 0.95,
               stagger: 0.055,
-              ease: "expo.out",
-              force3D: true,
+              ease: "power3.out",
             },
-            0.38
+            0.34
           );
         }
 
-        if (liquidFirstLine) {
+        if (firstLine) {
           reveal
             .to(
-              liquidFirstLine,
+              firstLine,
               {
                 clipPath: "inset(0% 0% 0% 0%)",
-                duration: 0.5,
+                duration: 0.46,
                 ease: "power4.out",
               },
-              0.7
+              0.68
             )
             .to(
-              liquidFirstLine,
+              firstLine,
               {
                 clipPath: "inset(0% 0% 0% 100%)",
-                duration: 0.5,
+                duration: 0.46,
                 ease: "power4.inOut",
               },
-              0.98
+              0.92
             );
         }
 
-        if (liquidLastLine) {
+        if (lastLine) {
           reveal.fromTo(
-            liquidLastLine,
+            lastLine,
             { clipPath: "inset(0% 100% 0% 0%)" },
             {
               clipPath:
                 window.innerWidth <= 767
                   ? "inset(0% calc(100% - 19.9004975124vw) 0% 0%)"
                   : "inset(0% calc(100% - 5vw) 0% 0%)",
-              duration: 0.58,
+              duration: 0.54,
               ease: "power4.out",
             },
-            1.06
+            1.0
           );
         }
 
-        if (liquidButtonSplit) {
+        if (buttonSplit) {
           reveal.to(
-            liquidButtonSplit.chars,
+            buttonSplit.chars,
             {
               y: 0,
               opacity: 1,
-              duration: 0.68,
+              duration: 0.58,
               stagger: 0.018,
               ease: "power3.out",
-              force3D: true,
             },
-            1.02
+            0.98
           );
         }
-      };
 
-      ScrollTrigger.create({
-        trigger: projectsLiquidSection,
-        start: "top 82%",
-        once: true,
-        onEnter: playProjectsLiquidReveal,
-      });
-
-      // Background depth is handled by the single shared Lenis parallax layer.
-      // Keep editorial content fixed so it stays crisp and never fights scroll.
-
-      // Magnetic text attraction tied to the same pointer that drives the liquid.
-      if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-        const liquidDescriptionBlock =
-          projectsLiquidSection.querySelector<HTMLElement>(
-            ".projects-liquid-descriptions"
-          );
-        const liquidButtonWrap =
-          projectsLiquidSection.querySelector<HTMLElement>(
-            ".projects-liquid-button-wrap"
-          );
-
-        const titleMoves = liquidTitleLines.map((line, index) => ({
-          x: gsap.quickTo(line, "x", {
-            duration: 0.5,
-            ease: "power3.out",
-          }),
-          y: gsap.quickTo(line, "y", {
-            duration: 0.5,
-            ease: "power3.out",
-          }),
-          skew: gsap.quickTo(line, "skewX", {
-            duration: 0.54,
-            ease: "power3.out",
-          }),
-          rotate: gsap.quickTo(line, "rotateZ", {
-            duration: 0.54,
-            ease: "power3.out",
-          }),
-          strength: 1 + index * 0.08,
-        }));
-
-        const descX = liquidDescriptionBlock
-          ? gsap.quickTo(liquidDescriptionBlock, "x", {
-              duration: 0.56,
-              ease: "power3.out",
-            })
-          : null;
-        const descY = liquidDescriptionBlock
-          ? gsap.quickTo(liquidDescriptionBlock, "y", {
-              duration: 0.56,
-              ease: "power3.out",
-            })
-          : null;
-        const buttonX = liquidButtonWrap
-          ? gsap.quickTo(liquidButtonWrap, "x", {
-              duration: 0.56,
-              ease: "power3.out",
-            })
-          : null;
-        const buttonY = liquidButtonWrap
-          ? gsap.quickTo(liquidButtonWrap, "y", {
-              duration: 0.56,
-              ease: "power3.out",
-            })
-          : null;
-
-        const clampProjectAttract = (
-          value: number,
-          min: number,
-          max: number
-        ) => Math.max(min, Math.min(max, value));
-
-        const onProjectLiquidMove = (event: MouseEvent) => {
-          liquidTitleLines.forEach((line, index) => {
-            const rect = line.getBoundingClientRect();
-            const cx = rect.left + rect.width * 0.5;
-            const cy = rect.top + rect.height * 0.5;
-            const dx = event.clientX - cx;
-            const dy = event.clientY - cy;
-            const distance = Math.hypot(dx, dy);
-            const radius = Math.min(window.innerWidth * 0.24, 300);
-            const proximity = Math.max(0, 1 - distance / radius);
-            const force = Math.pow(proximity, 1.65);
-            const move = titleMoves[index];
-
-            move.x(
-              clampProjectAttract(
-                dx * 0.05 * move.strength * force,
-                -22,
-                22
-              )
-            );
-            move.y(
-              clampProjectAttract(
-                dy * 0.07 * move.strength * force,
-                -18,
-                18
-              )
-            );
-            move.skew(
-              clampProjectAttract(dx * 0.05 * force, -10, 10)
-            );
-            move.rotate(
-              clampProjectAttract(dx * 0.01 * force, -3.2, 3.2)
-            );
-          });
-
-          if (liquidDescriptionBlock && descX && descY) {
-            const rect = liquidDescriptionBlock.getBoundingClientRect();
-            const dx =
-              event.clientX - (rect.left + rect.width * 0.5);
-            const dy =
-              event.clientY - (rect.top + rect.height * 0.5);
-            const radius = Math.min(window.innerWidth * 0.22, 250);
-            const proximity = Math.max(
-              0,
-              1 - Math.hypot(dx, dy) / radius
-            );
-            const force = Math.pow(proximity, 1.5);
-
-            descX(
-              clampProjectAttract(dx * 0.022 * force, -8, 8)
-            );
-            descY(
-              clampProjectAttract(dy * 0.03 * force, -7, 7)
-            );
-          }
-
-          if (liquidButtonWrap && buttonX && buttonY) {
-            const rect = liquidButtonWrap.getBoundingClientRect();
-            const dx =
-              event.clientX - (rect.left + rect.width * 0.5);
-            const dy =
-              event.clientY - (rect.top + rect.height * 0.5);
-            const radius = Math.min(window.innerWidth * 0.2, 220);
-            const proximity = Math.max(
-              0,
-              1 - Math.hypot(dx, dy) / radius
-            );
-            const force = Math.pow(proximity, 1.35);
-
-            buttonX(
-              clampProjectAttract(dx * 0.018 * force, -6, 6)
-            );
-            buttonY(
-              clampProjectAttract(dy * 0.022 * force, -5, 5)
-            );
-          }
-        };
-
-        const resetProjectLiquidText = () => {
-          titleMoves.forEach((move) => {
-            move.x(0);
-            move.y(0);
-            move.skew(0);
-            move.rotate(0);
-          });
-
-          if (descX) descX(0);
-          if (descY) descY(0);
-          if (buttonX) buttonX(0);
-          if (buttonY) buttonY(0);
-        };
-
-        projectsLiquidSection.addEventListener(
-          "mousemove",
-          onProjectLiquidMove
-        );
-        projectsLiquidSection.addEventListener(
-          "mouseleave",
-          resetProjectLiquidText
-        );
-
-        tiltCleanups.push(() => {
-          projectsLiquidSection.removeEventListener(
-            "mousemove",
-            onProjectLiquidMove
-          );
-          projectsLiquidSection.removeEventListener(
-            "mouseleave",
-            resetProjectLiquidText
-          );
-        });
-      }
-
-      if (chromeHeader) {
         ScrollTrigger.create({
-          trigger: projectsLiquidSection,
-          start: "top 24%",
-          end: "bottom 8%",
-          onToggle: (self) => {
-            chromeHeader.classList.toggle(
-              "over-projects-liquid",
-              self.isActive
-            );
-          },
+          trigger: projectsSection,
+          start: "top 79%",
+          once: true,
+          onEnter: () => reveal.play(),
         });
       }
     }
 
-    // Izanami-style magnetic typography for the EXISTING possibilities section.
-    // This is child-level motion, so it does not fight the existing pinned
-    // stack animation on .possibilities-header.
-    if (
-      possibilitiesSection &&
-      window.matchMedia("(hover: hover) and (pointer: fine)").matches
-    ) {
-      const title = possibilitiesSection.querySelector<HTMLElement>(
-        ".possibilities-title"
-      );
-      const desc = possibilitiesSection.querySelector<HTMLElement>(
-        ".possibilities-desc"
-      );
-      const eyebrow = possibilitiesSection.querySelector<HTMLElement>(
-        ".possibilities-eyebrow"
-      );
+    const renderChrome = (scrollY: number) => {
+      if (!chromeHeader) return;
 
-      if (title) {
-        const titleX = gsap.quickTo(title, "x", {
-          duration: 0.42,
-          ease: "power3.out",
-        });
-        const titleY = gsap.quickTo(title, "y", {
-          duration: 0.42,
-          ease: "power3.out",
-        });
-        const titleSkew = gsap.quickTo(title, "skewX", {
-          duration: 0.46,
-          ease: "power3.out",
-        });
-        const titleRotate = gsap.quickTo(title, "rotateZ", {
-          duration: 0.46,
-          ease: "power3.out",
-        });
+      const inProjects =
+        scrollY >= projectsTop - 40 &&
+        scrollY < projectsBottom - 20;
 
-        const descX = desc
-          ? gsap.quickTo(desc, "x", { duration: 0.48, ease: "power3.out" })
-          : null;
-        const descY = desc
-          ? gsap.quickTo(desc, "y", { duration: 0.48, ease: "power3.out" })
-          : null;
-        const eyebrowX = eyebrow
-          ? gsap.quickTo(eyebrow, "x", {
-              duration: 0.5,
-              ease: "power3.out",
-            })
-          : null;
-        const eyebrowY = eyebrow
-          ? gsap.quickTo(eyebrow, "y", {
-              duration: 0.5,
-              ease: "power3.out",
-            })
-          : null;
+      const inPossibilities =
+        scrollY >= possibilitiesTop - 40 &&
+        scrollY < possibilitiesBottom - 20 &&
+        !inProjects;
 
-        const clampAttract = (value: number, min: number, max: number) =>
-          Math.max(min, Math.min(max, value));
+      chromeHeader.classList.toggle("over-projects-liquid", inProjects);
+      chromeHeader.classList.toggle("over-possibilities", inPossibilities);
+    };
 
-        const onPossibilitiesAttract = (event: MouseEvent) => {
-          const rect = title.getBoundingClientRect();
-          const cx = rect.left + rect.width * 0.5;
-          const cy = rect.top + rect.height * 0.5;
-          const dx = event.clientX - cx;
-          const dy = event.clientY - cy;
-          const distance = Math.hypot(dx, dy);
-          const radius = Math.min(window.innerWidth * 0.28, 360);
-          const proximity = Math.max(0, 1 - distance / radius);
-          const force = Math.pow(proximity, 1.6);
+    const onDocumentClick = (event: MouseEvent) => {
+      const anchor = (event.target as HTMLElement | null)?.closest(
+        "a[href^='#']"
+      ) as HTMLAnchorElement | null;
 
-          titleX(clampAttract(dx * 0.055 * force, -24, 24));
-          titleY(clampAttract(dy * 0.072 * force, -18, 18));
-          titleSkew(clampAttract(dx * 0.045 * force, -8, 8));
-          titleRotate(clampAttract(dx * 0.008 * force, -2.5, 2.5));
+      if (!anchor) return;
 
-          if (desc && descX && descY) {
-            const d = desc.getBoundingClientRect();
-            const ddx = event.clientX - (d.left + d.width * 0.5);
-            const ddy = event.clientY - (d.top + d.height * 0.5);
-            const dForce = Math.pow(
-              Math.max(
-                0,
-                1 -
-                  Math.hypot(ddx, ddy) /
-                    Math.min(window.innerWidth * 0.23, 280)
-              ),
-              1.45
-            );
+      const href = anchor.getAttribute("href");
+      if (!href || href === "#") return;
 
-            descX(clampAttract(ddx * 0.022 * dForce, -8, 8));
-            descY(clampAttract(ddy * 0.03 * dForce, -7, 7));
-          }
-
-          if (eyebrow && eyebrowX && eyebrowY) {
-            const e = eyebrow.getBoundingClientRect();
-            const edx = event.clientX - (e.left + e.width * 0.5);
-            const edy = event.clientY - (e.top + e.height * 0.5);
-            const eForce = Math.pow(
-              Math.max(
-                0,
-                1 -
-                  Math.hypot(edx, edy) /
-                    Math.min(window.innerWidth * 0.2, 240)
-              ),
-              1.4
-            );
-
-            eyebrowX(clampAttract(edx * 0.016 * eForce, -5, 5));
-            eyebrowY(clampAttract(edy * 0.02 * eForce, -4, 4));
-          }
-        };
-
-        const resetPossibilitiesAttract = () => {
-          titleX(0);
-          titleY(0);
-          titleSkew(0);
-          titleRotate(0);
-          if (descX) descX(0);
-          if (descY) descY(0);
-          if (eyebrowX) eyebrowX(0);
-          if (eyebrowY) eyebrowY(0);
-        };
-
-        possibilitiesSection.addEventListener(
-          "mousemove",
-          onPossibilitiesAttract
-        );
-        possibilitiesSection.addEventListener(
-          "mouseleave",
-          resetPossibilitiesAttract
-        );
-
-        tiltCleanups.push(() => {
-          possibilitiesSection.removeEventListener(
-            "mousemove",
-            onPossibilitiesAttract
-          );
-          possibilitiesSection.removeEventListener(
-            "mouseleave",
-            resetPossibilitiesAttract
-          );
-        });
+      if (href === "#board") {
+        event.preventDefault();
+        lenis.scrollTo(heroEnd * 0.06, { duration: 0.9 });
+        return;
       }
-    }
 
-    // Cursor-following glass light without competing with the scroll transform.
-    if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-      document.querySelectorAll<HTMLElement>(".glass-card").forEach((card) => {
-        const icon = card.querySelector<HTMLElement>(".card-icon-wrap");
-        const iconX = icon ? gsap.quickTo(icon, "x", { duration: 0.28, ease: "power3.out" }) : null;
-        const iconY = icon ? gsap.quickTo(icon, "y", { duration: 0.28, ease: "power3.out" }) : null;
+      if (href === "#visit") {
+        event.preventDefault();
+        lenis.scrollTo(heroEnd * 0.5, { duration: 0.95 });
+        return;
+      }
 
-        const onMove = (event: PointerEvent) => {
-          const rect = card.getBoundingClientRect();
-          const px = (event.clientX - rect.left) / rect.width;
-          const py = (event.clientY - rect.top) / rect.height;
+      if (href === "#order") {
+        event.preventDefault();
+        if (possibilitiesSection) {
+          lenis.scrollTo(possibilitiesSection, { duration: 1.05 });
+        }
+        return;
+      }
 
-          card.style.setProperty("--mx", (px * 100).toFixed(2) + "%");
-          card.style.setProperty("--my", (py * 100).toFixed(2) + "%");
+      const target = document.querySelector<HTMLElement>(href);
+      if (!target) return;
 
-          if (iconX && iconY) {
-            iconX((px - 0.5) * 4);
-            iconY((py - 0.5) * 4);
-          }
-        };
+      event.preventDefault();
+      lenis.scrollTo(target, { duration: 1.05 });
+    };
 
-        const onLeave = () => {
-          card.style.setProperty("--mx", "50%");
-          card.style.setProperty("--my", "0%");
-
-          if (iconX && iconY) {
-            iconX(0);
-            iconY(0);
-          }
-        };
-
-        card.addEventListener("pointermove", onMove);
-        card.addEventListener("pointerleave", onLeave);
-
-        tiltCleanups.push(() => {
-          card.removeEventListener("pointermove", onMove);
-          card.removeEventListener("pointerleave", onLeave);
-        });
-      });
-    }
+    document.addEventListener("click", onDocumentClick);
+    cleanupFns.push(() =>
+      document.removeEventListener("click", onDocumentClick)
+    );
 
     const onLenisScroll = () => {
       const scrollY = lenis.scroll;
-      updateLiquidParallax(scrollY);
-      renderScrollState(scrollY);
-    };
-
-    const syncLenisSize = () => {
-      lenis.resize();
-      measureLiquidParallax();
-      updateLiquidParallax(lenis.scroll);
-    };
-
-    const onResize = () => {
-      syncLenisSize();
-      renderScrollState(lenis.scroll);
+      renderHero(scrollY);
+      renderProjectsParallax(scrollY);
+      renderChrome(scrollY);
+      ScrollTrigger.update();
     };
 
     lenis.on("scroll", onLenisScroll);
-    ScrollTrigger.addEventListener("refresh", syncLenisSize);
 
-    measureLiquidParallax();
-    updateLiquidParallax(lenis.scroll);
-    ScrollTrigger.refresh();
+    let resizeFrame = 0;
 
-    window.addEventListener("resize", onResize);
+    const onResize = () => {
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
 
-    renderScrollState(lenis.scroll);
-    preload();
+      resizeFrame = requestAnimationFrame(() => {
+        resizeFrame = 0;
+        lenis.resize();
+        measureLayout();
+        renderHero(lenis.scroll);
+        renderProjectsParallax(lenis.scroll);
+        renderChrome(lenis.scroll);
+        ScrollTrigger.refresh();
+      });
+    };
+
+    window.addEventListener("resize", onResize, { passive: true });
+
+    cleanupFns.push(() => {
+      window.removeEventListener("resize", onResize);
+      if (resizeFrame) cancelAnimationFrame(resizeFrame);
+    });
+
+    requestAnimationFrame(() => {
+      measureLayout();
+      renderHero(lenis.scroll);
+      renderProjectsParallax(lenis.scroll);
+      renderChrome(lenis.scroll);
+      ScrollTrigger.refresh();
+    });
 
     return () => {
-      gsap.ticker.remove(tickerCallback);
-      lenis.destroy();
+      initializedRef.current = false;
+
+      if (seekFrame) cancelAnimationFrame(seekFrame);
+
+      gsap.ticker.remove(ticker);
       motion.revert();
+
+      cleanupFns.forEach((cleanup) => cleanup());
       textSplits.forEach((split) => split.revert());
-      tiltCleanups.forEach((cleanup) => cleanup());
-      ScrollTrigger.getAll().forEach(t => t.kill());
-      ScrollTrigger.removeEventListener("refresh", syncLenisSize);
-      window.removeEventListener("resize", onResize);
-      unlockEvents.forEach((ev) => {
-        window.removeEventListener(ev, unlock);
-      });
+
+      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+      lenis.destroy();
     };
   }, []);
 
