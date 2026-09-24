@@ -1,7 +1,7 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 
     (() => {
-      const section = document.querySelector("#projects-liquid");
+      const section = document.querySelector("#projectsSection");
       const bgWrap = document.querySelector(".projects-liquid-bg");
       const sourceImage = bgWrap?.querySelector("img");
       const canvas = bgWrap?.querySelector(".projects-liquid-canvas");

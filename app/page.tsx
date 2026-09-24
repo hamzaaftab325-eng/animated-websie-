@@ -702,7 +702,7 @@ export default function Page() {
 
     // Uploaded Izanami-style projects section: same text reveal and parallax
     // as the approved standalone file, driven by the homepage Lenis instance.
-    const projectsLiquidSection = document.getElementById("projects-liquid");
+    const projectsLiquidSection = document.getElementById("projectsSection");
     if (projectsLiquidSection) {
       const liquidTitleLines = gsap.utils.toArray<HTMLElement>(
         ".projects-liquid-title-line",
@@ -743,10 +743,6 @@ export default function Page() {
       const liquidContents =
         projectsLiquidSection.querySelector<HTMLElement>(
           ".projects-liquid-contents"
-        );
-      const liquidLabel =
-        projectsLiquidSection.querySelector<HTMLElement>(
-          ".projects-liquid-label"
         );
 
       let liquidDescriptionSplit:
@@ -960,23 +956,6 @@ export default function Page() {
           );
         }
 
-        if (liquidLabel) {
-          gsap.fromTo(
-            liquidLabel,
-            { y: 14 },
-            {
-              y: -44,
-              ease: "none",
-              scrollTrigger: {
-                trigger: projectsLiquidSection,
-                start: "top center",
-                end: "bottom top",
-                scrub: true,
-              },
-            }
-          );
-        }
-
         if (liquidTint) {
           gsap.fromTo(
             liquidTint,
@@ -1028,23 +1007,177 @@ export default function Page() {
         }
       }
 
-      if (liquidButton) {
-        const onProjectsLiquidClick = (event: MouseEvent) => {
-          event.preventDefault();
-          const target = document.getElementById("possibilities");
-          if (target) {
-            lenis.scrollTo(target, {
-              duration: 1.15,
-              offset: 0,
-            });
+      // Magnetic text attraction tied to the same pointer that drives the liquid.
+      if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+        const liquidDescriptionBlock =
+          projectsLiquidSection.querySelector<HTMLElement>(
+            ".projects-liquid-descriptions"
+          );
+        const liquidButtonWrap =
+          projectsLiquidSection.querySelector<HTMLElement>(
+            ".projects-liquid-button-wrap"
+          );
+
+        const titleMoves = liquidTitleLines.map((line, index) => ({
+          x: gsap.quickTo(line, "x", {
+            duration: 0.42,
+            ease: "power3.out",
+          }),
+          y: gsap.quickTo(line, "y", {
+            duration: 0.42,
+            ease: "power3.out",
+          }),
+          skew: gsap.quickTo(line, "skewX", {
+            duration: 0.46,
+            ease: "power3.out",
+          }),
+          rotate: gsap.quickTo(line, "rotateZ", {
+            duration: 0.46,
+            ease: "power3.out",
+          }),
+          strength: 1 + index * 0.08,
+        }));
+
+        const descX = liquidDescriptionBlock
+          ? gsap.quickTo(liquidDescriptionBlock, "x", {
+              duration: 0.48,
+              ease: "power3.out",
+            })
+          : null;
+        const descY = liquidDescriptionBlock
+          ? gsap.quickTo(liquidDescriptionBlock, "y", {
+              duration: 0.48,
+              ease: "power3.out",
+            })
+          : null;
+        const buttonX = liquidButtonWrap
+          ? gsap.quickTo(liquidButtonWrap, "x", {
+              duration: 0.48,
+              ease: "power3.out",
+            })
+          : null;
+        const buttonY = liquidButtonWrap
+          ? gsap.quickTo(liquidButtonWrap, "y", {
+              duration: 0.48,
+              ease: "power3.out",
+            })
+          : null;
+
+        const clampProjectAttract = (
+          value: number,
+          min: number,
+          max: number
+        ) => Math.max(min, Math.min(max, value));
+
+        const onProjectLiquidMove = (event: MouseEvent) => {
+          liquidTitleLines.forEach((line, index) => {
+            const rect = line.getBoundingClientRect();
+            const cx = rect.left + rect.width * 0.5;
+            const cy = rect.top + rect.height * 0.5;
+            const dx = event.clientX - cx;
+            const dy = event.clientY - cy;
+            const distance = Math.hypot(dx, dy);
+            const radius = Math.min(window.innerWidth * 0.24, 300);
+            const proximity = Math.max(0, 1 - distance / radius);
+            const force = Math.pow(proximity, 1.65);
+            const move = titleMoves[index];
+
+            move.x(
+              clampProjectAttract(
+                dx * 0.05 * move.strength * force,
+                -22,
+                22
+              )
+            );
+            move.y(
+              clampProjectAttract(
+                dy * 0.07 * move.strength * force,
+                -18,
+                18
+              )
+            );
+            move.skew(
+              clampProjectAttract(dx * 0.05 * force, -10, 10)
+            );
+            move.rotate(
+              clampProjectAttract(dx * 0.01 * force, -3.2, 3.2)
+            );
+          });
+
+          if (liquidDescriptionBlock && descX && descY) {
+            const rect = liquidDescriptionBlock.getBoundingClientRect();
+            const dx =
+              event.clientX - (rect.left + rect.width * 0.5);
+            const dy =
+              event.clientY - (rect.top + rect.height * 0.5);
+            const radius = Math.min(window.innerWidth * 0.22, 250);
+            const proximity = Math.max(
+              0,
+              1 - Math.hypot(dx, dy) / radius
+            );
+            const force = Math.pow(proximity, 1.5);
+
+            descX(
+              clampProjectAttract(dx * 0.022 * force, -8, 8)
+            );
+            descY(
+              clampProjectAttract(dy * 0.03 * force, -7, 7)
+            );
+          }
+
+          if (liquidButtonWrap && buttonX && buttonY) {
+            const rect = liquidButtonWrap.getBoundingClientRect();
+            const dx =
+              event.clientX - (rect.left + rect.width * 0.5);
+            const dy =
+              event.clientY - (rect.top + rect.height * 0.5);
+            const radius = Math.min(window.innerWidth * 0.2, 220);
+            const proximity = Math.max(
+              0,
+              1 - Math.hypot(dx, dy) / radius
+            );
+            const force = Math.pow(proximity, 1.35);
+
+            buttonX(
+              clampProjectAttract(dx * 0.018 * force, -6, 6)
+            );
+            buttonY(
+              clampProjectAttract(dy * 0.022 * force, -5, 5)
+            );
           }
         };
 
-        liquidButton.addEventListener("click", onProjectsLiquidClick);
+        const resetProjectLiquidText = () => {
+          titleMoves.forEach((move) => {
+            move.x(0);
+            move.y(0);
+            move.skew(0);
+            move.rotate(0);
+          });
+
+          if (descX) descX(0);
+          if (descY) descY(0);
+          if (buttonX) buttonX(0);
+          if (buttonY) buttonY(0);
+        };
+
+        projectsLiquidSection.addEventListener(
+          "mousemove",
+          onProjectLiquidMove
+        );
+        projectsLiquidSection.addEventListener(
+          "mouseleave",
+          resetProjectLiquidText
+        );
+
         tiltCleanups.push(() => {
-          liquidButton.removeEventListener(
-            "click",
-            onProjectsLiquidClick
+          projectsLiquidSection.removeEventListener(
+            "mousemove",
+            onProjectLiquidMove
+          );
+          projectsLiquidSection.removeEventListener(
+            "mouseleave",
+            resetProjectLiquidText
           );
         });
       }
@@ -1467,7 +1600,7 @@ export default function Page() {
 
       {/* Uploaded Izanami-style projects section */}
       <section
-        id="projects-liquid"
+        id="projectsSection"
         className="projects-liquid-section"
         aria-labelledby="projects-liquid-title"
       >
@@ -1487,10 +1620,6 @@ export default function Page() {
 
         <div className="projects-liquid-contents">
           <div className="projects-liquid-sticky">
-            <div className="projects-liquid-sub">
-              <p className="projects-liquid-label">projects</p>
-            </div>
-
             <div className="projects-liquid-main">
               <div className="projects-liquid-content">
                 <h2
@@ -1527,7 +1656,7 @@ export default function Page() {
                 <div className="projects-liquid-button-wrap">
                   <a
                     className="projects-liquid-button"
-                    href="#possibilities"
+                    href="#projectsSection"
                     aria-label="View Projects"
                   >
                     <span className="projects-liquid-button-block">

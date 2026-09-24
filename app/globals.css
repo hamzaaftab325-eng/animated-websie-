@@ -1489,14 +1489,17 @@ body {
   --projects-dark: #0c0806;
 
   position: relative;
-  z-index: 12;
+  z-index: 35;
   display: grid;
   width: 100vw;
   min-height: 100vw;
   padding-block-start: 1.875vw;
   overflow: clip;
   isolation: isolate;
-  background: var(--projects-dark);
+  background:
+    var(--projects-dark)
+    url("/floral-projects-room.webp")
+    center center / cover no-repeat;
   color: var(--projects-ink);
 }
 
@@ -1512,6 +1515,10 @@ body {
   width: 100vw;
   aspect-ratio: 1 / 1;
   overflow: hidden;
+  background:
+    var(--projects-dark)
+    url("/floral-projects-room.webp")
+    center center / cover no-repeat;
 }
 
 .projects-liquid-bg img {
@@ -1586,31 +1593,8 @@ body {
   height: 100%;
 }
 
-.projects-liquid-main,
-.projects-liquid-sub {
+.projects-liquid-main {
   grid-area: 1 / 1;
-}
-
-.projects-liquid-sub {
-  justify-self: start;
-  padding-inline-start: 5vw;
-}
-
-.projects-liquid-label {
-  position: sticky;
-  top: clamp(147.75px, 12.3125vw, 221.625px);
-  width: max-content;
-  height: fit-content;
-  writing-mode: vertical-rl;
-  margin: 0;
-  font-family: var(--font-cinzel), "Cinzel", serif;
-  font-weight: 400;
-  font-size: clamp(15px, 1.25vw, 22.5px);
-  line-height: 1;
-  letter-spacing: 0.04em;
-  color: rgba(242, 237, 232, 0.82);
-  text-transform: lowercase;
-  will-change: transform;
 }
 
 .projects-liquid-content {
@@ -1641,7 +1625,7 @@ body {
   width: fit-content;
   color: var(--projects-ink);
   visibility: visible;
-  transform-origin: 0% 100%;
+  transform-origin: 50% 50%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   will-change: transform, opacity, filter;
@@ -1840,15 +1824,6 @@ body {
 
   .projects-liquid-bg img {
     object-position: 50% 50%;
-  }
-
-  .projects-liquid-sub {
-    padding-inline-start: 5.9701492537vw;
-  }
-
-  .projects-liquid-label {
-    top: 33.3333333333vw;
-    font-size: 2.9850746269vw;
   }
 
   .projects-liquid-content {
