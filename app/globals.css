@@ -125,10 +125,10 @@ body {
   transform-origin: 50% 50%;
   object-fit: cover;
   filter: none;
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
   backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
   will-change: transform;
+  contain: paint;
 }
 
 /* SCROLL PROGRESS BAR */
@@ -359,8 +359,17 @@ body {
 .hero-char,
 .sub-word {
   display: inline-block;
-  will-change: transform, opacity, filter;
+  will-change: transform, opacity;
   transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.hero-title,
+.sub {
+  will-change: transform, opacity, filter;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 /* HERO SUBHEADING */
@@ -584,6 +593,8 @@ body {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   will-change: transform, opacity;
+  contain: paint;
+  transform: translateZ(0);
   filter: none;
   transition:
     box-shadow 0.45s var(--ease),

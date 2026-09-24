@@ -142,6 +142,7 @@ export default function Page() {
     }
 
     let progress = 0;
+    let targetProgress = 0;
     let seekTo = 0;
     let seekAt = 0;
     let duration = 0;
@@ -158,8 +159,7 @@ export default function Page() {
       const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : (window.innerHeight * 1.5);
       
       // Video hero progress (0..1 during hero track)
-      progress = trackHeight > 0 ? clamp(scrollY / trackHeight, 0, 1) : 0;
-      if (duration) seekTo = progress * duration;
+      targetProgress = trackHeight > 0 ? clamp(scrollY / trackHeight, 0, 1) : 0;
 
       // Header adapt style when scrolled into possibilities section
       if (chromeHeader) {
@@ -182,9 +182,9 @@ export default function Page() {
       }
 
       if (clip) {
-        const parallaxY = (progress - 0.5) * (isTouch ? 12 : 30);
-        const parallaxX = Math.sin(progress * Math.PI) * (isTouch ? 1.5 : 5);
-        const scale = 1.035 + progress * (isTouch ? 0.018 : 0.035);
+        const parallaxY = (progress - 0.5) * (isTouch ? 8 : 20);
+        const parallaxX = Math.sin(progress * Math.PI) * (isTouch ? 1 : 3);
+        const scale = 1.035 + progress * (isTouch ? 0.012 : 0.022);
 
         clip.style.transform =
           `translate3d(calc(-50% + ${parallaxX.toFixed(2)}px), calc(-50% + ${parallaxY.toFixed(2)}px), 0) scale(${scale.toFixed(4)})`;
@@ -199,31 +199,44 @@ export default function Page() {
         const leave = ramp(progress, c[2], c[3]);
         const o = enter * (1 - leave);
         const cueCenter = (c[1] + c[2]) * 0.5;
-        const sceneParallax = (progress - cueCenter) * (isTouch ? -10 : -22) * o;
+        const sceneParallax = (progress - cueCenter) * (isTouch ? -6 : -12) * o;
         const y = (1 - enter) * DRIFT - leave * DRIFT + sceneParallax;
 
-        el.style.opacity = o.toString();
+        el.style.opacity = o.toFixed(4);
         el.style.transform = `translate3d(0, ${y.toFixed(2)}px, 0)`;
         el.style.pointerEvents = o > 0.5 ? "auto" : "none";
+
+        const title = el.querySelector<HTMLElement>(".hero-title");
+        const subtitle = el.querySelector<HTMLElement>(".sub");
+
+        // Keep the blur on one composited layer instead of every character.
+        // This preserves the focus effect while avoiding dozens of expensive
+        // filter repaints on every animation frame.
+        if (title) {
+          const titleBlur = (1 - enter) * (isTouch ? 7 : 11) + leave * 5;
+          title.style.filter = `blur(${titleBlur.toFixed(2)}px)`;
+        }
+
+        if (subtitle) {
+          const subtitleBlur = (1 - enter) * (isTouch ? 4 : 7) + leave * 3;
+          subtitle.style.filter = `blur(${subtitleBlur.toFixed(2)}px)`;
+        }
 
         const chars = panelTitleChars[i] || [];
         const charMiddle = Math.max(1, (chars.length - 1) / 2);
 
         chars.forEach((char, index) => {
           const distance = Math.abs(index - charMiddle) / charMiddle;
-          const stagger = distance * (isTouch ? 0.12 : 0.18);
+          const stagger = distance * (isTouch ? 0.10 : 0.14);
           const reveal = smooth(
             clamp((enter - stagger) / Math.max(0.001, 1 - stagger), 0, 1)
           );
-          const blur = (1 - reveal) * (isTouch ? 16 : 30) + leave * (isTouch ? 6 : 10);
-          const scale = 1 + (1 - reveal) * (isTouch ? 0.12 : 0.26);
-          const charY = (1 - reveal) * (isTouch ? 10 : 22) - leave * 7;
-          const rotateX = (1 - reveal) * (isTouch ? 4 : 8);
+          const scale = 1 + (1 - reveal) * (isTouch ? 0.07 : 0.12);
+          const charY = (1 - reveal) * (isTouch ? 7 : 12) - leave * 5;
 
-          char.style.opacity = reveal.toString();
-          char.style.filter = `blur(${blur.toFixed(2)}px)`;
+          char.style.opacity = reveal.toFixed(4);
           char.style.transform =
-            `translate3d(0, ${charY.toFixed(2)}px, 0) scale(${scale.toFixed(3)}) rotateX(${rotateX.toFixed(2)}deg)`;
+            `translate3d(0, ${charY.toFixed(2)}px, 0) scale(${scale.toFixed(3)})`;
         });
 
         const words = panelSubtitleWords[i] || [];
@@ -231,39 +244,48 @@ export default function Page() {
 
         words.forEach((word, index) => {
           const distance = Math.abs(index - wordMiddle) / wordMiddle;
-          const stagger = 0.10 + distance * 0.09;
+          const stagger = 0.08 + distance * 0.06;
           const reveal = smooth(
-            clamp((enter - stagger) / Math.max(0.001, 0.9 - stagger), 0, 1)
+            clamp((enter - stagger) / Math.max(0.001, 0.92 - stagger), 0, 1)
           );
-          const blur = (1 - reveal) * (isTouch ? 8 : 14) + leave * 5;
-          const wordY = (1 - reveal) * (isTouch ? 7 : 13);
+          const wordY = (1 - reveal) * (isTouch ? 5 : 8);
 
-          word.style.opacity = reveal.toString();
-          word.style.filter = `blur(${blur.toFixed(2)}px)`;
+          word.style.opacity = reveal.toFixed(4);
           word.style.transform = `translate3d(0, ${wordY.toFixed(2)}px, 0)`;
         });
       }
     }
 
-    // High-performance scrub loop. Touch devices seek less often to avoid
-    // decode thrashing while still catching up quickly to the scroll position.
+    // One damped master progress drives text, parallax, and video together.
+    // The video seek is rate-limited and only updates when the difference is
+    // large enough to avoid constant decoder thrashing.
     function frame(now = 0) {
-      if (ready && duration) {
-        const gap = seekTo - seekAt;
-        if (Math.abs(gap) > 0.001) {
-          seekAt += gap * seekLerp;
+      const smoothing = isTouch ? 0.18 : 0.12;
+      progress += (targetProgress - progress) * smoothing;
 
-          if (
-            clip &&
-            clip.readyState >= 2 &&
-            !clip.seeking &&
-            now - lastVideoSeek >= videoSeekInterval
-          ) {
-            lastVideoSeek = now;
-            try {
-              clip.currentTime = seekAt;
-            } catch (e) {}
-          }
+      if (Math.abs(targetProgress - progress) < 0.00008) {
+        progress = targetProgress;
+      }
+
+      if (ready && duration) {
+        seekTo = progress * duration;
+        const gap = seekTo - seekAt;
+
+        if (Math.abs(gap) > 0.002) {
+          seekAt += gap * (isTouch ? 0.26 : 0.20);
+        }
+
+        if (
+          clip &&
+          clip.readyState >= 2 &&
+          !clip.seeking &&
+          now - lastVideoSeek >= (isTouch ? 54 : 40) &&
+          Math.abs(clip.currentTime - seekAt) >= (isTouch ? 0.045 : 0.03)
+        ) {
+          lastVideoSeek = now;
+          try {
+            clip.currentTime = seekAt;
+          } catch (e) {}
         }
       }
 
@@ -295,6 +317,8 @@ export default function Page() {
         });
       }
       readScroll();
+      progress = targetProgress;
+      seekTo = progress * duration;
       seekAt = seekTo;
       if (clip && duration) {
         try {
@@ -313,6 +337,8 @@ export default function Page() {
         duration = clip.duration || 0;
         clip.pause();
         readScroll();
+        progress = targetProgress;
+        seekTo = progress * duration;
         seekAt = seekTo;
         try {
           clip.currentTime = seekAt;
@@ -494,7 +520,7 @@ export default function Page() {
               trigger: "#possibilities",
               start: "top top",
               end: "+=155%",
-              scrub: 1.05,
+              scrub: 0.75,
               pin: true,
               anticipatePin: 1,
               invalidateOnRefresh: true,
@@ -513,8 +539,7 @@ export default function Page() {
               {
                 x: (index: number, target: HTMLElement) => centerOffset(index, target),
                 y: (index: number) => 280 + index * 18,
-                rotateY: (index: number) => (index - 1.5) * 7,
-                rotateZ: (index: number) => (layerRotate[index] ?? 0) * 1.5,
+                rotateZ: (index: number) => (layerRotate[index] ?? 0) * 1.25,
                 scale: 0.84,
                 opacity: 0,
               },
@@ -522,7 +547,6 @@ export default function Page() {
                 x: (index: number, target: HTMLElement) =>
                   centerOffset(index, target) + (layerX[index] ?? 0),
                 y: (index: number) => (layerY[index] ?? 0) - 34,
-                rotateY: (index: number) => (index - 1.5) * 3.5,
                 rotateZ: (index: number) => layerRotate[index] ?? 0,
                 scale: (index: number) => layerScale[index] ?? 1,
                 opacity: 1,
@@ -537,8 +561,6 @@ export default function Page() {
               {
                 x: 0,
                 y: 0,
-                rotateX: 0,
-                rotateY: 0,
                 rotateZ: 0,
                 scale: 1,
                 duration: 0.72,
