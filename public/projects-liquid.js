@@ -373,6 +373,27 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
       let simHeight = 1;
       let active = true;
       let resizeRaf = 0;
+      let cardReferenceScale = 1;
+
+      function updateCardReferenceScale() {
+        const cardSection = document.querySelector("#possibilities");
+        const cardRect = cardSection?.getBoundingClientRect();
+        const projectRect = bgWrap.getBoundingClientRect();
+
+        const referenceHeight =
+          cardRect?.height || window.innerHeight || projectRect.height;
+
+        cardReferenceScale = Math.min(
+          1,
+          Math.max(0.35, referenceHeight / Math.max(1, projectRect.height))
+        );
+
+        // The splat shader's point size is an area term, so square the
+        // linear height ratio to keep the visible water footprint the same
+        // physical size as the card section.
+        splatMaterial.uniforms.u_point_size.value =
+          0.0005 * cardReferenceScale * cardReferenceScale;
+      }
 
       const pointer = {
         x: 0.65,
@@ -398,6 +419,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 
         renderer.setSize(rect.width, rect.height, false);
         sceneMaterial.uniforms.u_view_size.value.set(rect.width, rect.height);
+        updateCardReferenceScale();
 
         // Fluid motion is low-frequency. A capped field keeps the same visual
         // behavior while avoiding a multi-million-pixel simulation buffer.
