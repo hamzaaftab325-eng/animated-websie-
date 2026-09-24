@@ -1477,3 +1477,435 @@ body {
     display: none !important;
   }
 }
+
+
+/* ================================================================
+   UPLOADED IZANAMI LIQUID PROJECTS SECTION
+   ================================================================ */
+.projects-liquid-section {
+  --projects-ink: #f2ede8;
+  --projects-ink-soft: rgba(242, 237, 232, 0.78);
+  --projects-line: rgba(242, 237, 232, 0.72);
+  --projects-dark: #0c0806;
+
+  position: relative;
+  z-index: 12;
+  display: grid;
+  width: 100vw;
+  min-height: 100vw;
+  padding-block-start: 1.875vw;
+  overflow: clip;
+  isolation: isolate;
+  background: var(--projects-dark);
+  color: var(--projects-ink);
+}
+
+.projects-liquid-bg,
+.projects-liquid-tint,
+.projects-liquid-contents {
+  grid-area: 1 / 1;
+}
+
+.projects-liquid-bg {
+  position: relative;
+  z-index: 0;
+  width: 100vw;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+}
+
+.projects-liquid-bg img {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  transform: scale(1.08);
+  transform-origin: 50% 50%;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: opacity 0.22s ease;
+}
+
+.projects-liquid-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(1.08);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transition: opacity 0.22s ease;
+  mix-blend-mode: normal;
+}
+
+.projects-liquid-bg.is-liquid-ready .projects-liquid-canvas {
+  opacity: 1;
+}
+
+.projects-liquid-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 6, 5, 0.025) 0%,
+      rgba(10, 6, 5, 0) 42%,
+      rgba(10, 6, 5, 0.012) 100%
+    );
+}
+
+.projects-liquid-contents {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  pointer-events: none;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.projects-liquid-sticky {
+  display: grid;
+  width: 100%;
+  height: 100%;
+}
+
+.projects-liquid-main,
+.projects-liquid-sub {
+  grid-area: 1 / 1;
+}
+
+.projects-liquid-sub {
+  justify-self: start;
+  padding-inline-start: 5vw;
+}
+
+.projects-liquid-label {
+  position: sticky;
+  top: clamp(147.75px, 12.3125vw, 221.625px);
+  width: max-content;
+  height: fit-content;
+  writing-mode: vertical-rl;
+  margin: 0;
+  font-family: var(--font-cinzel), "Cinzel", serif;
+  font-weight: 400;
+  font-size: clamp(15px, 1.25vw, 22.5px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  color: rgba(242, 237, 232, 0.82);
+  text-transform: lowercase;
+  will-change: transform;
+}
+
+.projects-liquid-content {
+  height: 100%;
+  padding-block-start: 11.875vw;
+  padding-inline-start: 45vw;
+  padding-inline-end: 5vw;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.projects-liquid-title {
+  position: relative;
+  z-index: 10;
+  width: fit-content;
+  max-width: 43vw;
+  margin: 0;
+  font-family: var(--font-serif), "Playfair Display", serif;
+  font-weight: 400;
+  font-size: clamp(37.5px, 3.125vw, 56.25px);
+  line-height: 1;
+  letter-spacing: -0.018em;
+  color: var(--projects-ink);
+}
+
+.projects-liquid-title-line {
+  display: block;
+  width: fit-content;
+  color: var(--projects-ink);
+  visibility: visible;
+  transform-origin: 0% 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform, opacity, filter;
+}
+
+.projects-liquid-line-mask {
+  display: block;
+  overflow: clip;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.projects-liquid-descriptions {
+  width: fit-content;
+  max-width: 34vw;
+  margin-block-start: 1.25vw;
+}
+
+.projects-liquid-description {
+  margin: 0;
+  font-family: var(--font-shippori), "Shippori Mincho", serif;
+  font-weight: 400;
+  font-size: clamp(12px, 1vw, 18px);
+  line-height: 2.4;
+  color: var(--projects-ink-soft);
+}
+
+.projects-liquid-desc-line {
+  display: block;
+  will-change: transform, opacity, filter;
+}
+
+.projects-liquid-button-wrap {
+  width: min(23vw, 360px);
+  margin-block-start: 4.0625vw;
+  margin-inline-start: -1.25vw;
+}
+
+.projects-liquid-button {
+  position: relative;
+  display: inline-grid;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+  pointer-events: auto;
+  outline: none;
+}
+
+.projects-liquid-button-block {
+  position: relative;
+  display: grid;
+  align-items: center;
+  min-height: 54px;
+  padding-block: 12px;
+}
+
+.projects-liquid-button-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.projects-liquid-button-line {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 1px;
+  background: var(--projects-line);
+  transform: translateY(-50%);
+  will-change: clip-path;
+}
+
+.projects-liquid-button-line-first {
+  clip-path: inset(0% 0% 0% 100%);
+}
+
+.projects-liquid-button-line-last {
+  clip-path: inset(0% calc(100% - 5vw) 0% 0%);
+  opacity: 0.74;
+}
+
+.projects-liquid-button-copy {
+  position: relative;
+  z-index: 2;
+  justify-self: end;
+  padding-inline-start: 6.25vw;
+  padding-inline-end: 0.15em;
+  font-family: var(--font-serif), "Playfair Display", serif;
+  font-weight: 400;
+  font-size: clamp(15px, 1.25vw, 22.5px);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.projects-liquid-button-text {
+  display: inline-flex;
+}
+
+.projects-liquid-button-char {
+  display: inline-block;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+.projects-liquid-button::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border: 1px solid transparent;
+  pointer-events: none;
+}
+
+.projects-liquid-button:focus-visible::after {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .projects-liquid-button:hover .projects-liquid-button-line-last {
+    transform: translateY(-50%) scaleX(1.08);
+    transform-origin: left center;
+    transition: transform 0.55s cubic-bezier(.16, 1, .3, 1);
+  }
+
+  .projects-liquid-button:hover .projects-liquid-button-text {
+    transform: translateX(5px);
+    transition: transform 0.55s cubic-bezier(.16, 1, .3, 1);
+  }
+}
+
+.chrome.over-projects-liquid {
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(8, 5, 4, 0.46) 0%,
+      rgba(8, 5, 4, 0.18) 58%,
+      rgba(8, 5, 4, 0) 100%
+    );
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.chrome.over-projects-liquid .mark,
+.chrome.over-projects-liquid .mark-star,
+.chrome.over-projects-liquid .nav a:not(.pill) {
+  color: #ffffff;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.32);
+}
+
+.chrome.over-projects-liquid .pill {
+  background: rgba(255, 255, 255, 0.92);
+  color: #172722;
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  .projects-liquid-content {
+    padding-block-start: 13vw;
+    padding-inline-start: 42vw;
+    padding-inline-end: 6vw;
+  }
+
+  .projects-liquid-title {
+    max-width: 50vw;
+    font-size: clamp(34px, 4.8vw, 52px);
+  }
+
+  .projects-liquid-descriptions {
+    max-width: 46vw;
+  }
+
+  .projects-liquid-button-wrap {
+    width: min(30vw, 320px);
+  }
+
+  .projects-liquid-button-copy {
+    padding-inline-start: 8vw;
+  }
+}
+
+@media (max-width: 767px) {
+  .projects-liquid-section {
+    min-height: 256.7164179104vw;
+    padding-block-start: 7.4626865672vw;
+  }
+
+  .projects-liquid-bg {
+    width: 100vw;
+    height: 199.0049751244vw;
+    aspect-ratio: auto;
+    margin-block-start: 32.3383084577vw;
+  }
+
+  .projects-liquid-canvas {
+    display: none;
+  }
+
+  .projects-liquid-bg img {
+    object-position: 50% 50%;
+  }
+
+  .projects-liquid-sub {
+    padding-inline-start: 5.9701492537vw;
+  }
+
+  .projects-liquid-label {
+    top: 33.3333333333vw;
+    font-size: 2.9850746269vw;
+  }
+
+  .projects-liquid-content {
+    height: 223.8805970149vw;
+    margin-block-start: -1.2437810945vw;
+    padding-block-start: 0;
+    padding-inline-start: 14.9253731343vw;
+    padding-inline-end: 8.9552238806vw;
+  }
+
+  .projects-liquid-title {
+    max-width: 76vw;
+    font-size: 7.4626865672vw;
+    line-height: 1;
+  }
+
+  .projects-liquid-descriptions {
+    max-width: 72vw;
+    margin-block-start: 6.2189054726vw;
+  }
+
+  .projects-liquid-description {
+    font-size: 2.9850746269vw;
+    line-height: 2.4;
+  }
+
+  .projects-liquid-button-wrap {
+    width: 56vw;
+    margin-block-start: 9.4527363184vw;
+    margin-inline-start: -4.9751243781vw;
+  }
+
+  .projects-liquid-button-block {
+    min-height: 13vw;
+    padding-block: 3vw;
+  }
+
+  .projects-liquid-button-line-last {
+    clip-path: inset(0% calc(100% - 19.9004975124vw) 0% 0%);
+  }
+
+  .projects-liquid-button-copy {
+    padding-inline-start: 21vw;
+    font-size: 3.4825870647vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .projects-liquid-title-line,
+  .projects-liquid-desc-line,
+  .projects-liquid-button-char {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .projects-liquid-canvas {
+    display: none !important;
+  }
+}

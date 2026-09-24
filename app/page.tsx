@@ -699,6 +699,371 @@ export default function Page() {
       );
     }
 
+
+    // Uploaded Izanami-style projects section: same text reveal and parallax
+    // as the approved standalone file, driven by the homepage Lenis instance.
+    const projectsLiquidSection = document.getElementById("projects-liquid");
+    if (projectsLiquidSection) {
+      const liquidTitleLines = gsap.utils.toArray<HTMLElement>(
+        ".projects-liquid-title-line",
+        projectsLiquidSection
+      );
+      const liquidDescription =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-description"
+        );
+      const liquidButtonText =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-button-text"
+        );
+      const liquidButton =
+        projectsLiquidSection.querySelector<HTMLAnchorElement>(
+          ".projects-liquid-button"
+        );
+      const liquidFirstLine =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-button-line-first"
+        );
+      const liquidLastLine =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-button-line-last"
+        );
+      const liquidBgImage =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-bg img"
+        );
+      const liquidCanvas =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-canvas"
+        );
+      const liquidTint =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-tint"
+        );
+      const liquidContents =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-contents"
+        );
+      const liquidLabel =
+        projectsLiquidSection.querySelector<HTMLElement>(
+          ".projects-liquid-label"
+        );
+
+      let liquidDescriptionSplit:
+        | ReturnType<typeof SplitText.create>
+        | null = null;
+      let liquidButtonSplit:
+        | ReturnType<typeof SplitText.create>
+        | null = null;
+
+      if (liquidDescription) {
+        liquidDescriptionSplit = SplitText.create(liquidDescription, {
+          type: "lines",
+          linesClass: "projects-liquid-desc-line",
+          mask: "lines",
+        });
+        textSplits.push(liquidDescriptionSplit);
+      }
+
+      if (liquidButtonText) {
+        liquidButtonSplit = SplitText.create(liquidButtonText, {
+          type: "chars",
+          charsClass: "projects-liquid-button-char",
+        });
+        textSplits.push(liquidButtonSplit);
+      }
+
+      gsap.set(liquidTitleLines, {
+        yPercent: 125,
+        opacity: 0,
+        rotateX: 9,
+        filter: "blur(10px)",
+        transformOrigin: "0% 100%",
+        force3D: true,
+      });
+
+      if (liquidDescriptionSplit) {
+        gsap.set(liquidDescriptionSplit.lines, {
+          yPercent: 115,
+          opacity: 0,
+          filter: "blur(7px)",
+          force3D: true,
+        });
+      }
+
+      if (liquidButtonSplit) {
+        gsap.set(liquidButtonSplit.chars, {
+          y: 10,
+          opacity: 0,
+          force3D: true,
+        });
+      }
+
+      const playProjectsLiquidReveal = () => {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          gsap.set(liquidTitleLines, {
+            yPercent: 0,
+            opacity: 1,
+            rotateX: 0,
+            filter: "none",
+            visibility: "visible",
+          });
+          if (liquidDescriptionSplit) {
+            gsap.set(liquidDescriptionSplit.lines, {
+              yPercent: 0,
+              opacity: 1,
+              filter: "none",
+            });
+          }
+          if (liquidButtonSplit) {
+            gsap.set(liquidButtonSplit.chars, {
+              y: 0,
+              opacity: 1,
+            });
+          }
+          return;
+        }
+
+        gsap.to(liquidTitleLines, {
+          opacity: 1,
+          duration: 0.72,
+          stagger: 0.055,
+          ease: "power2.out",
+        });
+
+        gsap.to(liquidTitleLines, {
+          yPercent: 0,
+          rotateX: 0,
+          filter: "blur(0px)",
+          duration: 1.02,
+          stagger: 0.055,
+          ease: "expo.out",
+          force3D: true,
+          onComplete: () => {
+            gsap.set(liquidTitleLines, {
+              opacity: 1,
+              yPercent: 0,
+              rotateX: 0,
+              filter: "none",
+              visibility: "visible",
+            });
+          },
+        });
+
+        if (liquidDescriptionSplit) {
+          gsap.to(liquidDescriptionSplit.lines, {
+            opacity: 1,
+            duration: 0.78,
+            delay: 0.34,
+            stagger: 0.05,
+            ease: "power2.out",
+          });
+
+          gsap.to(liquidDescriptionSplit.lines, {
+            yPercent: 0,
+            filter: "blur(0px)",
+            duration: 1.02,
+            delay: 0.34,
+            stagger: 0.05,
+            ease: "expo.out",
+            force3D: true,
+          });
+        }
+
+        if (liquidFirstLine) {
+          gsap.to(liquidFirstLine, {
+            clipPath: "inset(0% 0% 0% 0%)",
+            duration: 0.52,
+            delay: 0.66,
+            ease: "power4.out",
+          });
+
+          gsap.to(liquidFirstLine, {
+            clipPath: "inset(0% 0% 0% 100%)",
+            duration: 0.52,
+            delay: 0.92,
+            ease: "power4.inOut",
+          });
+        }
+
+        if (liquidLastLine) {
+          gsap.fromTo(
+            liquidLastLine,
+            { clipPath: "inset(0% 100% 0% 0%)" },
+            {
+              clipPath:
+                window.innerWidth <= 767
+                  ? "inset(0% calc(100% - 19.9004975124vw) 0% 0%)"
+                  : "inset(0% calc(100% - 5vw) 0% 0%)",
+              duration: 0.58,
+              delay: 1.0,
+              ease: "power4.out",
+            }
+          );
+        }
+
+        if (liquidButtonSplit) {
+          gsap.to(liquidButtonSplit.chars, {
+            y: 0,
+            opacity: 1,
+            duration: 0.72,
+            delay: 0.98,
+            stagger: 0.018,
+            ease: "power3.out",
+            force3D: true,
+          });
+        }
+      };
+
+      ScrollTrigger.create({
+        trigger: projectsLiquidSection,
+        start: "top 78%",
+        once: true,
+        onEnter: playProjectsLiquidReveal,
+      });
+
+      const liquidParallaxTargets = [liquidBgImage, liquidCanvas].filter(
+        Boolean
+      ) as HTMLElement[];
+
+      if (!isTouch && liquidParallaxTargets.length) {
+        gsap.fromTo(
+          liquidParallaxTargets,
+          { yPercent: -6, scale: 1.115 },
+          {
+            yPercent: 9,
+            scale: 1.025,
+            ease: "none",
+            scrollTrigger: {
+              trigger: projectsLiquidSection,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            },
+          }
+        );
+
+        if (liquidContents) {
+          gsap.fromTo(
+            liquidContents,
+            { y: 74 },
+            {
+              y: -128,
+              ease: "none",
+              scrollTrigger: {
+                trigger: projectsLiquidSection,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+              },
+            }
+          );
+        }
+
+        if (liquidLabel) {
+          gsap.fromTo(
+            liquidLabel,
+            { y: 14 },
+            {
+              y: -44,
+              ease: "none",
+              scrollTrigger: {
+                trigger: projectsLiquidSection,
+                start: "top center",
+                end: "bottom top",
+                scrub: true,
+              },
+            }
+          );
+        }
+
+        if (liquidTint) {
+          gsap.fromTo(
+            liquidTint,
+            { opacity: 0.88 },
+            {
+              opacity: 1,
+              ease: "none",
+              scrollTrigger: {
+                trigger: projectsLiquidSection,
+                start: "top bottom",
+                end: "center center",
+                scrub: true,
+              },
+            }
+          );
+        }
+      } else if (liquidParallaxTargets.length) {
+        gsap.fromTo(
+          liquidParallaxTargets,
+          { yPercent: -3.5, scale: 1.09 },
+          {
+            yPercent: 6,
+            scale: 1.035,
+            ease: "none",
+            scrollTrigger: {
+              trigger: projectsLiquidSection,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            },
+          }
+        );
+
+        if (liquidContents) {
+          gsap.fromTo(
+            liquidContents,
+            { y: 32 },
+            {
+              y: -58,
+              ease: "none",
+              scrollTrigger: {
+                trigger: projectsLiquidSection,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+              },
+            }
+          );
+        }
+      }
+
+      if (liquidButton) {
+        const onProjectsLiquidClick = (event: MouseEvent) => {
+          event.preventDefault();
+          const target = document.getElementById("possibilities");
+          if (target) {
+            lenis.scrollTo(target, {
+              duration: 1.15,
+              offset: 0,
+            });
+          }
+        };
+
+        liquidButton.addEventListener("click", onProjectsLiquidClick);
+        tiltCleanups.push(() => {
+          liquidButton.removeEventListener(
+            "click",
+            onProjectsLiquidClick
+          );
+        });
+      }
+
+      if (chromeHeader) {
+        ScrollTrigger.create({
+          trigger: projectsLiquidSection,
+          start: "top 24%",
+          end: "bottom 8%",
+          onToggle: (self) => {
+            chromeHeader.classList.toggle(
+              "over-projects-liquid",
+              self.isActive
+            );
+          },
+        });
+      }
+    }
+
     // Izanami-style magnetic typography for the EXISTING possibilities section.
     // This is child-level motion, so it does not fight the existing pinned
     // stack animation on .possibilities-header.
@@ -1096,6 +1461,100 @@ export default function Page() {
       <Script
         id="possibilities-liquid-webgl"
         src="/possibilities-liquid.js"
+        type="module"
+        strategy="afterInteractive"
+      />
+
+      {/* Uploaded Izanami-style projects section */}
+      <section
+        id="projects-liquid"
+        className="projects-liquid-section"
+        aria-labelledby="projects-liquid-title"
+      >
+        <div className="projects-liquid-bg" aria-hidden="true">
+          <img
+            src="/floral-projects-room.webp"
+            alt=""
+            draggable={false}
+          />
+          <canvas
+            className="projects-liquid-canvas"
+            aria-hidden="true"
+          ></canvas>
+        </div>
+
+        <div className="projects-liquid-tint" aria-hidden="true"></div>
+
+        <div className="projects-liquid-contents">
+          <div className="projects-liquid-sticky">
+            <div className="projects-liquid-sub">
+              <p className="projects-liquid-label">projects</p>
+            </div>
+
+            <div className="projects-liquid-main">
+              <div className="projects-liquid-content">
+                <h2
+                  id="projects-liquid-title"
+                  className="projects-liquid-title"
+                  aria-label="Designing the Dimensions of Life"
+                >
+                  <span className="projects-liquid-line-mask">
+                    <span className="projects-liquid-title-line">
+                      Designing
+                    </span>
+                  </span>
+                  <span className="projects-liquid-line-mask">
+                    <span className="projects-liquid-title-line">
+                      the Dimensions
+                    </span>
+                  </span>
+                  <span className="projects-liquid-line-mask">
+                    <span className="projects-liquid-title-line">
+                      of Life
+                    </span>
+                  </span>
+                </h2>
+
+                <div className="projects-liquid-descriptions">
+                  <p className="projects-liquid-description">
+                    Through three practices,<br />
+                    Izanami designs harmony across life.<br />
+                    How life is nurtured, how living is enriched,<br />
+                    and how one returns to oneself.
+                  </p>
+                </div>
+
+                <div className="projects-liquid-button-wrap">
+                  <a
+                    className="projects-liquid-button"
+                    href="#possibilities"
+                    aria-label="View Projects"
+                  >
+                    <span className="projects-liquid-button-block">
+                      <span
+                        className="projects-liquid-button-lines"
+                        aria-hidden="true"
+                      >
+                        <span className="projects-liquid-button-line projects-liquid-button-line-first"></span>
+                        <span className="projects-liquid-button-line projects-liquid-button-line-last"></span>
+                      </span>
+                      <span className="projects-liquid-button-copy">
+                        <span className="projects-liquid-button-text">
+                          View Projects
+                        </span>
+                      </span>
+                    </span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Script
+        id="projects-liquid-webgl"
+        src="/projects-liquid.js"
         type="module"
         strategy="afterInteractive"
       />
