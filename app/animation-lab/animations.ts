@@ -24,6 +24,10 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
   const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  if (reducedMotion) return () => {};
+  const context = gsap.context(() => {}, root);
+  let cleanup = () => {};
+  context.add(() => {
   const lenis = new Lenis({
     duration: coarsePointer ? 0.46 : 0.82,
     easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -1185,15 +1189,18 @@ export function initAnimationLab(root: HTMLElement): Cleanup {
     );
   }
 
-  requestAnimationFrame(() => {
+  const refreshFrame = requestAnimationFrame(() => {
     ScrollTrigger.refresh();
   });
 
-  return () => {
+  cleanup = () => {
+    cancelAnimationFrame(refreshFrame);
     listeners.forEach((cleanup) => cleanup());
     mm.revert();
     splitInstances.forEach((split) => split.revert());
     gsap.ticker.remove(ticker);
     lenis.destroy();
   };
+  });
+  return () => { cleanup(); context.revert(); };
 }

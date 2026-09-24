@@ -2,20 +2,17 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 
 const BASE_POINT_SIZE = 0.0005;
 const BASE_CURSOR_DELTA = 6;
-const initializedLiquidSections = new WeakSet();
+const liquidInstances = new Map();
 
 function initLiquidSection(section) {
-  if (!section || initializedLiquidSections.has(section)) return;
-  initializedLiquidSections.add(section);
+  if (!section || liquidInstances.has(section)) return;
       const bgWrap = section;
       const imageSrc = section.getAttribute("data-liquid-image");
       const canvas = section.querySelector("[data-liquid-canvas]");
 
       if (!bgWrap || !canvas || !imageSrc) return;
 
-      const sourceImage = new Image();
-      sourceImage.crossOrigin = "anonymous";
-      sourceImage.src = imageSrc;
+
 
       // The reference enables its post-effect only for desktop/non-touch layouts.
       const desktopFinePointer = window.matchMedia(
@@ -25,14 +22,19 @@ function initLiquidSection(section) {
 
       if (!desktopFinePointer || reducedMotion) return;
 
-      const renderer = new THREE.WebGLRenderer({
+      let renderer;
+      try { renderer = new THREE.WebGLRenderer({
         canvas,
         antialias: false,
         alpha: true,
         premultipliedAlpha: false,
         powerPreference: "high-performance",
         preserveDrawingBuffer: false
-      });
+      }); } catch { return; }
+      let disposed = false;
+      let frame = 0;
+      let idleUntil = performance.now() + 2500;
+      let previousTime = performance.now();
 
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.setClearColor(0x000000, 0);
@@ -41,7 +43,8 @@ function initLiquidSection(section) {
       const quadGeometry = new THREE.PlaneGeometry(2, 2);
       const quadCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
       const quadScene = new THREE.Scene();
-      const quad = new THREE.Mesh(quadGeometry, new THREE.MeshBasicMaterial());
+      const initialMaterial = new THREE.MeshBasicMaterial();
+      const quad = new THREE.Mesh(quadGeometry, initialMaterial);
       quadScene.add(quad);
 
       const baseVertex = `
@@ -310,8 +313,9 @@ function initLiquidSection(section) {
       textureLoader.setCrossOrigin("anonymous");
 
       const texture = textureLoader.load(
-        sourceImage.currentSrc || sourceImage.src,
+        imageSrc,
         () => {
+          if (disposed) { texture.dispose(); return; }
           texture.colorSpace = THREE.SRGBColorSpace;
           texture.needsUpdate = true;
           sceneMaterial.uniforms.u_image_size.value.set(
@@ -319,8 +323,11 @@ function initLiquidSection(section) {
             texture.image?.naturalHeight || texture.image?.height || 2048
           );
           resize();
+          idleUntil = performance.now() + 2500;
           section.classList.add("is-liquid-ready");
-        }
+        },
+        undefined,
+        () => { section.classList.remove("is-liquid-ready"); }
       );
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.minFilter = THREE.LinearFilter;
@@ -472,10 +479,9 @@ function initLiquidSection(section) {
         outputColor.swap();
       }
 
-      function stepFluid() {
+      function stepFluid(dt) {
         if (!velocity || !outputColor || !divergence || !pressure) return;
 
-        const dt = 1 / 60;
 
         splat();
 
@@ -534,6 +540,7 @@ function initLiquidSection(section) {
       }
 
       function onPointerMove(event) {
+        idleUntil = performance.now() + 2500;
         const rect = bgWrap.getBoundingClientRect();
         if (
           event.clientX < rect.left ||
@@ -574,12 +581,14 @@ function initLiquidSection(section) {
         cancelAnimationFrame(resizeRaf);
         resizeRaf = requestAnimationFrame(() => {
           resize();
+          idleUntil = performance.now() + 2500;
         });
       }
 
       const observer = new IntersectionObserver(
         ([entry]) => {
           active = !!entry?.isIntersecting;
+          if (active) idleUntil = performance.now() + 2500;
         },
         { rootMargin: "25% 0px 25% 0px" }
       );
@@ -588,46 +597,52 @@ function initLiquidSection(section) {
       window.addEventListener("mousemove", onPointerMove, { passive: true });
       window.addEventListener("resize", onResize, { passive: true });
 
-      // The existing possibilities background stays fixed during its pinned card choreography.\n\n      resize();
+      resize();
 
-      function loop() {
-        if (active) {
-          stepFluid();
+      function loop(now = performance.now()) {
+        if (disposed) return;
+        const dt = Math.min(1 / 30, Math.max(1 / 240, (now - previousTime) / 1000));
+        previousTime = now;
+        if (active && !document.hidden && now < idleUntil) {
+          stepFluid(dt);
           renderFinal();
         }
-        requestAnimationFrame(loop);
+        frame = requestAnimationFrame(loop);
       }
 
+      const destroy = () => {
+        if (disposed) return;
+        disposed = true;
+        cancelAnimationFrame(frame);
+        cancelAnimationFrame(resizeRaf);
+        observer.disconnect();
+        window.removeEventListener('mousemove', onPointerMove);
+        window.removeEventListener('resize', onResize);
+        canvas.removeEventListener('webglcontextlost', onContextLost);
+        disposeTargets();
+        texture.dispose();
+        quadGeometry.dispose();
+        [initialMaterial, splatMaterial, divergenceMaterial, pressureMaterial, gradientMaterial, advectionMaterial, sceneMaterial, finalMaterial].forEach(material => material.dispose());
+        renderer.dispose();
+        section.classList.remove('is-liquid-ready');
+        liquidInstances.delete(section);
+      };
+      const onContextLost = (event) => { event.preventDefault(); destroy(); };
+      canvas.addEventListener('webglcontextlost', onContextLost);
+      liquidInstances.set(section, destroy);
       loop();
 }
 
-function bootLiquidSections() {
-  const sections = document.querySelectorAll("[data-liquid-surface]");
-  sections.forEach((section) => initLiquidSection(section));
+export function mountLiquidSection(section) {
+  const preference = window.matchMedia('(min-width: 768px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+  const sync = () => {
+    liquidInstances.get(section)?.();
+    if (preference.matches && section.isConnected) initLiquidSection(section);
+  };
+  preference.addEventListener('change', sync);
+  sync();
+  return () => {
+    preference.removeEventListener('change', sync);
+    liquidInstances.get(section)?.();
+  };
 }
-
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", bootLiquidSections, {
-    once: true
-  });
-} else {
-  bootLiquidSections();
-}
-
-requestAnimationFrame(bootLiquidSections);
-setTimeout(bootLiquidSections, 100);
-setTimeout(bootLiquidSections, 350);
-setTimeout(bootLiquidSections, 900);
-
-const liquidMountObserver = new MutationObserver(() => {
-  bootLiquidSections();
-});
-
-liquidMountObserver.observe(document.documentElement, {
-  childList: true,
-  subtree: true
-});
-
-setTimeout(() => {
-  liquidMountObserver.disconnect();
-}, 6000);
