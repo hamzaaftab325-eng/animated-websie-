@@ -154,8 +154,7 @@ export default function Page() {
     const assumedFps = isTouch ? 24 : 30;
     const minSeekDelta = 0.75 / assumedFps;
 
-    function readScroll() {
-      const scrollY = window.pageYOffset;
+    function readScroll(scrollY = lenis.scroll) {
       const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : (window.innerHeight * 1.5);
       
       // Lenis already provides the smoothing. Keep one authoritative progress
@@ -287,8 +286,8 @@ export default function Page() {
       } catch (e) {}
     }
 
-    function renderScrollState() {
-      readScroll();
+    function renderScrollState(scrollY = lenis.scroll) {
+      readScroll(scrollY);
       paint();
       updateVideoSeek();
       ScrollTrigger.update();
@@ -682,63 +681,67 @@ export default function Page() {
       }
     );
 
-    const possibilitiesSection = document.getElementById("possibilities");
-    if (possibilitiesSection && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      gsap.fromTo(
-        possibilitiesSection,
-        { "--section-reveal": "0" } as gsap.TweenVars,
-        {
-          "--section-reveal": "1",
-          ease: "none",
-          scrollTrigger: {
-            trigger: possibilitiesSection,
-            start: "top 96%",
-            end: "top 72%",
-            scrub: true,
-          },
-        } as gsap.TweenVars
-      );
-    }
+    // One parallax layer only: Lenis supplies the smoothing, and these setters
+    // simply map the already-smoothed scroll position to the visual background.
+    type LiquidParallaxScene = {
+      section: HTMLElement;
+      setY: (value: number) => void;
+      travel: number;
+      top: number;
+      height: number;
+    };
 
+    const liquidParallaxScenes: LiquidParallaxScene[] = [];
 
-    // Shared Lenis-driven background parallax. The image and WebGL liquid
-    // canvas live in the same .liquid-visual wrapper, so they stay perfectly
-    // aligned while moving.
-    const liquidParallaxSections =
-      gsap.utils.toArray<HTMLElement>("[data-liquid-surface]");
+    gsap.utils
+      .toArray<HTMLElement>("[data-liquid-surface]")
+      .forEach((section) => {
+        const visual =
+          section.querySelector<HTMLElement>("[data-liquid-visual]");
 
-    liquidParallaxSections.forEach((section) => {
-      const visual =
-        section.querySelector<HTMLElement>("[data-liquid-visual]");
+        if (!visual) return;
 
-      if (!visual) return;
+        liquidParallaxScenes.push({
+          section,
+          setY: gsap.quickSetter(
+            visual,
+            "yPercent"
+          ) as (value: number) => void,
+          travel: isTouch ? 1.4 : 2.8,
+          top: 0,
+          height: 1,
+        });
+      });
 
-      const travel = isTouch ? 1.8 : 3.4;
-      const visualScale = isTouch ? 1.016 : 1.028;
+    const measureLiquidParallax = () => {
+      const scrollY = lenis.scroll;
 
-      gsap.fromTo(
-        visual,
-        {
-          yPercent: -travel,
-          scale: visualScale,
-          force3D: true,
-        },
-        {
-          yPercent: travel,
-          scale: visualScale,
-          ease: "none",
-          force3D: true,
-          scrollTrigger: {
-            trigger: section,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: true,
-            invalidateOnRefresh: true,
-          },
-        }
-      );
-    });
+      liquidParallaxScenes.forEach((scene) => {
+        const rect = scene.section.getBoundingClientRect();
+        scene.top = rect.top + scrollY;
+        scene.height = Math.max(1, rect.height);
+      });
+    };
 
+    const updateLiquidParallax = (scrollY: number) => {
+      const viewportHeight = Math.max(1, window.innerHeight);
+      const viewportCenter = scrollY + viewportHeight * 0.5;
+
+      liquidParallaxScenes.forEach((scene) => {
+        const sceneCenter = scene.top + scene.height * 0.5;
+        const range = Math.max(
+          1,
+          (scene.height + viewportHeight) * 0.5
+        );
+        const normalized = clamp(
+          (viewportCenter - sceneCenter) / range,
+          -1,
+          1
+        );
+
+        scene.setY(normalized * scene.travel);
+      });
+    };
 
     // Uploaded Izanami-style projects section: same text reveal and parallax
     // as the approved standalone file, driven by the homepage Lenis instance.
@@ -768,15 +771,6 @@ export default function Page() {
         projectsLiquidSection.querySelector<HTMLElement>(
           ".projects-liquid-button-line-last"
         );
-      const liquidTint =
-        projectsLiquidSection.querySelector<HTMLElement>(
-          ".projects-liquid-tint"
-        );
-      const liquidContents =
-        projectsLiquidSection.querySelector<HTMLElement>(
-          ".projects-liquid-contents"
-        );
-
       let liquidDescriptionSplit:
         | ReturnType<typeof SplitText.create>
         | null = null;
@@ -972,56 +966,8 @@ export default function Page() {
         onEnter: playProjectsLiquidReveal,
       });
 
-      // Keep the liquid surface 1:1 with the section, exactly like the card section.
-      // Only the editorial content drifts vertically for depth.
-      if (!isTouch && liquidContents) {
-        gsap.fromTo(
-          liquidContents,
-          { y: 54 },
-          {
-            y: -72,
-            ease: "none",
-            scrollTrigger: {
-              trigger: projectsLiquidSection,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: true,
-            },
-          }
-        );
-
-        if (liquidTint) {
-          gsap.fromTo(
-            liquidTint,
-            { opacity: 0.88 },
-            {
-              opacity: 1,
-              ease: "none",
-              scrollTrigger: {
-                trigger: projectsLiquidSection,
-                start: "top bottom",
-                end: "center center",
-                scrub: true,
-              },
-            }
-          );
-        }
-      } else if (liquidContents) {
-        gsap.fromTo(
-          liquidContents,
-          { y: 24 },
-          {
-            y: -42,
-            ease: "none",
-            scrollTrigger: {
-              trigger: projectsLiquidSection,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: true,
-            },
-          }
-        );
-      }
+      // Background depth is handled by the single shared Lenis parallax layer.
+      // Keep editorial content fixed so it stays crisp and never fights scroll.
 
       // Magnetic text attraction tied to the same pointer that drives the liquid.
       if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
@@ -1398,20 +1344,32 @@ export default function Page() {
     }
 
     const onLenisScroll = () => {
-      renderScrollState();
+      const scrollY = lenis.scroll;
+      updateLiquidParallax(scrollY);
+      renderScrollState(scrollY);
     };
 
     const syncLenisSize = () => {
       lenis.resize();
+      measureLiquidParallax();
+      updateLiquidParallax(lenis.scroll);
+    };
+
+    const onResize = () => {
+      syncLenisSize();
+      renderScrollState(lenis.scroll);
     };
 
     lenis.on("scroll", onLenisScroll);
     ScrollTrigger.addEventListener("refresh", syncLenisSize);
+
+    measureLiquidParallax();
+    updateLiquidParallax(lenis.scroll);
     ScrollTrigger.refresh();
 
-    window.addEventListener("resize", renderScrollState);
+    window.addEventListener("resize", onResize);
 
-    renderScrollState();
+    renderScrollState(lenis.scroll);
     preload();
 
     return () => {
@@ -1422,7 +1380,7 @@ export default function Page() {
       tiltCleanups.forEach((cleanup) => cleanup());
       ScrollTrigger.getAll().forEach(t => t.kill());
       ScrollTrigger.removeEventListener("refresh", syncLenisSize);
-      window.removeEventListener("resize", renderScrollState);
+      window.removeEventListener("resize", onResize);
       unlockEvents.forEach((ev) => {
         window.removeEventListener(ev, unlock);
       });

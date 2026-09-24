@@ -1357,31 +1357,7 @@ body {
 }
 
 
-/* Scroll-performance state: moving glass uses a cheaper blur pass, then
-   restores the full optical depth when the cards reach their final positions. */
-@media (min-width: 901px) {
-  .cards-grid.is-card-motion .glass-card {
-    -webkit-backdrop-filter: blur(12px) saturate(138%);
-    backdrop-filter: blur(12px) saturate(138%);
-  }
-
-  .cards-grid.is-card-motion .glass-card::before {
-    opacity: 0.42;
-    filter: blur(18px);
-  }
-}
-
-
-/* Smooth Lenis/ScrollTrigger handoff from the scrubbed hero into the card scene. */
-.possibilities-section {
-  --section-reveal: 0;
-}
-
-.possibilities-section::before {
-  opacity: calc(0.72 + (var(--section-reveal) * 0.28));
-}
-
-/* Center-stack card sequence: keep the deck crisp while it expands. */
+/* Card stack motion: one performance/visual state instead of layered overrides. */
 @media (min-width: 901px) {
   .cards-grid {
     transform-style: preserve-3d;
@@ -1389,8 +1365,12 @@ body {
   }
 
   .cards-grid.is-card-motion .glass-card {
-    -webkit-backdrop-filter: blur(14px) saturate(142%);
-    backdrop-filter: blur(14px) saturate(142%);
+    -webkit-backdrop-filter: blur(6px) saturate(116%);
+    backdrop-filter: blur(6px) saturate(116%);
+    background:
+      radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.085), transparent 42%),
+      linear-gradient(150deg, rgba(255, 250, 247, 0.060) 0%, rgba(246, 185, 186, 0.030) 52%, rgba(189, 116, 112, 0.045) 100%);
+    border-color: rgba(255, 255, 255, 0.46);
     box-shadow:
       0 14px 30px rgba(72, 39, 39, 0.18),
       0 30px 62px rgba(72, 39, 39, 0.14),
@@ -1398,24 +1378,8 @@ body {
   }
 
   .cards-grid.is-card-motion .glass-card::before {
-    opacity: 0.50;
-  }
-}
-
-
-/* Clear optical glass — keep the landscape readable through the cards. */
-@media (min-width: 901px) {
-  .cards-grid.is-card-motion .glass-card {
-    -webkit-backdrop-filter: blur(6px) saturate(116%);
-    backdrop-filter: blur(6px) saturate(116%);
-    background:
-      radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.085), transparent 42%),
-      linear-gradient(150deg, rgba(255, 250, 247, 0.060) 0%, rgba(246, 185, 186, 0.030) 52%, rgba(189, 116, 112, 0.045) 100%);
-    border-color: rgba(255, 255, 255, 0.46);
-  }
-
-  .cards-grid.is-card-motion .glass-card::before {
     opacity: 0.20;
+    filter: blur(18px);
   }
 }
 
@@ -1504,7 +1468,6 @@ body {
   z-index: 2;
   height: 100%;
   pointer-events: none;
-  will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
