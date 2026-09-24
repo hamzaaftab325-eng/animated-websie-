@@ -728,14 +728,6 @@ export default function Page() {
         projectsLiquidSection.querySelector<HTMLElement>(
           ".projects-liquid-button-line-last"
         );
-      const liquidBgImage =
-        projectsLiquidSection.querySelector<HTMLElement>(
-          ".projects-liquid-bg img"
-        );
-      const liquidCanvas =
-        projectsLiquidSection.querySelector<HTMLElement>(
-          ".projects-liquid-canvas"
-        );
       const liquidTint =
         projectsLiquidSection.querySelector<HTMLElement>(
           ".projects-liquid-tint"
@@ -918,17 +910,14 @@ export default function Page() {
         onEnter: playProjectsLiquidReveal,
       });
 
-      const liquidParallaxTargets = [liquidBgImage, liquidCanvas].filter(
-        Boolean
-      ) as HTMLElement[];
-
-      if (!isTouch && liquidParallaxTargets.length) {
+      // Keep the liquid surface 1:1 with the section, exactly like the card section.
+      // Only the editorial content drifts vertically for depth.
+      if (!isTouch && liquidContents) {
         gsap.fromTo(
-          liquidParallaxTargets,
-          { yPercent: -6, scale: 1.115 },
+          liquidContents,
+          { y: 74 },
           {
-            yPercent: 9,
-            scale: 1.025,
+            y: -128,
             ease: "none",
             scrollTrigger: {
               trigger: projectsLiquidSection,
@@ -938,23 +927,6 @@ export default function Page() {
             },
           }
         );
-
-        if (liquidContents) {
-          gsap.fromTo(
-            liquidContents,
-            { y: 74 },
-            {
-              y: -128,
-              ease: "none",
-              scrollTrigger: {
-                trigger: projectsLiquidSection,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: true,
-              },
-            }
-          );
-        }
 
         if (liquidTint) {
           gsap.fromTo(
@@ -972,13 +944,12 @@ export default function Page() {
             }
           );
         }
-      } else if (liquidParallaxTargets.length) {
+      } else if (liquidContents) {
         gsap.fromTo(
-          liquidParallaxTargets,
-          { yPercent: -3.5, scale: 1.09 },
+          liquidContents,
+          { y: 32 },
           {
-            yPercent: 6,
-            scale: 1.035,
+            y: -58,
             ease: "none",
             scrollTrigger: {
               trigger: projectsLiquidSection,
@@ -988,23 +959,6 @@ export default function Page() {
             },
           }
         );
-
-        if (liquidContents) {
-          gsap.fromTo(
-            liquidContents,
-            { y: 32 },
-            {
-              y: -58,
-              ease: "none",
-              scrollTrigger: {
-                trigger: projectsLiquidSection,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: true,
-              },
-            }
-          );
-        }
       }
 
       // Magnetic text attraction tied to the same pointer that drives the liquid.
@@ -1610,11 +1564,12 @@ export default function Page() {
             alt=""
             draggable={false}
           />
-          <canvas
-            className="projects-liquid-canvas"
-            aria-hidden="true"
-          ></canvas>
         </div>
+
+        <canvas
+          className="projects-liquid-canvas"
+          aria-hidden="true"
+        ></canvas>
 
         <div className="projects-liquid-tint" aria-hidden="true"></div>
 

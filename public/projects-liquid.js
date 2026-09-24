@@ -2,11 +2,14 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
 
     (() => {
       const section = document.querySelector("#projectsSection");
-      const bgWrap = document.querySelector(".projects-liquid-bg");
-      const sourceImage = bgWrap?.querySelector("img");
-      const canvas = bgWrap?.querySelector(".projects-liquid-canvas");
+      const bgWrap = section;
+      const sourceImage = new Image();
+      sourceImage.crossOrigin = "anonymous";
+      sourceImage.src =
+        "https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp";
+      const canvas = section?.querySelector(".projects-liquid-canvas");
 
-      if (!section || !bgWrap || !sourceImage || !canvas) return;
+      if (!section || !bgWrap || !canvas) return;
 
       // The reference enables its post-effect only for desktop/non-touch layouts.
       const desktopFinePointer = window.matchMedia(
@@ -307,7 +310,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
             texture.image?.naturalHeight || texture.image?.height || 2048
           );
           resize();
-          bgWrap.classList.add("is-liquid-ready");
+          section.classList.add("is-liquid-ready");
         }
       );
       texture.colorSpace = THREE.SRGBColorSpace;
@@ -574,27 +577,7 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.m
       window.addEventListener("mousemove", onPointerMove, { passive: true });
       window.addEventListener("resize", onResize, { passive: true });
 
-      // Match the existing background parallax so the liquid-rendered image
-      // occupies exactly the same moving visual layer as the original image.
-      if (window.gsap && window.ScrollTrigger) {
-        window.gsap.fromTo(
-          canvas,
-          { yPercent: -6, scale: 1.115 },
-          {
-            yPercent: 9,
-            scale: 1.025,
-            ease: "none",
-            scrollTrigger: {
-              trigger: section,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: true
-            }
-          }
-        );
-      }
-
-      resize();
+      // The existing possibilities background stays fixed during its pinned card choreography.\n\n      resize();
 
       function loop() {
         if (active) {

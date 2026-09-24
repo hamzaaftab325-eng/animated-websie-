@@ -1504,6 +1504,7 @@ body {
 }
 
 .projects-liquid-bg,
+.projects-liquid-canvas,
 .projects-liquid-tint,
 .projects-liquid-contents {
   grid-area: 1 / 1;
@@ -1530,7 +1531,7 @@ body {
   height: 100%;
   object-fit: cover;
   object-position: 50% 50%;
-  transform: scale(1.08);
+  transform: none;
   transform-origin: 50% 50%;
   opacity: 1 !important;
   visibility: visible !important;
@@ -1550,7 +1551,7 @@ body {
   height: 100%;
   opacity: 0;
   pointer-events: none;
-  transform: scale(1.08);
+  transform: none;
   transform-origin: 50% 50%;
   will-change: transform, opacity;
   backface-visibility: hidden;
@@ -1559,7 +1560,7 @@ body {
   mix-blend-mode: normal;
 }
 
-.projects-liquid-bg.is-liquid-ready .projects-liquid-canvas {
+.projects-liquid-section.is-liquid-ready .projects-liquid-canvas {
   opacity: 1;
 }
 
