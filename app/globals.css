@@ -578,18 +578,17 @@ body {
   color: #ffffff;
   cursor: pointer;
   touch-action: pan-y;
-  border: 1px solid rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.58);
   background:
-    radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.34), transparent 34%),
-    linear-gradient(150deg, rgba(255, 242, 239, 0.40) 0%, rgba(246, 185, 186, 0.26) 52%, rgba(189, 116, 112, 0.30) 100%);
-  -webkit-backdrop-filter: blur(25px) saturate(150%);
-  backdrop-filter: blur(25px) saturate(150%);
+    radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.20), transparent 38%),
+    linear-gradient(150deg, rgba(255, 250, 247, 0.20) 0%, rgba(246, 185, 186, 0.11) 52%, rgba(189, 116, 112, 0.14) 100%);
+  -webkit-backdrop-filter: blur(16px) saturate(132%);
+  backdrop-filter: blur(16px) saturate(132%);
   box-shadow:
-    0 9px 18px rgba(72, 39, 39, 0.22),
-    0 26px 58px rgba(72, 39, 39, 0.18),
-    0 4px 14px rgba(255, 191, 193, 0.10),
-    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.16);
+    0 10px 22px rgba(72, 39, 39, 0.13),
+    0 28px 60px rgba(72, 39, 39, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
   transform-style: preserve-3d;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
@@ -612,9 +611,9 @@ body {
   height: 50%;
   border-radius: 50%;
   pointer-events: none;
-  background: rgba(255, 255, 255, 0.30);
-  filter: blur(28px);
-  opacity: 0.68;
+  background: rgba(255, 255, 255, 0.18);
+  filter: blur(24px);
+  opacity: 0.42;
   transform: translateZ(1px);
 }
 
@@ -629,28 +628,28 @@ body {
       115deg,
       transparent 0%,
       transparent 34%,
-      rgba(255, 255, 255, 0.20) 43%,
-      rgba(255, 255, 255, 0.04) 53%,
+      rgba(255, 255, 255, 0.13) 43%,
+      rgba(255, 255, 255, 0.025) 53%,
       transparent 62%,
       transparent 100%
     );
   background-size: 240% 100%;
   background-position: 120% 0;
   box-shadow:
-    inset 0 0 30px rgba(255, 222, 218, 0.14),
-    inset 0 0 1px rgba(255, 255, 255, 0.90);
-  opacity: 0.72;
+    inset 0 0 24px rgba(255, 222, 218, 0.08),
+    inset 0 0 1px rgba(255, 255, 255, 0.72);
+  opacity: 0.52;
   transition: background-position 0.8s var(--ease), opacity 0.35s ease;
 }
 
 .glass-card:hover,
 .glass-card:focus-visible {
-  border-color: rgba(255, 255, 255, 0.86);
+  border-color: rgba(255, 255, 255, 0.76);
   box-shadow:
-    0 31px 75px rgba(65, 34, 38, 0.28),
-    0 0 42px rgba(245, 161, 174, 0.20),
-    inset 0 1px 0 rgba(255, 255, 255, 0.90),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.20);
+    0 30px 72px rgba(65, 34, 38, 0.18),
+    0 0 34px rgba(245, 161, 174, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.76),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.10);
   outline: none;
 }
 
@@ -673,8 +672,8 @@ body {
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.58);
   background:
-    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.48), transparent 37%),
-    linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(238, 161, 168, 0.18));
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.30), transparent 40%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.10), rgba(238, 161, 168, 0.09));
   box-shadow:
     0 10px 24px rgba(91, 49, 51, 0.16),
     inset 0 1px 0 rgba(255, 255, 255, 0.70),
@@ -734,8 +733,8 @@ body {
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.76);
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.19), rgba(255, 255, 255, 0.07)),
-    rgba(235, 151, 164, 0.17);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.035)),
+    rgba(235, 151, 164, 0.08);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   box-shadow:
@@ -1397,5 +1396,21 @@ body {
 
   .cards-grid.is-card-motion .glass-card::before {
     opacity: 0.50;
+  }
+}
+
+
+/* Higher-transparency glass pass — keep the landscape visible through the cards. */
+@media (min-width: 901px) {
+  .cards-grid.is-card-motion .glass-card {
+    -webkit-backdrop-filter: blur(11px) saturate(128%);
+    backdrop-filter: blur(11px) saturate(128%);
+    background:
+      radial-gradient(circle at var(--mx) var(--my), rgba(255, 255, 255, 0.16), transparent 40%),
+      linear-gradient(150deg, rgba(255, 250, 247, 0.16) 0%, rgba(246, 185, 186, 0.08) 52%, rgba(189, 116, 112, 0.10) 100%);
+  }
+
+  .cards-grid.is-card-motion .glass-card::before {
+    opacity: 0.34;
   }
 }
