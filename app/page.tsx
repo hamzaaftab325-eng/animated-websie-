@@ -61,13 +61,15 @@ export default function Page() {
     const isTablet = window.innerWidth <= 900 && window.innerWidth > 580;
 
     const lenis = new Lenis({
-      duration: isTouch ? 0.48 : 1.05,
+      duration: isTouch ? 0.52 : 1.0,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: !isTouch,
-      touchMultiplier: isTouch ? 1.04 : 1.2,
-      wheelMultiplier: isTablet ? 0.88 : 0.92,
+      syncTouch: false,
+      touchMultiplier: isTouch ? 1.02 : 1.15,
+      wheelMultiplier: isTablet ? 0.86 : 0.9,
+      overscroll: false,
     });
 
     const tickerCallback = (time: number) => {
@@ -488,21 +490,27 @@ export default function Page() {
         }
 
         if (conditions.desktop && grid && cards.length) {
-          const centerOffset = (_index: number, target: HTMLElement) => {
-            const gridRect = grid.getBoundingClientRect();
-            const rect = target.getBoundingClientRect();
-            return gridRect.left + gridRect.width / 2 - (rect.left + rect.width / 2);
-          };
+          const finalCenters = cards.map((card) => {
+            const rect = card.getBoundingClientRect();
+            return rect.left + rect.width / 2;
+          });
 
-          const layerX = [-16, -6, 6, 16];
-          const layerY = [-28, -12, 4, 20];
-          const layerRotate = [-7, -2.4, 2.4, 7];
-          const layerScale = [0.93, 0.955, 0.978, 1];
+          const gridRect = grid.getBoundingClientRect();
+          const gridCenter = gridRect.left + gridRect.width / 2;
+
+          const stackedX = finalCenters.map((center, index) => {
+            const deckNudge = [-18, -6, 6, 18][index] ?? 0;
+            return gridCenter - center + deckNudge;
+          });
+
+          const stackedY = [-4, 2, 8, 14];
+          const stackedRotate = [-3.8, -1.4, 1.5, 4.2];
+          const stackedScale = [0.965, 0.978, 0.99, 1];
 
           gsap.set(cards, {
             zIndex: (index: number) => cards.length - index,
-            transformPerspective: 1100,
-            transformOrigin: "50% 50%",
+            transformOrigin: "50% 92%",
+            force3D: true,
           });
 
           let motionActive = true;
@@ -512,13 +520,16 @@ export default function Page() {
             scrollTrigger: {
               trigger: "#possibilities",
               start: "top top",
-              end: "+=155%",
+              end: "+=145%",
               scrub: true,
               pin: true,
               anticipatePin: 1,
               invalidateOnRefresh: true,
+              onRefreshInit: () => {
+                gsap.set(cards, { clearProps: "x,y,rotation,scale" });
+              },
               onUpdate: (self) => {
-                const nextActive = self.progress < 0.985;
+                const nextActive = self.progress < 0.992;
                 if (nextActive !== motionActive) {
                   motionActive = nextActive;
                   grid.classList.toggle("is-card-motion", motionActive);
@@ -538,66 +549,59 @@ export default function Page() {
           stackTimeline
             .fromTo(
               ".possibilities-header",
-              { y: -12, opacity: 0, filter: "blur(14px)" },
-              { y: 0, opacity: 1, filter: "blur(0px)", duration: 0.28, ease: "power3.out" },
+              { y: 18, opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.16, ease: "none" },
               0
             )
+            // 01 — exact center stack.
             .fromTo(
               cards,
               {
-                x: (index: number, target: HTMLElement) => centerOffset(index, target),
-                y: (index: number) => 280 + index * 18,
-                rotateZ: (index: number) => (layerRotate[index] ?? 0) * 1.25,
-                scale: 0.84,
-                opacity: 0,
+                x: (index: number) => stackedX[index] ?? 0,
+                y: (index: number) => stackedY[index] ?? 0,
+                rotation: (index: number) => stackedRotate[index] ?? 0,
+                scale: (index: number) => stackedScale[index] ?? 1,
+                opacity: 1,
               },
               {
-                x: (index: number, target: HTMLElement) =>
-                  centerOffset(index, target) + (layerX[index] ?? 0),
-                y: (index: number) => (layerY[index] ?? 0) - 34,
-                rotateZ: (index: number) => layerRotate[index] ?? 0,
-                scale: (index: number) => layerScale[index] ?? 1,
-                opacity: 1,
-                duration: 0.48,
-                stagger: { each: 0.025, from: "center" },
-                ease: "power4.out",
+                x: (index: number) => (stackedX[index] ?? 0) * 0.72,
+                y: (index: number) => (stackedY[index] ?? 0) * 0.7,
+                rotation: (index: number) => (stackedRotate[index] ?? 0) * 0.72,
+                scale: (index: number) => 0.975 + index * 0.008,
+                duration: 0.26,
+                ease: "none",
               },
               0.08
             )
+            // 02/03 — controlled fan-out while scrolling.
+            .to(
+              cards,
+              {
+                x: (index: number) => (stackedX[index] ?? 0) * 0.34,
+                y: (index: number) => (index - 1.5) * 4,
+                rotation: (index: number) => (stackedRotate[index] ?? 0) * 0.24,
+                scale: 0.992,
+                duration: 0.36,
+                ease: "none",
+              },
+              0.34
+            )
+            // 04 — final row, perfectly aligned to the designed grid.
             .to(
               cards,
               {
                 x: 0,
                 y: 0,
-                rotateZ: 0,
+                rotation: 0,
                 scale: 1,
-                duration: 0.72,
-                stagger: { each: 0.03, from: "center" },
-                ease: "power3.inOut",
+                duration: 0.38,
+                stagger: {
+                  each: 0.015,
+                  from: "center",
+                },
+                ease: "none",
               },
-              0.52
-            )
-            .to(
-              cards,
-              {
-                y: 7,
-                scaleY: 0.992,
-                duration: 0.12,
-                stagger: 0.018,
-                ease: "power2.out",
-              },
-              1.12
-            )
-            .to(
-              cards,
-              {
-                y: 0,
-                scaleY: 1,
-                duration: 0.20,
-                stagger: 0.018,
-                ease: "back.out(1.65)",
-              },
-              1.23
+              0.70
             );
         } else {
           gsap.fromTo(
@@ -667,6 +671,24 @@ export default function Page() {
         );
       }
     );
+
+    const possibilitiesSection = document.getElementById("possibilities");
+    if (possibilitiesSection && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.fromTo(
+        possibilitiesSection,
+        { "--section-reveal": "0" } as gsap.TweenVars,
+        {
+          "--section-reveal": "1",
+          ease: "none",
+          scrollTrigger: {
+            trigger: possibilitiesSection,
+            start: "top 96%",
+            end: "top 72%",
+            scrub: true,
+          },
+        } as gsap.TweenVars
+      );
+    }
 
     // Cursor-following glass light without competing with the scroll transform.
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {

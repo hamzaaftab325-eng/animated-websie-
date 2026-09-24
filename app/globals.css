@@ -1368,3 +1368,34 @@ body {
     filter: blur(18px);
   }
 }
+
+
+/* Smooth Lenis/ScrollTrigger handoff from the scrubbed hero into the card scene. */
+.possibilities-section {
+  --section-reveal: 0;
+}
+
+.possibilities-section::before {
+  opacity: calc(0.72 + (var(--section-reveal) * 0.28));
+}
+
+/* Center-stack card sequence: keep the deck crisp while it expands. */
+@media (min-width: 901px) {
+  .cards-grid {
+    transform-style: preserve-3d;
+    isolation: isolate;
+  }
+
+  .cards-grid.is-card-motion .glass-card {
+    -webkit-backdrop-filter: blur(14px) saturate(142%);
+    backdrop-filter: blur(14px) saturate(142%);
+    box-shadow:
+      0 14px 30px rgba(72, 39, 39, 0.18),
+      0 30px 62px rgba(72, 39, 39, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.70);
+  }
+
+  .cards-grid.is-card-motion .glass-card::before {
+    opacity: 0.50;
+  }
+}
