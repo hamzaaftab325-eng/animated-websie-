@@ -681,6 +681,8 @@ export default function Page() {
       }
     );
 
+    const possibilitiesSection = document.getElementById("possibilities");
+
     // One parallax layer only: Lenis supplies the smoothing, and these setters
     // simply map the already-smoothed scroll position to the visual background.
     type LiquidParallaxScene = {
