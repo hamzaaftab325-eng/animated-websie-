@@ -1437,7 +1437,6 @@ body {
 
 
 /* Izanami-style liquid refraction on the existing possibilities section. */
-/* .possibilities-liquid-canvas intentionally inherits .liquid-canvas */
 
 /* Keep the existing cinematic overlay above the refracted background. */
 .possibilities-section::before {
@@ -1451,17 +1450,7 @@ body {
   transform-origin: 50% 50%;
 }
 
-@media (hover: none), (pointer: coarse), (max-width: 767px) {
-  .possibilities-liquid-canvas {
-    display: none;
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .possibilities-liquid-canvas {
-    display: none !important;
-  }
-}
 
 
 /* ================================================================
@@ -1488,43 +1477,12 @@ body {
   color: var(--projects-ink);
 }
 
-.projects-liquid-bg,
 .projects-liquid-tint,
 .projects-liquid-contents {
   grid-area: 1 / 1;
 }
 
-.projects-liquid-bg {
-  position: relative;
-  z-index: 0;
-  width: 100vw;
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  background:
-    var(--projects-dark)
-    url("https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp")
-    center center / cover no-repeat;
-}
 
-.projects-liquid-bg img {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: 50% 50%;
-  opacity: 1 !important;
-  visibility: visible !important;
-  filter: none !important;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transition: opacity 0.22s ease;
-}
-
-/* .projects-liquid-canvas intentionally inherits .liquid-canvas */
 
 .projects-liquid-tint {
   position: absolute;
@@ -1774,21 +1732,6 @@ body {
     padding-block-start: 7.4626865672vw;
   }
 
-  .projects-liquid-bg {
-    width: 100vw;
-    height: 199.0049751244vw;
-    aspect-ratio: auto;
-    margin-block-start: 32.3383084577vw;
-  }
-
-  .projects-liquid-canvas {
-    display: none;
-  }
-
-  .projects-liquid-bg img {
-    object-position: 50% 50%;
-  }
-
   .projects-liquid-content {
     height: 223.8805970149vw;
     margin-block-start: -1.2437810945vw;
@@ -1843,15 +1786,11 @@ body {
     filter: none !important;
   }
 
-  .projects-liquid-canvas {
-    display: none !important;
   }
-}
 
 
 /* ================================================================
-   SHARED LIQUID SURFACE
-   Both cards + projects use this exact canvas/media architecture.
+   SHARED LIQUID SURFACE — ONE GEOMETRY FOR BOTH SECTIONS
    ================================================================ */
 .liquid-section {
   position: relative;
@@ -1859,49 +1798,56 @@ body {
   overflow: hidden;
 }
 
-.liquid-media,
-.liquid-canvas {
+.liquid-section > .liquid-media,
+.liquid-section > .liquid-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
 
-.liquid-media {
+.liquid-section > .liquid-media {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
 
-.liquid-image {
+.liquid-section > .liquid-media > .liquid-image {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+  max-width: none;
+  max-height: none;
   object-fit: cover;
   object-position: 50% 50%;
+  transform: none;
+  filter: none;
 }
 
-.liquid-canvas {
-  z-index: 0;
+.liquid-section > .liquid-canvas {
+  z-index: 1;
   display: block;
   opacity: 0;
   pointer-events: none;
+  transform: none;
   transition: opacity 0.22s ease;
   mix-blend-mode: normal;
 }
 
-.liquid-section.is-liquid-ready .liquid-canvas {
+.liquid-section.is-liquid-ready > .liquid-canvas {
   opacity: 1;
 }
 
 @media (hover: none), (pointer: coarse), (max-width: 767px) {
-  .liquid-canvas {
+  .liquid-section > .liquid-canvas {
     display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .liquid-canvas {
+  .liquid-section > .liquid-canvas {
     display: none !important;
   }
 }

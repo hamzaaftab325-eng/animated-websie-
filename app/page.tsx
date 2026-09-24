@@ -1429,7 +1429,6 @@ export default function Page() {
         id="possibilities"
         className="possibilities-section"
         imageSrc="https://res.cloudinary.com/diometfe9/image/upload/v1790183196/download_enkn9u.png"
-        canvasClassName="possibilities-liquid-canvas"
       >
         <span className="possibility-petal petal-1" aria-hidden="true"></span>
         <span className="possibility-petal petal-2" aria-hidden="true"></span>
@@ -1552,8 +1551,6 @@ export default function Page() {
         id="projectsSection"
         className="projects-liquid-section"
         imageSrc="https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp"
-        mediaClassName="projects-liquid-bg"
-        canvasClassName="projects-liquid-canvas"
         ariaLabelledby="projects-liquid-title"
       >
 

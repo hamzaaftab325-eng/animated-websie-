@@ -1,5 +1,5 @@
 import type {Metadata, Viewport} from 'next';
-import { Cinzel, Inter_Tight, Playfair_Display, Shippori_Mincho } from 'next/font/google';
+import { Inter_Tight, Playfair_Display, Shippori_Mincho } from 'next/font/google';
 import './globals.css';
 
 const interTight = Inter_Tight({
@@ -16,12 +16,6 @@ const playfair = Playfair_Display({
   variable: '--font-serif',
 });
 
-const cinzel = Cinzel({
-  subsets: ['latin'],
-  weight: ['400'],
-  display: 'swap',
-  variable: '--font-cinzel',
-});
 
 const shippori = Shippori_Mincho({
   subsets: ['latin'],
@@ -53,7 +47,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en" className={`${interTight.variable} ${playfair.variable} ${cinzel.variable} ${shippori.variable}`}>
+    <html lang="en" className={`${interTight.variable} ${playfair.variable} ${shippori.variable}`}>
       <head>
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

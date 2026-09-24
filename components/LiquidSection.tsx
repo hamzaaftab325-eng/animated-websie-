@@ -4,8 +4,6 @@ type LiquidSectionProps = {
   id: string;
   imageSrc: string;
   className?: string;
-  mediaClassName?: string;
-  canvasClassName?: string;
   ariaLabelledby?: string;
   children: ReactNode;
 };
@@ -14,8 +12,6 @@ export default function LiquidSection({
   id,
   imageSrc,
   className = '',
-  mediaClassName = '',
-  canvasClassName = '',
   ariaLabelledby,
   children,
 }: LiquidSectionProps) {
@@ -27,11 +23,7 @@ export default function LiquidSection({
       data-liquid-image={imageSrc}
       aria-labelledby={ariaLabelledby}
     >
-      <div
-        className={`liquid-media ${mediaClassName}`}
-        data-liquid-bg
-        aria-hidden="true"
-      >
+      <div className="liquid-media" data-liquid-bg aria-hidden="true">
         <img
           className="liquid-image"
           src={imageSrc}
@@ -41,7 +33,7 @@ export default function LiquidSection({
       </div>
 
       <canvas
-        className={`liquid-canvas ${canvasClassName}`}
+        className="liquid-canvas"
         data-liquid-canvas
         aria-hidden="true"
       />

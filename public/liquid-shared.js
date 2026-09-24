@@ -1,6 +1,21 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 
-const liquidSections = document.querySelectorAll("[data-liquid-surface]");
+const liquidSections = Array.from(
+  document.querySelectorAll("[data-liquid-surface]")
+);
+
+const referenceSurface =
+  liquidSections.find((surface) => surface.id === "possibilities") ||
+  liquidSections[0] ||
+  null;
+
+const BASE_POINT_SIZE = 0.0005;
+const BASE_CURSOR_DELTA = 6;
+
+function getReferenceHeight() {
+  const height = referenceSurface?.getBoundingClientRect().height;
+  return height && height > 0 ? height : window.innerHeight;
+}
 
 liquidSections.forEach((section) => {
       const bgWrap = section;
@@ -375,6 +390,7 @@ liquidSections.forEach((section) => {
       let simHeight = 1;
       let active = true;
       let resizeRaf = 0;
+      let sharedScale = 1;
 
       const pointer = {
         x: 0.65,
@@ -400,6 +416,12 @@ liquidSections.forEach((section) => {
 
         renderer.setSize(rect.width, rect.height, false);
         sceneMaterial.uniforms.u_view_size.value.set(rect.width, rect.height);
+
+        const referenceHeight = getReferenceHeight();
+        sharedScale = referenceHeight / Math.max(1, rect.height);
+
+        splatMaterial.uniforms.u_point_size.value =
+          BASE_POINT_SIZE * sharedScale * sharedScale;
 
         // Fluid motion is low-frequency. A capped field keeps the same visual
         // behavior while avoiding a multi-million-pixel simulation buffer.
@@ -553,8 +575,8 @@ liquidSections.forEach((section) => {
         const dyPx = event.clientY - pointer.lastY;
 
         pointer.moved = true;
-        pointer.dx = 6 * dxPx;
-        pointer.dy = 6 * dyPx;
+        pointer.dx = BASE_CURSOR_DELTA * dxPx * sharedScale;
+        pointer.dy = BASE_CURSOR_DELTA * dyPx * sharedScale;
         pointer.x = x;
         pointer.y = y;
         pointer.lastX = event.clientX;
