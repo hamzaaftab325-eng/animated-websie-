@@ -1,23 +1,12 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 
-const liquidSections = Array.from(
-  document.querySelectorAll("[data-liquid-surface]")
-);
-
-const referenceSurface =
-  liquidSections.find((surface) => surface.id === "possibilities") ||
-  liquidSections[0] ||
-  null;
-
 const BASE_POINT_SIZE = 0.0005;
 const BASE_CURSOR_DELTA = 6;
+const initializedLiquidSections = new WeakSet();
 
-function getReferenceHeight() {
-  const height = referenceSurface?.getBoundingClientRect().height;
-  return height && height > 0 ? height : window.innerHeight;
-}
-
-liquidSections.forEach((section) => {
+function initLiquidSection(section) {
+  if (!section || initializedLiquidSections.has(section)) return;
+  initializedLiquidSections.add(section);
       const bgWrap = section;
       const imageSrc = section.getAttribute("data-liquid-image");
       const canvas = section.querySelector("[data-liquid-canvas]");
@@ -317,7 +306,10 @@ liquidSections.forEach((section) => {
         u_dissipation: { value: 0.98 }
       });
 
-      const texture = new THREE.TextureLoader().load(
+      const textureLoader = new THREE.TextureLoader();
+      textureLoader.setCrossOrigin("anonymous");
+
+      const texture = textureLoader.load(
         sourceImage.currentSrc || sourceImage.src,
         () => {
           texture.colorSpace = THREE.SRGBColorSpace;
@@ -390,7 +382,6 @@ liquidSections.forEach((section) => {
       let simHeight = 1;
       let active = true;
       let resizeRaf = 0;
-      let sharedScale = 1;
 
       const pointer = {
         x: 0.65,
@@ -417,11 +408,7 @@ liquidSections.forEach((section) => {
         renderer.setSize(rect.width, rect.height, false);
         sceneMaterial.uniforms.u_view_size.value.set(rect.width, rect.height);
 
-        const referenceHeight = getReferenceHeight();
-        sharedScale = referenceHeight / Math.max(1, rect.height);
-
-        splatMaterial.uniforms.u_point_size.value =
-          BASE_POINT_SIZE * sharedScale * sharedScale;
+        splatMaterial.uniforms.u_point_size.value = BASE_POINT_SIZE;
 
         // Fluid motion is low-frequency. A capped field keeps the same visual
         // behavior while avoiding a multi-million-pixel simulation buffer.
@@ -575,8 +562,8 @@ liquidSections.forEach((section) => {
         const dyPx = event.clientY - pointer.lastY;
 
         pointer.moved = true;
-        pointer.dx = BASE_CURSOR_DELTA * dxPx * sharedScale;
-        pointer.dy = BASE_CURSOR_DELTA * dyPx * sharedScale;
+        pointer.dx = BASE_CURSOR_DELTA * dxPx;
+        pointer.dy = BASE_CURSOR_DELTA * dyPx;
         pointer.x = x;
         pointer.y = y;
         pointer.lastX = event.clientX;
@@ -612,4 +599,35 @@ liquidSections.forEach((section) => {
       }
 
       loop();
-    });
+}
+
+function bootLiquidSections() {
+  const sections = document.querySelectorAll("[data-liquid-surface]");
+  sections.forEach((section) => initLiquidSection(section));
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", bootLiquidSections, {
+    once: true
+  });
+} else {
+  bootLiquidSections();
+}
+
+requestAnimationFrame(bootLiquidSections);
+setTimeout(bootLiquidSections, 100);
+setTimeout(bootLiquidSections, 350);
+setTimeout(bootLiquidSections, 900);
+
+const liquidMountObserver = new MutationObserver(() => {
+  bootLiquidSections();
+});
+
+liquidMountObserver.observe(document.documentElement, {
+  childList: true,
+  subtree: true
+});
+
+setTimeout(() => {
+  liquidMountObserver.disconnect();
+}, 6000);

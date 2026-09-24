@@ -763,10 +763,11 @@ export default function Page() {
       }
 
       gsap.set(liquidTitleLines, {
-        yPercent: 125,
+        yPercent: 118,
         opacity: 0,
-        rotateX: 9,
-        filter: "blur(10px)",
+        rotateX: 7,
+        scale: 0.985,
+        filter: "blur(9px)",
         transformOrigin: "0% 100%",
         force3D: true,
       });
@@ -815,17 +816,18 @@ export default function Page() {
 
         gsap.to(liquidTitleLines, {
           opacity: 1,
-          duration: 0.72,
-          stagger: 0.055,
+          duration: 0.82,
+          stagger: 0.075,
           ease: "power2.out",
         });
 
         gsap.to(liquidTitleLines, {
           yPercent: 0,
           rotateX: 0,
+          scale: 1,
           filter: "blur(0px)",
-          duration: 1.02,
-          stagger: 0.055,
+          duration: 1.18,
+          stagger: 0.075,
           ease: "expo.out",
           force3D: true,
           onComplete: () => {
@@ -833,6 +835,7 @@ export default function Page() {
               opacity: 1,
               yPercent: 0,
               rotateX: 0,
+              scale: 1,
               filter: "none",
               visibility: "visible",
             });
@@ -842,18 +845,18 @@ export default function Page() {
         if (liquidDescriptionSplit) {
           gsap.to(liquidDescriptionSplit.lines, {
             opacity: 1,
-            duration: 0.78,
-            delay: 0.34,
-            stagger: 0.05,
+            duration: 0.9,
+            delay: 0.4,
+            stagger: 0.065,
             ease: "power2.out",
           });
 
           gsap.to(liquidDescriptionSplit.lines, {
             yPercent: 0,
             filter: "blur(0px)",
-            duration: 1.02,
-            delay: 0.34,
-            stagger: 0.05,
+            duration: 1.15,
+            delay: 0.4,
+            stagger: 0.065,
             ease: "expo.out",
             force3D: true,
           });
@@ -906,7 +909,7 @@ export default function Page() {
 
       ScrollTrigger.create({
         trigger: projectsLiquidSection,
-        start: "top 78%",
+        start: "top 82%",
         once: true,
         onEnter: playProjectsLiquidReveal,
       });
@@ -916,15 +919,15 @@ export default function Page() {
       if (!isTouch && liquidContents) {
         gsap.fromTo(
           liquidContents,
-          { y: 74 },
+          { y: 42 },
           {
-            y: -128,
+            y: -46,
             ease: "none",
             scrollTrigger: {
               trigger: projectsLiquidSection,
               start: "top bottom",
               end: "bottom top",
-              scrub: true,
+              scrub: 0.75,
             },
           }
         );
@@ -940,7 +943,7 @@ export default function Page() {
                 trigger: projectsLiquidSection,
                 start: "top bottom",
                 end: "center center",
-                scrub: true,
+                scrub: 0.65,
               },
             }
           );
@@ -975,19 +978,19 @@ export default function Page() {
 
         const titleMoves = liquidTitleLines.map((line, index) => ({
           x: gsap.quickTo(line, "x", {
-            duration: 0.42,
+            duration: 0.5,
             ease: "power3.out",
           }),
           y: gsap.quickTo(line, "y", {
-            duration: 0.42,
+            duration: 0.5,
             ease: "power3.out",
           }),
           skew: gsap.quickTo(line, "skewX", {
-            duration: 0.46,
+            duration: 0.54,
             ease: "power3.out",
           }),
           rotate: gsap.quickTo(line, "rotateZ", {
-            duration: 0.46,
+            duration: 0.54,
             ease: "power3.out",
           }),
           strength: 1 + index * 0.08,
@@ -995,25 +998,25 @@ export default function Page() {
 
         const descX = liquidDescriptionBlock
           ? gsap.quickTo(liquidDescriptionBlock, "x", {
-              duration: 0.48,
+              duration: 0.56,
               ease: "power3.out",
             })
           : null;
         const descY = liquidDescriptionBlock
           ? gsap.quickTo(liquidDescriptionBlock, "y", {
-              duration: 0.48,
+              duration: 0.56,
               ease: "power3.out",
             })
           : null;
         const buttonX = liquidButtonWrap
           ? gsap.quickTo(liquidButtonWrap, "x", {
-              duration: 0.48,
+              duration: 0.56,
               ease: "power3.out",
             })
           : null;
         const buttonY = liquidButtonWrap
           ? gsap.quickTo(liquidButtonWrap, "y", {
-              duration: 0.48,
+              duration: 0.56,
               ease: "power3.out",
             })
           : null;
