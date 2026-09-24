@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
+import Script from 'next/script';
 
 interface CardInfo {
   id: string;
@@ -698,6 +699,149 @@ export default function Page() {
       );
     }
 
+    // Izanami-style magnetic typography for the EXISTING possibilities section.
+    // This is child-level motion, so it does not fight the existing pinned
+    // stack animation on .possibilities-header.
+    if (
+      possibilitiesSection &&
+      window.matchMedia("(hover: hover) and (pointer: fine)").matches
+    ) {
+      const title = possibilitiesSection.querySelector<HTMLElement>(
+        ".possibilities-title"
+      );
+      const desc = possibilitiesSection.querySelector<HTMLElement>(
+        ".possibilities-desc"
+      );
+      const eyebrow = possibilitiesSection.querySelector<HTMLElement>(
+        ".possibilities-eyebrow"
+      );
+
+      if (title) {
+        const titleX = gsap.quickTo(title, "x", {
+          duration: 0.42,
+          ease: "power3.out",
+        });
+        const titleY = gsap.quickTo(title, "y", {
+          duration: 0.42,
+          ease: "power3.out",
+        });
+        const titleSkew = gsap.quickTo(title, "skewX", {
+          duration: 0.46,
+          ease: "power3.out",
+        });
+        const titleRotate = gsap.quickTo(title, "rotateZ", {
+          duration: 0.46,
+          ease: "power3.out",
+        });
+
+        const descX = desc
+          ? gsap.quickTo(desc, "x", { duration: 0.48, ease: "power3.out" })
+          : null;
+        const descY = desc
+          ? gsap.quickTo(desc, "y", { duration: 0.48, ease: "power3.out" })
+          : null;
+        const eyebrowX = eyebrow
+          ? gsap.quickTo(eyebrow, "x", {
+              duration: 0.5,
+              ease: "power3.out",
+            })
+          : null;
+        const eyebrowY = eyebrow
+          ? gsap.quickTo(eyebrow, "y", {
+              duration: 0.5,
+              ease: "power3.out",
+            })
+          : null;
+
+        const clampAttract = (value: number, min: number, max: number) =>
+          Math.max(min, Math.min(max, value));
+
+        const onPossibilitiesAttract = (event: MouseEvent) => {
+          const rect = title.getBoundingClientRect();
+          const cx = rect.left + rect.width * 0.5;
+          const cy = rect.top + rect.height * 0.5;
+          const dx = event.clientX - cx;
+          const dy = event.clientY - cy;
+          const distance = Math.hypot(dx, dy);
+          const radius = Math.min(window.innerWidth * 0.28, 360);
+          const proximity = Math.max(0, 1 - distance / radius);
+          const force = Math.pow(proximity, 1.6);
+
+          titleX(clampAttract(dx * 0.055 * force, -24, 24));
+          titleY(clampAttract(dy * 0.072 * force, -18, 18));
+          titleSkew(clampAttract(dx * 0.045 * force, -8, 8));
+          titleRotate(clampAttract(dx * 0.008 * force, -2.5, 2.5));
+
+          if (desc && descX && descY) {
+            const d = desc.getBoundingClientRect();
+            const ddx = event.clientX - (d.left + d.width * 0.5);
+            const ddy = event.clientY - (d.top + d.height * 0.5);
+            const dForce = Math.pow(
+              Math.max(
+                0,
+                1 -
+                  Math.hypot(ddx, ddy) /
+                    Math.min(window.innerWidth * 0.23, 280)
+              ),
+              1.45
+            );
+
+            descX(clampAttract(ddx * 0.022 * dForce, -8, 8));
+            descY(clampAttract(ddy * 0.03 * dForce, -7, 7));
+          }
+
+          if (eyebrow && eyebrowX && eyebrowY) {
+            const e = eyebrow.getBoundingClientRect();
+            const edx = event.clientX - (e.left + e.width * 0.5);
+            const edy = event.clientY - (e.top + e.height * 0.5);
+            const eForce = Math.pow(
+              Math.max(
+                0,
+                1 -
+                  Math.hypot(edx, edy) /
+                    Math.min(window.innerWidth * 0.2, 240)
+              ),
+              1.4
+            );
+
+            eyebrowX(clampAttract(edx * 0.016 * eForce, -5, 5));
+            eyebrowY(clampAttract(edy * 0.02 * eForce, -4, 4));
+          }
+        };
+
+        const resetPossibilitiesAttract = () => {
+          titleX(0);
+          titleY(0);
+          titleSkew(0);
+          titleRotate(0);
+          if (descX) descX(0);
+          if (descY) descY(0);
+          if (eyebrowX) eyebrowX(0);
+          if (eyebrowY) eyebrowY(0);
+        };
+
+        possibilitiesSection.addEventListener(
+          "mousemove",
+          onPossibilitiesAttract
+        );
+        possibilitiesSection.addEventListener(
+          "mouseleave",
+          resetPossibilitiesAttract
+        );
+
+        tiltCleanups.push(() => {
+          possibilitiesSection.removeEventListener(
+            "mousemove",
+            onPossibilitiesAttract
+          );
+          possibilitiesSection.removeEventListener(
+            "mouseleave",
+            resetPossibilitiesAttract
+          );
+        });
+      }
+    }
+
     // Cursor-following glass light without competing with the scroll transform.
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
       document.querySelectorAll<HTMLElement>(".glass-card").forEach((card) => {
@@ -829,6 +973,10 @@ export default function Page() {
       {/* NEW SECTION: "DISCOVER THE POSSIBILITIES — EVERYTHING YOU NEED" */}
       {/* ============================================================== */}
       <section id="possibilities" className="possibilities-section">
+        <canvas
+          className="possibilities-liquid-canvas"
+          aria-hidden="true"
+        ></canvas>
         <span className="possibility-petal petal-1" aria-hidden="true"></span>
         <span className="possibility-petal petal-2" aria-hidden="true"></span>
         <span className="possibility-petal petal-3" aria-hidden="true"></span>
@@ -944,6 +1092,13 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      <Script
+        id="possibilities-liquid-webgl"
+        src="/possibilities-liquid.js"
+        type="module"
+        strategy="afterInteractive"
+      />
 
       {/* Interactive Detail Modal for clicked Card */}
       <div
