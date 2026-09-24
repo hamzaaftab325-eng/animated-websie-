@@ -549,44 +549,49 @@ export default function Page() {
           stackTimeline
             .fromTo(
               ".possibilities-header",
-              { y: 18, opacity: 0 },
-              { y: 0, opacity: 1, duration: 0.16, ease: "none" },
+              { y: 14, opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.14, ease: "none" },
               0
             )
-            // 01 — exact center stack.
+            // 01 — all four cards begin merged below the viewport center.
             .fromTo(
               cards,
+              {
+                x: (index: number) => stackedX[index] ?? 0,
+                y: (index: number) => 320 + index * 12,
+                rotation: (index: number) => (stackedRotate[index] ?? 0) * 1.25,
+                scale: 0.90,
+                opacity: 0,
+              },
               {
                 x: (index: number) => stackedX[index] ?? 0,
                 y: (index: number) => stackedY[index] ?? 0,
                 rotation: (index: number) => stackedRotate[index] ?? 0,
                 scale: (index: number) => stackedScale[index] ?? 1,
                 opacity: 1,
-              },
-              {
-                x: (index: number) => (stackedX[index] ?? 0) * 0.72,
-                y: (index: number) => (stackedY[index] ?? 0) * 0.7,
-                rotation: (index: number) => (stackedRotate[index] ?? 0) * 0.72,
-                scale: (index: number) => 0.975 + index * 0.008,
-                duration: 0.26,
+                duration: 0.36,
+                stagger: {
+                  each: 0.018,
+                  from: "center",
+                },
                 ease: "none",
               },
-              0.08
+              0.06
             )
-            // 02/03 — controlled fan-out while scrolling.
+            // 02 — the merged deck begins to open from the center.
             .to(
               cards,
               {
-                x: (index: number) => (stackedX[index] ?? 0) * 0.34,
-                y: (index: number) => (index - 1.5) * 4,
-                rotation: (index: number) => (stackedRotate[index] ?? 0) * 0.24,
+                x: (index: number) => (stackedX[index] ?? 0) * 0.48,
+                y: (index: number) => (index - 1.5) * 3,
+                rotation: (index: number) => (stackedRotate[index] ?? 0) * 0.32,
                 scale: 0.992,
-                duration: 0.36,
+                duration: 0.34,
                 ease: "none",
               },
-              0.34
+              0.42
             )
-            // 04 — final row, perfectly aligned to the designed grid.
+            // 03 — cards separate into their exact final row.
             .to(
               cards,
               {
@@ -594,14 +599,14 @@ export default function Page() {
                 y: 0,
                 rotation: 0,
                 scale: 1,
-                duration: 0.38,
+                duration: 0.42,
                 stagger: {
-                  each: 0.015,
+                  each: 0.014,
                   from: "center",
                 },
                 ease: "none",
               },
-              0.70
+              0.74
             );
         } else {
           gsap.fromTo(
@@ -630,10 +635,10 @@ export default function Page() {
               card,
               {
                 x: horizontal,
-                y: conditions.mobile ? 42 : 54,
+                y: conditions.mobile ? 86 : 110,
                 rotateZ: index % 2 === 0 ? -2 : 2,
                 opacity: 0,
-                scale: conditions.mobile ? 0.965 : 0.95,
+                scale: conditions.mobile ? 0.95 : 0.93,
               },
               {
                 x: 0,
