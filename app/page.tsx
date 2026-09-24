@@ -498,14 +498,9 @@ export default function Page() {
           const gridRect = grid.getBoundingClientRect();
           const gridCenter = gridRect.left + gridRect.width / 2;
 
-          const stackedX = finalCenters.map((center, index) => {
-            const deckNudge = [-18, -6, 6, 18][index] ?? 0;
-            return gridCenter - center + deckNudge;
-          });
-
-          const stackedY = [-4, 2, 8, 14];
-          const stackedRotate = [-3.8, -1.4, 1.5, 4.2];
-          const stackedScale = [0.965, 0.978, 0.99, 1];
+          // Exact overlap: every card shares one center position so the
+          // rising deck reads visually as a single card.
+          const stackedX = finalCenters.map((center) => gridCenter - center);
 
           gsap.set(cards, {
             zIndex: (index: number) => cards.length - index,
@@ -553,45 +548,53 @@ export default function Page() {
               { y: 0, opacity: 1, duration: 0.14, ease: "none" },
               0
             )
-            // 01 — all four cards begin merged below the viewport center.
+            // 01 — one-card illusion: exact same X/Y/rotation/scale while rising.
+            // Only the top card is visible during the rise so transparent glass
+            // layers do not become darker from stacking.
             .fromTo(
               cards,
               {
                 x: (index: number) => stackedX[index] ?? 0,
-                y: (index: number) => 320 + index * 12,
-                rotation: (index: number) => (stackedRotate[index] ?? 0) * 1.25,
-                scale: 0.90,
-                opacity: 0,
+                y: 330,
+                rotation: 0,
+                scale: 0.94,
+                opacity: (index: number) => (index === 0 ? 1 : 0),
               },
               {
                 x: (index: number) => stackedX[index] ?? 0,
-                y: (index: number) => stackedY[index] ?? 0,
-                rotation: (index: number) => stackedRotate[index] ?? 0,
-                scale: (index: number) => stackedScale[index] ?? 1,
-                opacity: 1,
-                duration: 0.36,
-                stagger: {
-                  each: 0.018,
-                  from: "center",
-                },
+                y: 0,
+                rotation: 0,
+                scale: 1,
+                opacity: (index: number) => (index === 0 ? 1 : 0),
+                duration: 0.38,
                 ease: "none",
               },
               0.06
             )
-            // 02 — the merged deck begins to open from the center.
+            // 02 — at dead center the hidden cards become part of the same deck.
+            .to(
+              cards,
+              {
+                opacity: 1,
+                duration: 0.08,
+                ease: "none",
+              },
+              0.44
+            )
+            // 03 — only after reaching center do the cards begin separating.
             .to(
               cards,
               {
                 x: (index: number) => (stackedX[index] ?? 0) * 0.48,
-                y: (index: number) => (index - 1.5) * 3,
-                rotation: (index: number) => (stackedRotate[index] ?? 0) * 0.32,
+                y: 0,
+                rotation: 0,
                 scale: 0.992,
-                duration: 0.34,
+                duration: 0.30,
                 ease: "none",
               },
-              0.42
+              0.52
             )
-            // 03 — cards separate into their exact final row.
+            // 04 — finish in the exact designed row.
             .to(
               cards,
               {
@@ -606,7 +609,7 @@ export default function Page() {
                 },
                 ease: "none",
               },
-              0.74
+              0.82
             );
         } else {
           gsap.fromTo(
