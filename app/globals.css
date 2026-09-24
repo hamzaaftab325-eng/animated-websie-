@@ -9,6 +9,19 @@
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --pill-bg: #0a0908;
   --pill-fg: #ffffff;
+
+  /* Rejoice-style soft cinematic veil: dusty rose + lavender-grey + haze. */
+  --scene-overlay:
+    linear-gradient(180deg,
+      rgba(92, 103, 132, 0.18) 0%,
+      rgba(190, 157, 176, 0.16) 34%,
+      rgba(220, 171, 177, 0.20) 67%,
+      rgba(92, 79, 101, 0.18) 100%);
+  --scene-haze:
+    radial-gradient(circle at 50% 42%,
+      rgba(255, 245, 240, 0.12) 0%,
+      rgba(255, 238, 235, 0.07) 34%,
+      rgba(255, 255, 255, 0) 68%);
 }
 
 html {
@@ -87,6 +100,21 @@ body {
   overflow: hidden;
   background: #000;
 }
+
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    var(--scene-haze),
+    var(--scene-overlay);
+  box-shadow:
+    inset 0 0 120px rgba(53, 45, 65, 0.10),
+    inset 0 -80px 130px rgba(88, 56, 68, 0.10);
+}
+
 .stage video {
   position: absolute;
   top: 50%;
@@ -402,11 +430,12 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 50% 28%, rgba(255, 250, 240, 0.11), transparent 32%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 30%, rgba(45, 18, 22, 0.08));
+    var(--scene-haze),
+    var(--scene-overlay),
+    radial-gradient(circle at 50% 28%, rgba(255, 250, 240, 0.10), transparent 32%);
 }
 
 .possibilities-section::after {
@@ -416,8 +445,8 @@ body {
   z-index: 8;
   pointer-events: none;
   box-shadow:
-    inset 0 0 110px rgba(32, 18, 12, 0.10),
-    inset 0 -80px 120px rgba(25, 13, 13, 0.08);
+    inset 0 0 105px rgba(49, 40, 58, 0.08),
+    inset 0 -80px 120px rgba(78, 51, 66, 0.07);
 }
 
 .possibilities-header {
@@ -444,8 +473,8 @@ body {
   font-weight: 600;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: rgba(29, 62, 53, 0.82);
-  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.18);
+  color: rgba(25, 54, 47, 0.88);
+  text-shadow: 0 1px 12px rgba(255, 255, 255, 0.22);
 }
 
 .possibilities-eyebrow::before,
@@ -469,10 +498,10 @@ body {
   line-height: 0.95;
   font-weight: 600;
   letter-spacing: -0.04em;
-  color: #12332b;
+  color: #102f28;
   margin: 0;
   text-wrap: balance;
-  text-shadow: 0 1px 18px rgba(255, 244, 235, 0.24);
+  text-shadow: 0 1px 18px rgba(255, 244, 235, 0.30);
 }
 
 .possibilities-desc {
