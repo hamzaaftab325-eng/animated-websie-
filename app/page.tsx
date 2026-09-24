@@ -63,14 +63,14 @@ export default function Page() {
     const isTablet = window.innerWidth <= 900 && window.innerWidth > 580;
 
     const lenis = new Lenis({
-      duration: isTouch ? 0.5 : 1.12,
-      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      duration: isTouch ? 0.5 : 1.34,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -9 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: !isTouch,
       syncTouch: false,
-      touchMultiplier: isTouch ? 1.02 : 1.15,
-      wheelMultiplier: isTablet ? 0.88 : 0.94,
+      touchMultiplier: isTouch ? 1.02 : 1.1,
+      wheelMultiplier: isTablet ? 0.8 : 0.84,
       overscroll: false,
     });
 
@@ -78,7 +78,7 @@ export default function Page() {
       lenis.raf(time * 1000);
     };
     gsap.ticker.add(tickerCallback);
-    gsap.ticker.lagSmoothing(500, 33);
+    gsap.ticker.lagSmoothing(0);
 
     const VIDEO_URL = "https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4";
 
@@ -713,8 +713,8 @@ export default function Page() {
 
       if (!visual) return;
 
-      const travel = isTouch ? 2.4 : 4.6;
-      const visualScale = isTouch ? 1.015 : 1.025;
+      const travel = isTouch ? 2.1 : 4.0;
+      const visualScale = isTouch ? 1.018 : 1.032;
 
       gsap.fromTo(
         visual,
@@ -732,7 +732,7 @@ export default function Page() {
             trigger: section,
             start: "top bottom",
             end: "bottom top",
-            scrub: isTouch ? 0.55 : 0.85,
+            scrub: isTouch ? 0.8 : 1.4,
             invalidateOnRefresh: true,
           },
         }
@@ -985,7 +985,7 @@ export default function Page() {
               trigger: projectsLiquidSection,
               start: "top bottom",
               end: "bottom top",
-              scrub: 0.75,
+              scrub: 1.15,
             },
           }
         );
@@ -1001,7 +1001,7 @@ export default function Page() {
                 trigger: projectsLiquidSection,
                 start: "top bottom",
                 end: "center center",
-                scrub: 0.65,
+                scrub: 1.0,
               },
             }
           );
