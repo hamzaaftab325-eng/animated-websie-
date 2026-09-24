@@ -1498,7 +1498,7 @@ body {
   isolation: isolate;
   background:
     var(--projects-dark)
-    url("/floral-projects-room.webp")
+    url("https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp")
     center center / cover no-repeat;
   color: var(--projects-ink);
 }
@@ -1517,7 +1517,7 @@ body {
   overflow: hidden;
   background:
     var(--projects-dark)
-    url("/floral-projects-room.webp")
+    url("https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp")
     center center / cover no-repeat;
 }
 

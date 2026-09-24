@@ -1606,7 +1606,7 @@ export default function Page() {
       >
         <div className="projects-liquid-bg" aria-hidden="true">
           <img
-            src="/floral-projects-room.webp"
+            src="https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp"
             alt=""
             draggable={false}
           />
