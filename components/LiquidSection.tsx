@@ -26,8 +26,10 @@ export default function LiquidSection({
       <div className="liquid-media" data-liquid-bg aria-hidden="true">
         <img
           className="liquid-image"
+          data-liquid-image-element
           src={imageSrc}
           alt=""
+          crossOrigin="anonymous"
           draggable={false}
         />
       </div>

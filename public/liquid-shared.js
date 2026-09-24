@@ -1,29 +1,31 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 
 const BASE_POINT_SIZE = 0.0005;
+const BASE_DISTURB_POWER = 0.5;
 const BASE_CURSOR_DELTA = 6;
+const MAX_POINTER_DELTA = 42;
 const initializedLiquidSections = new WeakSet();
 
 function initLiquidSection(section) {
   if (!section || initializedLiquidSections.has(section)) return;
+
+  const bgWrap = section;
+  const canvas = section.querySelector("[data-liquid-canvas]");
+  const sourceImage = section.querySelector("[data-liquid-image-element]");
+
+  if (!bgWrap || !canvas || !sourceImage) return;
+
+  // Keep the approved desktop interaction and respect reduced-motion users.
+  const desktopFinePointer = window.matchMedia(
+    "(min-width: 768px) and (hover: hover) and (pointer: fine)"
+  ).matches;
+  const reducedMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  ).matches;
+
+  if (!desktopFinePointer || reducedMotion) return;
+
   initializedLiquidSections.add(section);
-      const bgWrap = section;
-      const imageSrc = section.getAttribute("data-liquid-image");
-      const canvas = section.querySelector("[data-liquid-canvas]");
-
-      if (!bgWrap || !canvas || !imageSrc) return;
-
-      const sourceImage = new Image();
-      sourceImage.crossOrigin = "anonymous";
-      sourceImage.src = imageSrc;
-
-      // The reference enables its post-effect only for desktop/non-touch layouts.
-      const desktopFinePointer = window.matchMedia(
-        "(min-width: 768px) and (hover: hover) and (pointer: fine)"
-      ).matches;
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-      if (!desktopFinePointer || reducedMotion) return;
 
       const renderer = new THREE.WebGLRenderer({
         canvas,
@@ -306,22 +308,7 @@ function initLiquidSection(section) {
         u_dissipation: { value: 0.98 }
       });
 
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.setCrossOrigin("anonymous");
-
-      const texture = textureLoader.load(
-        sourceImage.currentSrc || sourceImage.src,
-        () => {
-          texture.colorSpace = THREE.SRGBColorSpace;
-          texture.needsUpdate = true;
-          sceneMaterial.uniforms.u_image_size.value.set(
-            texture.image?.naturalWidth || texture.image?.width || 2048,
-            texture.image?.naturalHeight || texture.image?.height || 2048
-          );
-          resize();
-          section.classList.add("is-liquid-ready");
-        }
-      );
+      const texture = new THREE.Texture(sourceImage);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.minFilter = THREE.LinearFilter;
       texture.magFilter = THREE.LinearFilter;
@@ -337,8 +324,31 @@ function initLiquidSection(section) {
         u_scene: { value: null },
         u_velocity: { value: null },
         u_output: { value: null },
-        u_disturb_power: { value: 0.5 } // reference distortionPower
+        u_disturb_power: { value: BASE_DISTURB_POWER }
       }, true);
+
+      let textureReady = false;
+
+      function activateTexture() {
+        if (textureReady || !sourceImage.naturalWidth || !sourceImage.naturalHeight) {
+          return;
+        }
+
+        textureReady = true;
+        texture.needsUpdate = true;
+        sceneMaterial.uniforms.u_image_size.value.set(
+          sourceImage.naturalWidth,
+          sourceImage.naturalHeight
+        );
+        resize();
+        section.classList.add("is-liquid-ready");
+      }
+
+      if (sourceImage.complete && sourceImage.naturalWidth) {
+        activateTexture();
+      } else {
+        sourceImage.addEventListener("load", activateTexture, { once: true });
+      }
 
       function createRT(width, height) {
         return new THREE.WebGLRenderTarget(width, height, {
@@ -382,6 +392,8 @@ function initLiquidSection(section) {
       let simHeight = 1;
       let active = true;
       let resizeRaf = 0;
+      let liquidScale = 1;
+      let disturbPower = BASE_DISTURB_POWER;
 
       const pointer = {
         x: 0.65,
@@ -408,7 +420,17 @@ function initLiquidSection(section) {
         renderer.setSize(rect.width, rect.height, false);
         sceneMaterial.uniforms.u_view_size.value.set(rect.width, rect.height);
 
-        splatMaterial.uniforms.u_point_size.value = BASE_POINT_SIZE;
+        const referenceHeight = Math.max(1, window.innerHeight);
+        liquidScale = Math.min(
+          1.35,
+          Math.max(0.35, referenceHeight / Math.max(1, rect.height))
+        );
+
+        // One shared formula for every LiquidSection. This keeps the visible
+        // footprint and refraction displacement consistent in screen pixels.
+        splatMaterial.uniforms.u_point_size.value =
+          BASE_POINT_SIZE * liquidScale * liquidScale;
+        disturbPower = BASE_DISTURB_POWER * liquidScale;
 
         // Fluid motion is low-frequency. A capped field keeps the same visual
         // behavior while avoiding a multi-million-pixel simulation buffer.
@@ -525,7 +547,7 @@ function initLiquidSection(section) {
         finalMaterial.uniforms.u_scene.value = sceneTarget.texture;
         finalMaterial.uniforms.u_velocity.value = velocity.read.texture;
         finalMaterial.uniforms.u_output.value = outputColor.read.texture;
-        finalMaterial.uniforms.u_disturb_power.value = 0.5;
+        finalMaterial.uniforms.u_disturb_power.value = disturbPower;
 
         quad.material = finalMaterial;
         renderer.setRenderTarget(null);
@@ -558,12 +580,18 @@ function initLiquidSection(section) {
           return;
         }
 
-        const dxPx = event.clientX - pointer.lastX;
-        const dyPx = event.clientY - pointer.lastY;
+        const dxPx = Math.max(
+          -MAX_POINTER_DELTA,
+          Math.min(MAX_POINTER_DELTA, event.clientX - pointer.lastX)
+        );
+        const dyPx = Math.max(
+          -MAX_POINTER_DELTA,
+          Math.min(MAX_POINTER_DELTA, event.clientY - pointer.lastY)
+        );
 
         pointer.moved = true;
-        pointer.dx = BASE_CURSOR_DELTA * dxPx;
-        pointer.dy = BASE_CURSOR_DELTA * dyPx;
+        pointer.dx = BASE_CURSOR_DELTA * dxPx * liquidScale;
+        pointer.dy = BASE_CURSOR_DELTA * dyPx * liquidScale;
         pointer.x = x;
         pointer.y = y;
         pointer.lastX = event.clientX;
@@ -588,10 +616,13 @@ function initLiquidSection(section) {
       window.addEventListener("mousemove", onPointerMove, { passive: true });
       window.addEventListener("resize", onResize, { passive: true });
 
-      // The existing possibilities background stays fixed during its pinned card choreography.\n\n      resize();
+      const resizeObserver = new ResizeObserver(onResize);
+      resizeObserver.observe(section);
+
+      resize();
 
       function loop() {
-        if (active) {
+        if (active && textureReady) {
           stepFluid();
           renderFinal();
         }

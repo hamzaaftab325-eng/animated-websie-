@@ -795,9 +795,11 @@ export default function Page() {
             yPercent: 0,
             opacity: 1,
             rotateX: 0,
+            scale: 1,
             filter: "none",
             visibility: "visible",
           });
+
           if (liquidDescriptionSplit) {
             gsap.set(liquidDescriptionSplit.lines, {
               yPercent: 0,
@@ -805,31 +807,19 @@ export default function Page() {
               filter: "none",
             });
           }
+
           if (liquidButtonSplit) {
             gsap.set(liquidButtonSplit.chars, {
               y: 0,
               opacity: 1,
             });
           }
+
           return;
         }
 
-        gsap.to(liquidTitleLines, {
-          opacity: 1,
-          duration: 0.82,
-          stagger: 0.075,
-          ease: "power2.out",
-        });
-
-        gsap.to(liquidTitleLines, {
-          yPercent: 0,
-          rotateX: 0,
-          scale: 1,
-          filter: "blur(0px)",
-          duration: 1.18,
-          stagger: 0.075,
-          ease: "expo.out",
-          force3D: true,
+        const reveal = gsap.timeline({
+          defaults: { overwrite: "auto" },
           onComplete: () => {
             gsap.set(liquidTitleLines, {
               opacity: 1,
@@ -839,47 +829,73 @@ export default function Page() {
               filter: "none",
               visibility: "visible",
             });
+
+            if (liquidDescriptionSplit) {
+              gsap.set(liquidDescriptionSplit.lines, {
+                opacity: 1,
+                yPercent: 0,
+                filter: "none",
+              });
+            }
           },
         });
 
-        if (liquidDescriptionSplit) {
-          gsap.to(liquidDescriptionSplit.lines, {
-            opacity: 1,
-            duration: 0.9,
-            delay: 0.4,
-            stagger: 0.065,
-            ease: "power2.out",
-          });
-
-          gsap.to(liquidDescriptionSplit.lines, {
+        reveal.to(
+          liquidTitleLines,
+          {
             yPercent: 0,
+            opacity: 1,
+            rotateX: 0,
+            scale: 1,
             filter: "blur(0px)",
-            duration: 1.15,
-            delay: 0.4,
-            stagger: 0.065,
+            duration: 1.18,
+            stagger: 0.075,
             ease: "expo.out",
             force3D: true,
-          });
+          },
+          0
+        );
+
+        if (liquidDescriptionSplit) {
+          reveal.to(
+            liquidDescriptionSplit.lines,
+            {
+              yPercent: 0,
+              opacity: 1,
+              filter: "blur(0px)",
+              duration: 1.08,
+              stagger: 0.055,
+              ease: "expo.out",
+              force3D: true,
+            },
+            0.38
+          );
         }
 
         if (liquidFirstLine) {
-          gsap.to(liquidFirstLine, {
-            clipPath: "inset(0% 0% 0% 0%)",
-            duration: 0.52,
-            delay: 0.66,
-            ease: "power4.out",
-          });
-
-          gsap.to(liquidFirstLine, {
-            clipPath: "inset(0% 0% 0% 100%)",
-            duration: 0.52,
-            delay: 0.92,
-            ease: "power4.inOut",
-          });
+          reveal
+            .to(
+              liquidFirstLine,
+              {
+                clipPath: "inset(0% 0% 0% 0%)",
+                duration: 0.5,
+                ease: "power4.out",
+              },
+              0.7
+            )
+            .to(
+              liquidFirstLine,
+              {
+                clipPath: "inset(0% 0% 0% 100%)",
+                duration: 0.5,
+                ease: "power4.inOut",
+              },
+              0.98
+            );
         }
 
         if (liquidLastLine) {
-          gsap.fromTo(
+          reveal.fromTo(
             liquidLastLine,
             { clipPath: "inset(0% 100% 0% 0%)" },
             {
@@ -888,22 +904,25 @@ export default function Page() {
                   ? "inset(0% calc(100% - 19.9004975124vw) 0% 0%)"
                   : "inset(0% calc(100% - 5vw) 0% 0%)",
               duration: 0.58,
-              delay: 1.0,
               ease: "power4.out",
-            }
+            },
+            1.06
           );
         }
 
         if (liquidButtonSplit) {
-          gsap.to(liquidButtonSplit.chars, {
-            y: 0,
-            opacity: 1,
-            duration: 0.72,
-            delay: 0.98,
-            stagger: 0.018,
-            ease: "power3.out",
-            force3D: true,
-          });
+          reveal.to(
+            liquidButtonSplit.chars,
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.68,
+              stagger: 0.018,
+              ease: "power3.out",
+              force3D: true,
+            },
+            1.02
+          );
         }
       };
 
@@ -919,9 +938,9 @@ export default function Page() {
       if (!isTouch && liquidContents) {
         gsap.fromTo(
           liquidContents,
-          { y: 42 },
+          { y: 54 },
           {
-            y: -46,
+            y: -72,
             ease: "none",
             scrollTrigger: {
               trigger: projectsLiquidSection,
@@ -951,9 +970,9 @@ export default function Page() {
       } else if (liquidContents) {
         gsap.fromTo(
           liquidContents,
-          { y: 32 },
+          { y: 24 },
           {
-            y: -58,
+            y: -42,
             ease: "none",
             scrollTrigger: {
               trigger: projectsLiquidSection,

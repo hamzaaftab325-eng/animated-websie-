@@ -1787,8 +1787,7 @@ body {
     transform: none !important;
     filter: none !important;
   }
-
-  }
+}
 
 
 /* ================================================================
@@ -1831,6 +1830,7 @@ body {
 .liquid-section > .liquid-canvas {
   z-index: 1;
   display: block;
+  contain: layout paint;
   opacity: 0;
   pointer-events: none;
   transform: none;
@@ -1851,34 +1851,5 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .liquid-section > .liquid-canvas {
     display: none !important;
-  }
-}
-
-
-/* ================================================================
-   PROJECT LIQUID MOTION POLISH
-   ================================================================ */
-.projects-liquid-section > .liquid-media {
-  transform: scale(1.015);
-  transform-origin: 50% 50%;
-  will-change: transform;
-}
-
-.projects-liquid-section.is-liquid-ready > .liquid-media {
-  transform: scale(1);
-  transition: transform 1.4s cubic-bezier(.16, 1, .3, 1);
-}
-
-.projects-liquid-section .projects-liquid-title-line,
-.projects-liquid-section .projects-liquid-desc-line,
-.projects-liquid-section .projects-liquid-button-char {
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .projects-liquid-section > .liquid-media {
-    transform: none !important;
-    transition: none !important;
   }
 }
