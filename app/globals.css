@@ -121,7 +121,7 @@ body {
   left: 50%;
   width: 100%;
   height: 100%;
-  transform: translate3d(-50%, -50%, 0) scale(1.035);
+  transform: translate3d(-50%, -50%, 0) scale(1.045);
   transform-origin: 50% 50%;
   object-fit: cover;
   filter: none;
@@ -367,9 +367,10 @@ body {
 
 .hero-title,
 .sub {
-  will-change: transform, opacity, filter;
+  will-change: opacity, filter;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 /* HERO SUBHEADING */
@@ -1350,5 +1351,20 @@ body {
     max-width: 29ch;
     font-size: 14px;
     line-height: 1.4;
+  }
+}
+
+
+/* Scroll-performance state: moving glass uses a cheaper blur pass, then
+   restores the full optical depth when the cards reach their final positions. */
+@media (min-width: 901px) {
+  .cards-grid.is-card-motion .glass-card {
+    -webkit-backdrop-filter: blur(12px) saturate(138%);
+    backdrop-filter: blur(12px) saturate(138%);
+  }
+
+  .cards-grid.is-card-motion .glass-card::before {
+    opacity: 0.42;
+    filter: blur(18px);
   }
 }

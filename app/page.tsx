@@ -70,12 +70,11 @@ export default function Page() {
       wheelMultiplier: isTablet ? 0.88 : 0.92,
     });
 
-    lenis.on('scroll', ScrollTrigger.update);
     const tickerCallback = (time: number) => {
       lenis.raf(time * 1000);
     };
     gsap.ticker.add(tickerCallback);
-    gsap.ticker.lagSmoothing(0);
+    gsap.ticker.lagSmoothing(500, 33);
 
     const VIDEO_URL = "https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4";
 
@@ -142,24 +141,22 @@ export default function Page() {
     }
 
     let progress = 0;
-    let targetProgress = 0;
-    let seekTo = 0;
-    let seekAt = 0;
     let duration = 0;
     let ready = false;
     let started = false;
     let attached = false;
-    let rafId: number;
     let lastVideoSeek = 0;
-    const videoSeekInterval = isTouch ? 48 : 28;
-    const seekLerp = isTouch ? 0.42 : 0.30;
+    let videoSeekQueued = false;
+    const assumedFps = isTouch ? 24 : 30;
+    const minSeekDelta = 0.75 / assumedFps;
 
     function readScroll() {
       const scrollY = window.pageYOffset;
       const trackHeight = heroTrack ? (heroTrack.offsetHeight - window.innerHeight) : (window.innerHeight * 1.5);
       
-      // Video hero progress (0..1 during hero track)
-      targetProgress = trackHeight > 0 ? clamp(scrollY / trackHeight, 0, 1) : 0;
+      // Lenis already provides the smoothing. Keep one authoritative progress
+      // value so video, text and ScrollTrigger remain phase-locked.
+      progress = trackHeight > 0 ? clamp(scrollY / trackHeight, 0, 1) : 0;
 
       // Header adapt style when scrolled into possibilities section
       if (chromeHeader) {
@@ -181,15 +178,6 @@ export default function Page() {
         meter.style.transform = `scaleX(${progress})`;
       }
 
-      if (clip) {
-        const parallaxY = (progress - 0.5) * (isTouch ? 8 : 20);
-        const parallaxX = Math.sin(progress * Math.PI) * (isTouch ? 1 : 3);
-        const scale = 1.035 + progress * (isTouch ? 0.012 : 0.022);
-
-        clip.style.transform =
-          `translate3d(calc(-50% + ${parallaxX.toFixed(2)}px), calc(-50% + ${parallaxY.toFixed(2)}px), 0) scale(${scale.toFixed(4)})`;
-      }
-
       for (let i = 0; i < panels.length; i++) {
         const c = CUES[i];
         const el = panels[i];
@@ -198,8 +186,18 @@ export default function Page() {
         const enter = ramp(progress, c[0], c[1]);
         const leave = ramp(progress, c[2], c[3]);
         const o = enter * (1 - leave);
+
+        // Do no expensive descendant work for fully hidden scenes.
+        if (o <= 0.0005) {
+          if (el.style.opacity !== "0") {
+            el.style.opacity = "0";
+            el.style.pointerEvents = "none";
+          }
+          continue;
+        }
+
         const cueCenter = (c[1] + c[2]) * 0.5;
-        const sceneParallax = (progress - cueCenter) * (isTouch ? -6 : -12) * o;
+        const sceneParallax = (progress - cueCenter) * (isTouch ? -5 : -10) * o;
         const y = (1 - enter) * DRIFT - leave * DRIFT + sceneParallax;
 
         el.style.opacity = o.toFixed(4);
@@ -209,17 +207,14 @@ export default function Page() {
         const title = el.querySelector<HTMLElement>(".hero-title");
         const subtitle = el.querySelector<HTMLElement>(".sub");
 
-        // Keep the blur on one composited layer instead of every character.
-        // This preserves the focus effect while avoiding dozens of expensive
-        // filter repaints on every animation frame.
         if (title) {
-          const titleBlur = (1 - enter) * (isTouch ? 7 : 11) + leave * 5;
-          title.style.filter = `blur(${titleBlur.toFixed(2)}px)`;
+          const titleBlur = (1 - enter) * (isTouch ? 5 : 8) + leave * 3;
+          title.style.filter = titleBlur < 0.12 ? "none" : `blur(${titleBlur.toFixed(2)}px)`;
         }
 
         if (subtitle) {
-          const subtitleBlur = (1 - enter) * (isTouch ? 4 : 7) + leave * 3;
-          subtitle.style.filter = `blur(${subtitleBlur.toFixed(2)}px)`;
+          const subtitleBlur = (1 - enter) * (isTouch ? 3 : 5) + leave * 2;
+          subtitle.style.filter = subtitleBlur < 0.12 ? "none" : `blur(${subtitleBlur.toFixed(2)}px)`;
         }
 
         const chars = panelTitleChars[i] || [];
@@ -227,12 +222,12 @@ export default function Page() {
 
         chars.forEach((char, index) => {
           const distance = Math.abs(index - charMiddle) / charMiddle;
-          const stagger = distance * (isTouch ? 0.10 : 0.14);
+          const stagger = distance * (isTouch ? 0.08 : 0.11);
           const reveal = smooth(
             clamp((enter - stagger) / Math.max(0.001, 1 - stagger), 0, 1)
           );
-          const scale = 1 + (1 - reveal) * (isTouch ? 0.07 : 0.12);
-          const charY = (1 - reveal) * (isTouch ? 7 : 12) - leave * 5;
+          const scale = 1 + (1 - reveal) * (isTouch ? 0.045 : 0.075);
+          const charY = (1 - reveal) * (isTouch ? 5 : 8) - leave * 4;
 
           char.style.opacity = reveal.toFixed(4);
           char.style.transform =
@@ -244,11 +239,11 @@ export default function Page() {
 
         words.forEach((word, index) => {
           const distance = Math.abs(index - wordMiddle) / wordMiddle;
-          const stagger = 0.08 + distance * 0.06;
+          const stagger = 0.06 + distance * 0.045;
           const reveal = smooth(
-            clamp((enter - stagger) / Math.max(0.001, 0.92 - stagger), 0, 1)
+            clamp((enter - stagger) / Math.max(0.001, 0.94 - stagger), 0, 1)
           );
-          const wordY = (1 - reveal) * (isTouch ? 5 : 8);
+          const wordY = (1 - reveal) * (isTouch ? 3 : 5);
 
           word.style.opacity = reveal.toFixed(4);
           word.style.transform = `translate3d(0, ${wordY.toFixed(2)}px, 0)`;
@@ -256,41 +251,43 @@ export default function Page() {
       }
     }
 
-    // One damped master progress drives text, parallax, and video together.
-    // The video seek is rate-limited and only updates when the difference is
-    // large enough to avoid constant decoder thrashing.
-    function frame(now = 0) {
-      const smoothing = isTouch ? 0.18 : 0.12;
-      progress += (targetProgress - progress) * smoothing;
+    function updateVideoSeek() {
+      if (!ready || !duration || !clip || clip.readyState < 2) return;
 
-      if (Math.abs(targetProgress - progress) < 0.00008) {
-        progress = targetProgress;
+      const frameDuration = 1 / assumedFps;
+      const desired = Math.round((progress * duration) / frameDuration) * frameDuration;
+      const difference = desired - clip.currentTime;
+
+      if (Math.abs(difference) < minSeekDelta) {
+        videoSeekQueued = false;
+        return;
       }
 
-      if (ready && duration) {
-        seekTo = progress * duration;
-        const gap = seekTo - seekAt;
-
-        if (Math.abs(gap) > 0.002) {
-          seekAt += gap * (isTouch ? 0.26 : 0.20);
-        }
-
-        if (
-          clip &&
-          clip.readyState >= 2 &&
-          !clip.seeking &&
-          now - lastVideoSeek >= (isTouch ? 54 : 40) &&
-          Math.abs(clip.currentTime - seekAt) >= (isTouch ? 0.045 : 0.03)
-        ) {
-          lastVideoSeek = now;
-          try {
-            clip.currentTime = seekAt;
-          } catch (e) {}
-        }
+      if (clip.seeking) {
+        videoSeekQueued = true;
+        return;
       }
 
+      const now = performance.now();
+      const minInterval = isTouch ? 50 : 34;
+      if (now - lastVideoSeek < minInterval) {
+        videoSeekQueued = true;
+        return;
+      }
+
+      lastVideoSeek = now;
+      videoSeekQueued = false;
+
+      try {
+        clip.currentTime = clamp(desired, 0, Math.max(0, duration - frameDuration));
+      } catch (e) {}
+    }
+
+    function renderScrollState() {
+      readScroll();
       paint();
-      rafId = requestAnimationFrame(frame);
+      updateVideoSeek();
+      ScrollTrigger.update();
     }
 
     function setProgress(f: number) {
@@ -316,14 +313,9 @@ export default function Page() {
           }
         });
       }
-      readScroll();
-      progress = targetProgress;
-      seekTo = progress * duration;
-      seekAt = seekTo;
+      renderScrollState();
       if (clip && duration) {
-        try {
-          clip.currentTime = seekAt;
-        } catch (e) {}
+        updateVideoSeek();
       }
     }
 
@@ -336,18 +328,16 @@ export default function Page() {
         if (!clip) return;
         duration = clip.duration || 0;
         clip.pause();
-        readScroll();
-        progress = targetProgress;
-        seekTo = progress * duration;
-        seekAt = seekTo;
-        try {
-          clip.currentTime = seekAt;
-        } catch (e) {}
+        renderScrollState();
+        updateVideoSeek();
       });
 
       clip.addEventListener("loadeddata", start);
       clip.addEventListener("canplaythrough", start);
       clip.addEventListener("error", start);
+      clip.addEventListener("seeked", () => {
+        if (videoSeekQueued) updateVideoSeek();
+      });
 
       clip.src = src;
       clip.load();
@@ -515,15 +505,33 @@ export default function Page() {
             transformOrigin: "50% 50%",
           });
 
+          let motionActive = true;
+          grid.classList.add("is-card-motion");
+
           const stackTimeline = gsap.timeline({
             scrollTrigger: {
               trigger: "#possibilities",
               start: "top top",
               end: "+=155%",
-              scrub: 0.75,
+              scrub: true,
               pin: true,
               anticipatePin: 1,
               invalidateOnRefresh: true,
+              onUpdate: (self) => {
+                const nextActive = self.progress < 0.985;
+                if (nextActive !== motionActive) {
+                  motionActive = nextActive;
+                  grid.classList.toggle("is-card-motion", motionActive);
+                }
+              },
+              onLeaveBack: () => {
+                motionActive = true;
+                grid.classList.add("is-card-motion");
+              },
+              onLeave: () => {
+                motionActive = false;
+                grid.classList.remove("is-card-motion");
+              },
             },
           });
 
@@ -653,42 +661,42 @@ export default function Page() {
               trigger: "#possibilities",
               start: "top bottom",
               end: "bottom top",
-              scrub: conditions.mobile ? 0.3 : 0.6,
+              scrub: true,
             },
           }
         );
       }
     );
 
-    // Premium cursor-following glass highlight and subtle 3D tilt.
+    // Cursor-following glass light without competing with the scroll transform.
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
       document.querySelectorAll<HTMLElement>(".glass-card").forEach((card) => {
-        gsap.set(card, { transformPerspective: 900, transformOrigin: "center center" });
-        const rotateX = gsap.quickTo(card, "rotateX", { duration: 0.34, ease: "power3.out" });
-        const rotateY = gsap.quickTo(card, "rotateY", { duration: 0.34, ease: "power3.out" });
-        const lift = gsap.quickTo(card, "y", { duration: 0.34, ease: "power3.out" });
-        const scale = gsap.quickTo(card, "scale", { duration: 0.34, ease: "power3.out" });
+        const icon = card.querySelector<HTMLElement>(".card-icon-wrap");
+        const iconX = icon ? gsap.quickTo(icon, "x", { duration: 0.28, ease: "power3.out" }) : null;
+        const iconY = icon ? gsap.quickTo(icon, "y", { duration: 0.28, ease: "power3.out" }) : null;
 
         const onMove = (event: PointerEvent) => {
           const rect = card.getBoundingClientRect();
           const px = (event.clientX - rect.left) / rect.width;
           const py = (event.clientY - rect.top) / rect.height;
 
-          card.style.setProperty("--mx", (px * 100) + "%");
-          card.style.setProperty("--my", (py * 100) + "%");
-          rotateX((0.5 - py) * 5);
-          rotateY((px - 0.5) * 6);
-          lift(-7);
-          scale(1.012);
+          card.style.setProperty("--mx", (px * 100).toFixed(2) + "%");
+          card.style.setProperty("--my", (py * 100).toFixed(2) + "%");
+
+          if (iconX && iconY) {
+            iconX((px - 0.5) * 4);
+            iconY((py - 0.5) * 4);
+          }
         };
 
         const onLeave = () => {
           card.style.setProperty("--mx", "50%");
           card.style.setProperty("--my", "0%");
-          rotateX(0);
-          rotateY(0);
-          lift(0);
-          scale(1);
+
+          if (iconX && iconY) {
+            iconX(0);
+            iconY(0);
+          }
         };
 
         card.addEventListener("pointermove", onMove);
@@ -701,26 +709,26 @@ export default function Page() {
       });
     }
 
+    const onLenisScroll = () => {
+      renderScrollState();
+    };
+
+    lenis.on("scroll", onLenisScroll);
     ScrollTrigger.refresh();
 
-    window.addEventListener("scroll", readScroll, { passive: true });
-    window.addEventListener("resize", readScroll);
+    window.addEventListener("resize", renderScrollState);
 
-    readScroll();
-    paint();
+    renderScrollState();
     preload();
-    rafId = requestAnimationFrame(frame);
 
     return () => {
-      cancelAnimationFrame(rafId);
       gsap.ticker.remove(tickerCallback);
       lenis.destroy();
       motion.revert();
       textSplits.forEach((split) => split.revert());
       tiltCleanups.forEach((cleanup) => cleanup());
       ScrollTrigger.getAll().forEach(t => t.kill());
-      window.removeEventListener("scroll", readScroll);
-      window.removeEventListener("resize", readScroll);
+      window.removeEventListener("resize", renderScrollState);
       unlockEvents.forEach((ev) => {
         window.removeEventListener(ev, unlock);
       });
