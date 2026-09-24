@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
 import Script from 'next/script';
+import LiquidSection from '../components/LiquidSection';
 
 interface CardInfo {
   id: string;
@@ -1424,11 +1425,12 @@ export default function Page() {
       {/* ============================================================== */}
       {/* NEW SECTION: "DISCOVER THE POSSIBILITIES — EVERYTHING YOU NEED" */}
       {/* ============================================================== */}
-      <section id="possibilities" className="possibilities-section">
-        <canvas
-          className="possibilities-liquid-canvas"
-          aria-hidden="true"
-        ></canvas>
+      <LiquidSection
+        id="possibilities"
+        className="possibilities-section"
+        imageSrc="https://res.cloudinary.com/diometfe9/image/upload/v1790183196/download_enkn9u.png"
+        canvasClassName="possibilities-liquid-canvas"
+      >
         <span className="possibility-petal petal-1" aria-hidden="true"></span>
         <span className="possibility-petal petal-2" aria-hidden="true"></span>
         <span className="possibility-petal petal-3" aria-hidden="true"></span>
@@ -1543,33 +1545,17 @@ export default function Page() {
             </div>
           </div>
         </div>
-      </section>
-
-      <Script
-        id="possibilities-liquid-webgl"
-        src="/possibilities-liquid.js"
-        type="module"
-        strategy="afterInteractive"
-      />
+      </LiquidSection>
 
       {/* Uploaded Izanami-style projects section */}
-      <section
+      <LiquidSection
         id="projectsSection"
         className="projects-liquid-section"
-        aria-labelledby="projects-liquid-title"
+        imageSrc="https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp"
+        mediaClassName="projects-liquid-bg"
+        canvasClassName="projects-liquid-canvas"
+        ariaLabelledby="projects-liquid-title"
       >
-        <div className="projects-liquid-bg" aria-hidden="true">
-          <img
-            src="https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp"
-            alt=""
-            draggable={false}
-          />
-        </div>
-
-        <canvas
-          className="projects-liquid-canvas"
-          aria-hidden="true"
-        ></canvas>
 
         <div className="projects-liquid-tint" aria-hidden="true"></div>
 
@@ -1634,11 +1620,11 @@ export default function Page() {
             </div>
           </div>
         </div>
-      </section>
+      </LiquidSection>
 
       <Script
-        id="projects-liquid-webgl"
-        src="/projects-liquid.js"
+        id="shared-liquid-webgl"
+        src="/liquid-shared.js"
         type="module"
         strategy="afterInteractive"
       />
