@@ -5,8 +5,13 @@ import Link from 'next/link';
 import gsap from 'gsap';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
-const VIDEO_URL =
-  'https://res.cloudinary.com/diometfe9/video/upload/v1790340573/613a50d4-f1da-4f2d-b494-40cd0f20f141_cd4zyw.mp4';
+const FRAME_COUNT = 82;
+const FRAME_RATE = 30;
+const ANIMATION_COMPLETE_PROGRESS = 0.93;
+const FRAME_BASE =
+  'https://res.cloudinary.com/diometfe9/video/upload';
+const FRAME_ASSET =
+  'v1790340573/613a50d4-f1da-4f2d-b494-40cd0f20f141_cd4zyw';
 
 const CUES = [
   [0.0, 0.012, 0.235, 0.29],
@@ -14,10 +19,8 @@ const CUES = [
   [0.64, 0.685, 1.2, 1.25],
 ] as const;
 
-const DRIFT = 12;
-const SEEK_EASE = 0.34;
-const SEEK_INTERVAL = 24;
-const VIDEO_COMPLETE_PROGRESS = 0.93;
+const DRIFT = 10;
+const PRELOAD_CONCURRENCY = 10;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -30,14 +33,28 @@ const ramp = (
   start: number,
   end: number
 ) => {
-  if (end <= start) {
-    return progress >= end ? 1 : 0;
-  }
+  if (end <= start) return progress >= end ? 1 : 0;
 
   return smoothstep(
     clamp((progress - start) / (end - start), 0, 1)
   );
 };
+
+function getFrameWidth() {
+  if (typeof window === 'undefined') return 1280;
+  if (window.innerWidth < 640) return 800;
+  if (window.innerWidth < 1200) return 1080;
+  return 1280;
+}
+
+function getFrameUrl(index: number, width: number) {
+  const time = index / FRAME_RATE;
+
+  return (
+    `${FRAME_BASE}/so_${time.toFixed(3)},c_scale,w_${width},q_auto:good,f_webp/` +
+    `${FRAME_ASSET}.webp`
+  );
+}
 
 export function CinematicHero() {
   const { lenis } = useSmoothScroll();
@@ -47,19 +64,24 @@ export function CinematicHero() {
     if (!lenis || !rootRef.current) return;
 
     const root = rootRef.current;
-    const track = root.querySelector<HTMLElement>('[data-hero-track]');
-    const clip = root.querySelector<HTMLVideoElement>('#clip');
+    const track =
+      root.querySelector<HTMLElement>('[data-hero-track]');
+    const canvas =
+      root.querySelector<HTMLCanvasElement>('#heroSequence');
     const boot = root.querySelector<HTMLElement>('#boot');
-    const bootBar = root.querySelector<HTMLElement>('#bootBar');
-    const bootPct = root.querySelector<HTMLElement>('#bootPct');
-    const meter = root.querySelector<HTMLElement>('#meter');
+    const bootBar =
+      root.querySelector<HTMLElement>('#bootBar');
+    const bootPct =
+      root.querySelector<HTMLElement>('#bootPct');
+    const meter =
+      root.querySelector<HTMLElement>('#meter');
     const panels = Array.from(
       root.querySelectorAll<HTMLElement>('[data-panel]')
     );
 
     if (
       !track ||
-      !clip ||
+      !canvas ||
       !boot ||
       !bootBar ||
       !bootPct ||
@@ -68,46 +90,125 @@ export function CinematicHero() {
       return;
     }
 
+    const context = canvas.getContext('2d', {
+      alpha: false,
+      desynchronized: true,
+    });
+
+    if (!context) return;
+
+    const frames: Array<HTMLImageElement | null> =
+      new Array(FRAME_COUNT).fill(null);
+
+    let destroyed = false;
     let progress = 0;
-    let seekTarget = 0;
-    let seekCurrent = 0;
-    let duration = 0;
-    let ready = false;
+    let targetFrame = 0;
+    let paintedFrame = -1;
+    let renderRaf = 0;
+    let resizeRaf = 0;
     let started = false;
-    let rafId = 0;
-    let lastSeekTime = 0;
-    let fallbackTimer = 0;
+    let frameWidth = getFrameWidth();
 
     const setBootProgress = (value: number) => {
-      const progressValue = clamp(value, 0, 1);
+      const normalized = clamp(value, 0, 1);
+
       bootBar.style.transform =
-        `scaleX(${progressValue})`;
+        `scaleX(${normalized})`;
       bootPct.textContent =
-        `LOADING ${Math.round(progressValue * 100)}%`;
+        `PREPARING ${Math.round(normalized * 100)}%`;
     };
 
-    const readScroll = () => {
-      const range = Math.max(
+    const resizeCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(
+        window.devicePixelRatio || 1,
+        1.5
+      );
+      const width = Math.max(
         1,
-        track.offsetHeight - window.innerHeight
+        Math.round(rect.width * dpr)
+      );
+      const height = Math.max(
+        1,
+        Math.round(rect.height * dpr)
       );
 
-      progress = clamp(lenis.scroll / range, 0, 1);
-
-      if (duration) {
-        const videoProgress = clamp(
-          progress / VIDEO_COMPLETE_PROGRESS,
-          0,
-          1
-        );
-        const finalFrameTime = Math.max(
-          0,
-          duration - 0.001
-        );
-
-        seekTarget =
-          videoProgress * finalFrameTime;
+      if (
+        canvas.width !== width ||
+        canvas.height !== height
+      ) {
+        canvas.width = width;
+        canvas.height = height;
+        paintedFrame = -1;
       }
+    };
+
+    const drawCover = (image: HTMLImageElement) => {
+      if (
+        !image.naturalWidth ||
+        !image.naturalHeight ||
+        !canvas.width ||
+        !canvas.height
+      ) {
+        return;
+      }
+
+      const scale = Math.max(
+        canvas.width / image.naturalWidth,
+        canvas.height / image.naturalHeight
+      );
+      const width = image.naturalWidth * scale;
+      const height = image.naturalHeight * scale;
+      const x = (canvas.width - width) * 0.5;
+      const y = (canvas.height - height) * 0.5;
+
+      context.globalAlpha = 1;
+      context.fillStyle = '#11131a';
+      context.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+      context.imageSmoothingEnabled = true;
+      context.imageSmoothingQuality = 'high';
+      context.drawImage(image, x, y, width, height);
+    };
+
+    const nearestFrame = (index: number) => {
+      const exact = frames[index];
+      if (exact) return exact;
+
+      for (
+        let distance = 1;
+        distance < FRAME_COUNT;
+        distance += 1
+      ) {
+        const before = frames[index - distance];
+        if (before) return before;
+
+        const after = frames[index + distance];
+        if (after) return after;
+      }
+
+      return null;
+    };
+
+    const render = () => {
+      renderRaf = 0;
+
+      if (targetFrame === paintedFrame) return;
+
+      const image = nearestFrame(targetFrame);
+      if (!image) return;
+
+      drawCover(image);
+      paintedFrame = targetFrame;
+    };
+
+    const scheduleRender = () => {
+      if (renderRaf) return;
+      renderRaf = requestAnimationFrame(render);
     };
 
     const paintPanels = () => {
@@ -123,72 +224,133 @@ export function CinematicHero() {
         const y =
           (1 - enter) * DRIFT -
           leave * DRIFT;
-        const scale = 0.994 + opacity * 0.006;
 
         panel.style.opacity = opacity.toFixed(4);
         panel.style.transform =
-          `translate3d(0,${y.toFixed(2)}px,0) scale(${scale.toFixed(4)})`;
+          `translate3d(0,${y.toFixed(2)}px,0)`;
         panel.style.pointerEvents =
           opacity > 0.62 ? 'auto' : 'none';
       });
     };
 
-    const renderFrame = (time: number) => {
-      if (ready && duration) {
-        const gap = seekTarget - seekCurrent;
+    const readScroll = () => {
+      const range = Math.max(
+        1,
+        track.offsetHeight - window.innerHeight
+      );
 
-        if (Math.abs(gap) > 0.001) {
-          const nearEnd =
-            progress >= VIDEO_COMPLETE_PROGRESS - 0.05;
-          const almostSettled =
-            Math.abs(gap) < 0.035;
-          const catchUp =
-            nearEnd ? 0.62 : SEEK_EASE;
+      progress = clamp(
+        lenis.animatedScroll / range,
+        0,
+        1
+      );
 
-          // Avoid the exponential "braking" tail at the end: normal motion
-          // remains damped, while the final portion catches the target quickly.
-          seekCurrent =
-            progress >= VIDEO_COMPLETE_PROGRESS ||
-            almostSettled
-              ? seekTarget
-              : seekCurrent + gap * catchUp;
+      const animationProgress = clamp(
+        progress / ANIMATION_COMPLETE_PROGRESS,
+        0,
+        1
+      );
 
-          if (
-            time - lastSeekTime >= SEEK_INTERVAL &&
-            clip.readyState >= 2 &&
-            !clip.seeking
-          ) {
-            lastSeekTime = time;
-
-            try {
-              clip.currentTime = clamp(
-                seekCurrent,
-                0,
-                Math.max(0, duration - 0.001)
-              );
-            } catch {}
-          }
-        }
-      }
+      targetFrame = Math.min(
+        FRAME_COUNT - 1,
+        Math.round(
+          animationProgress * (FRAME_COUNT - 1)
+        )
+      );
 
       paintPanels();
-      rafId = requestAnimationFrame(renderFrame);
+      scheduleRender();
     };
 
-    const start = () => {
+    const loadFrame = (
+      index: number,
+      attempt = 0
+    ) =>
+      new Promise<void>((resolve) => {
+        const image = new Image();
+        image.decoding = 'async';
+        image.crossOrigin = 'anonymous';
+
+        image.onload = async () => {
+          try {
+            await image.decode();
+          } catch {
+            // onload already guarantees the frame is drawable.
+          }
+
+          if (!destroyed) {
+            frames[index] = image;
+          }
+
+          resolve();
+        };
+
+        image.onerror = () => {
+          if (attempt < 1 && !destroyed) {
+            window.setTimeout(() => {
+              void loadFrame(index, attempt + 1).then(resolve);
+            }, 250);
+            return;
+          }
+
+          resolve();
+        };
+
+        image.src = getFrameUrl(index, frameWidth);
+      });
+
+    const preloadAllFrames = async () => {
+      let nextIndex = 0;
+      let completed = 0;
+
+      const worker = async () => {
+        while (!destroyed) {
+          const index = nextIndex;
+          nextIndex += 1;
+
+          if (index >= FRAME_COUNT) return;
+
+          await loadFrame(index);
+
+          completed += 1;
+          setBootProgress(completed / FRAME_COUNT);
+        }
+      };
+
+      await Promise.all(
+        Array.from(
+          { length: PRELOAD_CONCURRENCY },
+          () => worker()
+        )
+      );
+    };
+
+    const start = async () => {
       if (started) return;
       started = true;
-      ready = true;
-      readScroll();
-      seekCurrent = seekTarget;
 
-      try {
-        clip.currentTime = seekCurrent;
-      } catch {}
+      resizeCanvas();
+
+      // The uploaded archive contains frames 000–081. Load the entire
+      // 82-frame sequence before enabling the experience so scrolling never
+      // waits for network or MP4 seeking.
+      await preloadAllFrames();
+
+      if (destroyed) return;
+
+      targetFrame = 0;
+      const firstFrame = nearestFrame(0);
+
+      if (firstFrame) {
+        drawCover(firstFrame);
+        paintedFrame = 0;
+      }
+
+      readScroll();
 
       gsap.to(boot, {
         opacity: 0,
-        duration: 0.48,
+        duration: 0.45,
         ease: 'power3.out',
         onComplete: () => {
           boot.classList.add(
@@ -199,83 +361,19 @@ export function CinematicHero() {
       });
     };
 
-    const onMetadata = () => {
-      duration =
-        Number.isFinite(clip.duration) ? clip.duration : 0;
-      clip.pause();
-      setBootProgress(0.72);
-      readScroll();
-      seekCurrent = seekTarget;
-
-      try {
-        clip.currentTime = seekCurrent;
-      } catch {}
-    };
-
-    const onProgress = () => {
-      if (!clip.duration || !clip.buffered.length) return;
-
-      const end =
-        clip.buffered.end(clip.buffered.length - 1);
-      setBootProgress(
-        Math.max(0.72, Math.min(0.98, end / clip.duration))
-      );
-    };
-
-    const onReady = () => {
-      setBootProgress(1);
-      start();
-    };
-
-    const onError = () => {
-      setBootProgress(1);
-      start();
-    };
-
-    clip.addEventListener('loadedmetadata', onMetadata);
-    clip.addEventListener('progress', onProgress);
-    clip.addEventListener('loadeddata', onReady);
-    clip.addEventListener('canplaythrough', onReady);
-    clip.addEventListener('error', onError);
-
-    // Production path: let the browser/CDN buffer the MP4 immediately.
-    // Waiting for a full Blob download made the experience feel unnecessarily slow.
-    clip.src = VIDEO_URL;
-    clip.load();
-
-    fallbackTimer = window.setTimeout(start, 4500);
-
-    const unlock = () => {
-      const playback = clip.play();
-
-      if (playback && typeof playback.then === 'function') {
-        playback
-          .then(() => clip.pause())
-          .catch(() => {});
-      } else {
-        clip.pause();
-      }
-    };
-
-    const unlockEvents: Array<keyof WindowEventMap> = [
-      'touchstart',
-      'pointerdown',
-      'wheel',
-      'keydown',
-    ];
-
-    unlockEvents.forEach((eventName) => {
-      window.addEventListener(eventName, unlock, {
-        once: true,
-        passive: true,
-      });
-    });
-
     const onLenisScroll = () => readScroll();
+
     const onResize = () => {
-      lenis.resize();
-      readScroll();
-      paintPanels();
+      if (resizeRaf) {
+        cancelAnimationFrame(resizeRaf);
+      }
+
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = 0;
+        lenis.resize();
+        resizeCanvas();
+        readScroll();
+      });
     };
 
     lenis.on('scroll', onLenisScroll);
@@ -283,31 +381,26 @@ export function CinematicHero() {
       passive: true,
     });
 
-    readScroll();
+    resizeCanvas();
     paintPanels();
-    rafId = requestAnimationFrame(renderFrame);
+    void start();
 
     return () => {
-      cancelAnimationFrame(rafId);
-      window.clearTimeout(fallbackTimer);
+      destroyed = true;
 
-      clip.removeEventListener(
-        'loadedmetadata',
-        onMetadata
-      );
-      clip.removeEventListener('progress', onProgress);
-      clip.removeEventListener('loadeddata', onReady);
-      clip.removeEventListener(
-        'canplaythrough',
-        onReady
-      );
-      clip.removeEventListener('error', onError);
+      if (renderRaf) {
+        cancelAnimationFrame(renderRaf);
+      }
+
+      if (resizeRaf) {
+        cancelAnimationFrame(resizeRaf);
+      }
 
       lenis.off('scroll', onLenisScroll);
       window.removeEventListener('resize', onResize);
 
-      unlockEvents.forEach((eventName) => {
-        window.removeEventListener(eventName, unlock);
+      frames.forEach((image) => {
+        if (image) image.src = '';
       });
     };
   }, [lenis]);
@@ -327,22 +420,20 @@ export function CinematicHero() {
             className="block h-full w-full origin-left scale-x-0 bg-white"
           />
         </div>
+
         <p
           id="bootPct"
           className="text-[10px] font-medium tracking-[0.16em] text-white/55"
         >
-          LOADING 0%
+          PREPARING 0%
         </p>
       </div>
 
       <div className="fixed inset-0 z-0 overflow-hidden bg-[#11131a]">
-        <video
-          id="clip"
-          muted
-          playsInline
-          preload="auto"
-          disablePictureInPicture
-          className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 scale-[1.025] object-cover"
+        <canvas
+          id="heroSequence"
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full"
         />
 
         <div
@@ -367,7 +458,11 @@ export function CinematicHero() {
           title="FRAME & FORM"
           subtitle={
             <>
-              Where your <em className="font-normal italic">Vision</em> meets Reality
+              Where your{' '}
+              <em className="font-normal italic">
+                Vision
+              </em>{' '}
+              meets Reality
             </>
           }
           href="/contact"
