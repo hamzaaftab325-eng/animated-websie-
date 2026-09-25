@@ -106,7 +106,7 @@ export function EverythingYouNeed() {
               <article
                 key={feature.title}
                 data-reveal
-                className="group relative min-h-[228px] overflow-hidden rounded-[22px] border border-white/[0.44] bg-white/[0.07] px-5 py-[18px] text-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,.35),inset_0_-1px_0_rgba(255,255,255,.05),0_9px_22px_rgba(75,44,40,.10)] backdrop-blur-[14px] transition-[transform,background-color,border-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[2px] hover:border-white/[0.58] hover:bg-white/[0.09] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.48),inset_0_-1px_0_rgba(255,255,255,.07),0_15px_30px_rgba(75,44,40,.13)]"
+                className="group relative min-h-[205px] overflow-hidden rounded-[22px] border border-white/[0.44] bg-white/[0.07] px-5 py-[14px] text-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,.35),inset_0_-1px_0_rgba(255,255,255,.05),0_9px_22px_rgba(75,44,40,.10)] backdrop-blur-[14px] transition-[transform,background-color,border-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[2px] hover:border-white/[0.58] hover:bg-white/[0.09] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.48),inset_0_-1px_0_rgba(255,255,255,.07),0_15px_30px_rgba(75,44,40,.13)]"
               >
                 <div
                   aria-hidden="true"
@@ -128,7 +128,7 @@ export function EverythingYouNeed() {
                 />
 
                 <div className="relative z-10 flex h-full flex-col items-center">
-                  <div className="relative h-[58px] w-[58px] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-[2px] group-hover:scale-[1.02]">
+                  <div className="relative h-[54px] w-[54px] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-[2px] group-hover:scale-[1.02]">
                     <div className="absolute inset-0 rounded-full border border-white/[0.50] bg-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,.46),inset_0_-7px_16px_rgba(111,66,60,.08),0_8px_22px_rgba(93,52,47,.13)] backdrop-blur-[14px]" />
 
                     <div
@@ -152,18 +152,18 @@ export function EverythingYouNeed() {
                     />
                   </div>
 
-                  <h3 className="mt-4 font-serif text-[1.4rem] font-normal leading-none tracking-[-0.025em] text-white [text-shadow:0_1px_10px_rgba(91,47,44,.18)]">
+                  <h3 className="mt-3 font-serif text-[1.4rem] font-normal leading-none tracking-[-0.025em] text-white [text-shadow:0_1px_10px_rgba(91,47,44,.18)]">
                     {feature.title}
                   </h3>
 
-                  <p className="mt-3 max-w-[162px] text-[12.5px] leading-[1.42] text-white/92">
+                  <p className="mt-2 max-w-[162px] text-[12.5px] leading-[1.42] text-white/92">
                     {feature.description}
                   </p>
 
                   <Link
                     href={feature.href}
                     aria-label={`${feature.title} — learn more`}
-                    className="mt-auto flex h-[32px] min-w-[78px] items-center justify-center rounded-full border border-white/[0.52] bg-white/[0.075] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.36),0_4px_12px_rgba(93,50,46,.09)] backdrop-blur-[14px] transition-[transform,background-color,border-color,box-shadow] duration-600 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[1px] hover:border-white/[0.72] hover:bg-white/[0.105]"
+                    className="mt-auto flex h-[30px] min-w-[76px] items-center justify-center rounded-full border border-white/[0.52] bg-white/[0.075] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.36),0_4px_12px_rgba(93,50,46,.09)] backdrop-blur-[14px] transition-[transform,background-color,border-color,box-shadow] duration-600 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[1px] hover:border-white/[0.72] hover:bg-white/[0.105]"
                   >
                     <ArrowRight className="h-[17px] w-[17px] stroke-[1.4] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[2px]" />
                   </Link>
