@@ -1055,22 +1055,24 @@ function HeroPanel({
           >
             <Link
               href={href}
-              className="group relative isolate inline-flex h-[44px] min-w-[138px] transform-gpu items-center justify-between overflow-hidden rounded-full border border-white/[0.24] bg-white/[0.06] pl-6 pr-[7px] text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.16),inset_0_-1px_0_rgba(255,255,255,.03),0_10px_26px_rgba(22,15,30,.10)] backdrop-blur-[18px] transition-[transform,background-color,border-color,box-shadow] duration-[800ms] ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[1px] hover:border-white/[0.39] hover:bg-white/[0.085] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.21),inset_0_-1px_0_rgba(255,255,255,.05),0_15px_34px_rgba(22,15,30,.14)] active:translate-y-0 active:scale-[0.992] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="group relative isolate inline-flex h-[44px] min-w-[140px] items-center justify-between overflow-hidden rounded-full border border-white/[0.22] bg-white/[0.055] pl-6 pr-[7px] text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15),inset_0_-1px_0_rgba(255,255,255,.025),0_10px_28px_rgba(22,15,30,.10)] backdrop-blur-[18px] transition-[background-color,border-color,box-shadow] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] hover:border-white/[0.36] hover:bg-white/[0.078] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.21),inset_0_-1px_0_rgba(255,255,255,.045),0_14px_34px_rgba(22,15,30,.13)] active:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-[1px] rounded-full border border-white/[0.06] transition-colors duration-[800ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/[0.11]"
+                className="pointer-events-none absolute inset-[1px] rounded-full border border-white/[0.055] opacity-90 transition-[border-color,opacity] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/[0.10] group-hover:opacity-100"
               />
 
-              <span className="relative z-10 transition-[transform,opacity] duration-[800ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-x-[1px] group-hover:opacity-95">
+              <span className="relative z-10 transition-[transform,opacity] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-x-[1px] group-hover:opacity-95">
                 {cta}
               </span>
 
               <span
                 aria-hidden="true"
-                className="relative z-10 ml-5 flex h-[30px] w-[30px] shrink-0 transform-gpu items-center justify-center rounded-full border border-white/[0.15] bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,.11)] backdrop-blur-md transition-[transform,background-color,border-color,box-shadow] duration-[800ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.025] group-hover:border-white/[0.26] group-hover:bg-white/[0.06] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.16),0_4px_14px_rgba(10,8,14,.07)]"
+                className="relative z-10 ml-5 flex h-[30px] w-[30px] shrink-0 items-center justify-end overflow-hidden rounded-full border border-white/[0.14] bg-white/[0.032] shadow-[inset_0_1px_0_rgba(255,255,255,.10)] backdrop-blur-md transition-[width,background-color,border-color,box-shadow] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:w-[44px] group-hover:border-white/[0.25] group-hover:bg-white/[0.06] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.15),0_5px_16px_rgba(10,8,14,.07)]"
               >
-                <span className="transform-gpu transition-transform duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[2px] group-hover:-translate-y-[2px]">
+                <span className="absolute left-[9px] top-1/2 h-px w-0 -translate-y-1/2 bg-white/45 opacity-0 transition-[width,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:w-[8px] group-hover:opacity-100" />
+
+                <span className="mr-[7px] flex h-[16px] w-[16px] items-center justify-center transition-[transform,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[1px] group-hover:opacity-100">
                   <svg
                     viewBox="0 0 18 18"
                     className="h-[14px] w-[14px]"
@@ -1080,13 +1082,13 @@ function HeroPanel({
                     <path
                       d="M5 13L13 5"
                       stroke="currentColor"
-                      strokeWidth="1.35"
+                      strokeWidth="1.3"
                       strokeLinecap="round"
                     />
                     <path
                       d="M7.6 5H13V10.4"
                       stroke="currentColor"
-                      strokeWidth="1.35"
+                      strokeWidth="1.3"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
