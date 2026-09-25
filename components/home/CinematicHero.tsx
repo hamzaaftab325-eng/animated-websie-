@@ -6,7 +6,7 @@ import gsap from 'gsap';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const VIDEO_URL =
-  'https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4';
+  'https://res.cloudinary.com/diometfe9/video/upload/v1790340573/613a50d4-f1da-4f2d-b494-40cd0f20f141_cd4zyw.mp4';
 
 const CUES = [
   [0.0, 0.012, 0.235, 0.29],
