@@ -6,10 +6,14 @@ import gsap from 'gsap';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const FRAME_COUNT = 82;
+const LAST_FRAME_INDEX = 81;
 const SOURCE_WIDTH = 1920;
 const SOURCE_HEIGHT = 1080;
 const ANIMATION_COMPLETE_PROGRESS = 0.95;
-const PRELOAD_CONCURRENCY = 8;
+const BACKGROUND_PRELOAD_CONCURRENCY = 10;
+const INITIAL_FRAMES = [
+  0, 1, 2, 3, 4, 5, 6, 7, LAST_FRAME_INDEX,
+] as const;
 
 const CUES = [
   [0.0, 0.012, 0.235, 0.29],
@@ -34,9 +38,7 @@ const ramp = (
   start: number,
   end: number
 ) => {
-  if (end <= start) {
-    return progress >= end ? 1 : 0;
-  }
+  if (end <= start) return progress >= end ? 1 : 0;
 
   return smoothstep(
     clamp((progress - start) / (end - start), 0, 1)
@@ -90,6 +92,8 @@ export function CinematicHero() {
 
     const frameBlobs: Array<Blob | null> =
       new Array(FRAME_COUNT).fill(null);
+    const frameRequests =
+      new Map<number, Promise<Blob | null>>();
     const decodedFrames =
       new Map<number, DecodedFrame>();
     const decodingFrames =
@@ -100,9 +104,9 @@ export function CinematicHero() {
     const decodedLimit =
       window.innerWidth < 768 ? 10 : 18;
     const decodeBehind =
-      window.innerWidth < 768 ? 2 : 4;
+      window.innerWidth < 768 ? 1 : 2;
     const decodeAhead =
-      window.innerWidth < 768 ? 5 : 10;
+      window.innerWidth < 768 ? 4 : 6;
 
     let destroyed = false;
     let progress = 0;
@@ -113,12 +117,10 @@ export function CinematicHero() {
 
     const setBootProgress = (
       value: number,
-      label = 'LOADING FRAMES'
+      label = 'STARTING'
     ) => {
       const normalized = clamp(value, 0, 1);
-
-      bootBar.style.transform =
-        `scaleX(${normalized})`;
+      bootBar.style.transform = `scaleX(${normalized})`;
       bootPct.textContent =
         `${label} ${Math.round(normalized * 100)}%`;
     };
@@ -131,28 +133,19 @@ export function CinematicHero() {
       } catch {}
     };
 
-    const trimDecodedCache = (
-      focus: number
-    ) => {
-      if (
-        decodedFrames.size <= decodedLimit
-      ) {
-        return;
-      }
+    const trimDecodedCache = (focus: number) => {
+      if (decodedFrames.size <= decodedLimit) return;
 
-      const removable = Array.from(
-        decodedFrames.keys()
-      )
+      const removable = Array.from(decodedFrames.keys())
         .filter(
           (index) =>
             index !== requestedFrame &&
-            index !== FRAME_COUNT - 1
+            index !== 0 &&
+            index !== LAST_FRAME_INDEX
         )
         .sort((a, b) => {
-          const distanceA =
-            Math.abs(a - focus);
-          const distanceB =
-            Math.abs(b - focus);
+          const distanceA = Math.abs(a - focus);
+          const distanceB = Math.abs(b - focus);
 
           if (distanceA !== distanceB) {
             return distanceB - distanceA;
@@ -172,16 +165,69 @@ export function CinematicHero() {
 
         if (index == null) break;
 
-        closeFrame(
-          decodedFrames.get(index)
-        );
+        closeFrame(decodedFrames.get(index));
         decodedFrames.delete(index);
         decodeUse.delete(index);
       }
     };
 
+    const ensureFrameBlob = (
+      index: number
+    ): Promise<Blob | null> => {
+      const bounded = clamp(
+        Math.round(index),
+        0,
+        LAST_FRAME_INDEX
+      );
+
+      const cached = frameBlobs[bounded];
+      if (cached) {
+        return Promise.resolve(cached);
+      }
+
+      const active = frameRequests.get(bounded);
+      if (active) {
+        return active;
+      }
+
+      const request = (async () => {
+        try {
+          const response = await fetch(
+            frameUrl(bounded),
+            {
+              cache: 'force-cache',
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Frame ${bounded} failed with ${response.status}.`
+            );
+          }
+
+          const blob = await response.blob();
+
+          if (!destroyed) {
+            frameBlobs[bounded] = blob;
+          }
+
+          return blob;
+        } catch (error) {
+          console.error(
+            `Hero frame ${bounded} failed to load:`,
+            error
+          );
+          return null;
+        } finally {
+          frameRequests.delete(bounded);
+        }
+      })();
+
+      frameRequests.set(bounded, request);
+      return request;
+    };
+
     const decodeWithImage = (
-      index: number,
       blob: Blob
     ) =>
       new Promise<DecodedFrame | null>(
@@ -197,17 +243,12 @@ export function CinematicHero() {
               await image.decode();
             } catch {}
 
-            URL.revokeObjectURL(
-              objectUrl
-            );
-
+            URL.revokeObjectURL(objectUrl);
             resolve(image);
           };
 
           image.onerror = () => {
-            URL.revokeObjectURL(
-              objectUrl
-            );
+            URL.revokeObjectURL(objectUrl);
             resolve(null);
           };
 
@@ -221,103 +262,64 @@ export function CinematicHero() {
       const bounded = clamp(
         Math.round(index),
         0,
-        FRAME_COUNT - 1
+        LAST_FRAME_INDEX
       );
 
-      const cached =
-        decodedFrames.get(bounded);
+      const cached = decodedFrames.get(bounded);
 
       if (cached) {
-        decodeUse.set(
-          bounded,
-          performance.now()
-        );
+        decodeUse.set(bounded, performance.now());
         return Promise.resolve(cached);
       }
 
-      const existing =
-        decodingFrames.get(bounded);
-
-      if (existing) {
-        return existing;
-      }
-
-      const blob =
-        frameBlobs[bounded];
-
-      if (!blob) {
-        return Promise.resolve(null);
-      }
+      const active = decodingFrames.get(bounded);
+      if (active) return active;
 
       const request = (async () => {
+        const blob = await ensureFrameBlob(bounded);
+
+        if (!blob || destroyed) {
+          decodingFrames.delete(bounded);
+          return null;
+        }
+
         let decoded: DecodedFrame | null = null;
 
-        if (
-          typeof createImageBitmap === 'function'
-        ) {
+        if (typeof createImageBitmap === 'function') {
           try {
             decoded =
-              (await createImageBitmap(
-                blob
-              )) as DecodedFrame;
+              (await createImageBitmap(blob)) as DecodedFrame;
           } catch {
             decoded = null;
           }
         }
 
         if (!decoded) {
-          decoded =
-            await decodeWithImage(
-              bounded,
-              blob
-            );
+          decoded = await decodeWithImage(blob);
         }
 
-        decodingFrames.delete(
-          bounded
-        );
+        decodingFrames.delete(bounded);
 
-        if (
-          decoded &&
-          !destroyed
-        ) {
-          decodedFrames.set(
-            bounded,
-            decoded
-          );
-          decodeUse.set(
-            bounded,
-            performance.now()
-          );
-          trimDecodedCache(
-            requestedFrame
-          );
+        if (decoded && !destroyed) {
+          decodedFrames.set(bounded, decoded);
+          decodeUse.set(bounded, performance.now());
+          trimDecodedCache(requestedFrame);
           scheduleRender();
           return decoded;
         }
 
-        closeFrame(
-          decoded ?? undefined
-        );
+        closeFrame(decoded ?? undefined);
         return null;
       })();
 
-      decodingFrames.set(
-        bounded,
-        request
-      );
-
+      decodingFrames.set(bounded, request);
       return request;
     };
 
-    const primeDecodeWindow = (
-      focus: number
-    ) => {
+    const primeDecodeWindow = (focus: number) => {
       for (
-        let index =
-          focus - decodeBehind;
-        index <=
-          focus + decodeAhead;
+        let index = focus - decodeBehind;
+        index <= focus + decodeAhead;
         index += 1
       ) {
         if (
@@ -330,19 +332,15 @@ export function CinematicHero() {
     };
 
     const resizeCanvas = () => {
-      const rect =
-        canvas.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
 
-      const sourceSafeDpr =
-        Math.max(
-          1,
-          Math.min(
-            SOURCE_WIDTH /
-              Math.max(rect.width, 1),
-            SOURCE_HEIGHT /
-              Math.max(rect.height, 1)
-          )
-        );
+      const sourceSafeDpr = Math.max(
+        1,
+        Math.min(
+          SOURCE_WIDTH / Math.max(rect.width, 1),
+          SOURCE_HEIGHT / Math.max(rect.height, 1)
+        )
+      );
 
       const dpr = Math.min(
         window.devicePixelRatio || 1,
@@ -385,26 +383,17 @@ export function CinematicHero() {
           ? Number(frame.height)
           : 0;
 
-      if (
-        !sourceWidth ||
-        !sourceHeight
-      ) {
-        return;
-      }
+      if (!sourceWidth || !sourceHeight) return;
 
       const scale = Math.max(
         canvas.width / sourceWidth,
         canvas.height / sourceHeight
       );
 
-      const width =
-        sourceWidth * scale;
-      const height =
-        sourceHeight * scale;
-      const x =
-        (canvas.width - width) * 0.5;
-      const y =
-        (canvas.height - height) * 0.5;
+      const width = sourceWidth * scale;
+      const height = sourceHeight * scale;
+      const x = (canvas.width - width) * 0.5;
+      const y = (canvas.height - height) * 0.5;
 
       context.globalAlpha = 1;
       context.fillStyle = '#11131a';
@@ -429,14 +418,10 @@ export function CinematicHero() {
     const nearestDecoded = (
       target: number
     ) => {
-      const exact =
-        decodedFrames.get(target);
+      const exact = decodedFrames.get(target);
 
       if (exact) {
-        decodeUse.set(
-          target,
-          performance.now()
-        );
+        decodeUse.set(target, performance.now());
         return {
           index: target,
           frame: exact,
@@ -447,35 +432,23 @@ export function CinematicHero() {
       let bestDistance =
         Number.POSITIVE_INFINITY;
 
-      decodedFrames.forEach(
-        (frame, index) => {
-          const distance =
-            Math.abs(index - target);
+      decodedFrames.forEach((frame, index) => {
+        const distance =
+          Math.abs(index - target);
 
-          if (
-            distance < bestDistance
-          ) {
-            bestDistance = distance;
-            bestIndex = index;
-          }
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
         }
-      );
+      });
 
-      if (bestIndex < 0) {
-        return null;
-      }
+      if (bestIndex < 0) return null;
 
-      decodeUse.set(
-        bestIndex,
-        performance.now()
-      );
+      decodeUse.set(bestIndex, performance.now());
 
       return {
         index: bestIndex,
-        frame:
-          decodedFrames.get(
-            bestIndex
-          )!,
+        frame: decodedFrames.get(bestIndex)!,
       };
     };
 
@@ -483,70 +456,59 @@ export function CinematicHero() {
       renderRaf = 0;
 
       const resolved =
-        nearestDecoded(
-          requestedFrame
-        );
+        nearestDecoded(requestedFrame);
 
       if (!resolved) return;
 
       if (
-        resolved.index ===
-          paintedFrame &&
-        requestedFrame ===
-          paintedFrame
+        resolved.index === paintedFrame &&
+        requestedFrame === paintedFrame
       ) {
         return;
       }
 
       drawCover(resolved.frame);
-      paintedFrame =
-        resolved.index;
+      paintedFrame = resolved.index;
     };
 
     function scheduleRender() {
       if (renderRaf) return;
-
-      renderRaf =
-        requestAnimationFrame(
-          render
-        );
+      renderRaf = requestAnimationFrame(render);
     }
 
     const paintPanels = () => {
       meter.style.transform =
         `scaleX(${progress})`;
 
-      panels.forEach(
-        (panel, index) => {
-          const cue = CUES[index];
-          if (!cue) return;
+      panels.forEach((panel, index) => {
+        const cue = CUES[index];
+        if (!cue) return;
 
-          const enter = ramp(
-            progress,
-            cue[0],
-            cue[1]
-          );
-          const leave = ramp(
-            progress,
-            cue[2],
-            cue[3]
-          );
-          const opacity =
-            enter * (1 - leave);
-          const y =
-            (1 - enter) * DRIFT -
-            leave * DRIFT;
+        const enter = ramp(
+          progress,
+          cue[0],
+          cue[1]
+        );
+        const leave = ramp(
+          progress,
+          cue[2],
+          cue[3]
+        );
+        const opacity =
+          enter * (1 - leave);
+        const y =
+          (1 - enter) * DRIFT -
+          leave * DRIFT;
 
-          panel.style.opacity =
-            opacity.toFixed(4);
-          panel.style.transform =
-            `translate3d(0,${y.toFixed(2)}px,0)`;
-          panel.style.pointerEvents =
-            opacity > 0.62
-              ? 'auto'
-              : 'none';
-        }
-      );
+        panel.style.opacity =
+          opacity.toFixed(4);
+        panel.style.transform =
+          `translate3d(0,${y.toFixed(2)}px,0)`;
+        panel.style.pointerEvents =
+          opacity > 0.62
+            ? 'auto'
+            : 'none';
+      });
     };
 
     const readScroll = () => {
@@ -562,113 +524,99 @@ export function CinematicHero() {
         1
       );
 
-      const sequenceProgress =
-        clamp(
-          progress /
-            ANIMATION_COMPLETE_PROGRESS,
-          0,
-          1
-        );
+      const sequenceProgress = clamp(
+        progress /
+          ANIMATION_COMPLETE_PROGRESS,
+        0,
+        1
+      );
 
       requestedFrame =
-        Math.round(
-          sequenceProgress *
-            (FRAME_COUNT - 1)
-        );
+        sequenceProgress >= 1
+          ? LAST_FRAME_INDEX
+          : Math.round(
+              sequenceProgress *
+                LAST_FRAME_INDEX
+            );
 
-      primeDecodeWindow(
-        requestedFrame
-      );
+      primeDecodeWindow(requestedFrame);
       paintPanels();
       scheduleRender();
     };
 
-    const preloadAllFrames =
-      async () => {
-        let nextIndex = 0;
-        let completed = 0;
+    const preloadInitialFrames = async () => {
+      let completed = 0;
 
-        const worker = async () => {
-          while (!destroyed) {
-            const index = nextIndex;
-            nextIndex += 1;
+      await Promise.all(
+        INITIAL_FRAMES.map(async (index) => {
+          const blob =
+            await ensureFrameBlob(index);
 
-            if (
-              index >= FRAME_COUNT
-            ) {
-              return;
-            }
-
-            const response =
-              await fetch(
-                frameUrl(index),
-                {
-                  cache:
-                    'force-cache',
-                }
-              );
-
-            if (!response.ok) {
-              throw new Error(
-                `Frame ${index} failed with ${response.status}.`
-              );
-            }
-
-            frameBlobs[index] =
-              await response.blob();
-
-            completed += 1;
-
-            setBootProgress(
-              completed /
-                FRAME_COUNT
+          if (!blob) {
+            throw new Error(
+              `Initial hero frame ${index} failed to load.`
             );
           }
-        };
 
-        await Promise.all(
-          Array.from(
-            {
-              length:
-                PRELOAD_CONCURRENCY,
-            },
-            () => worker()
-          )
-        );
+          completed += 1;
+          setBootProgress(
+            completed /
+              INITIAL_FRAMES.length,
+            'STARTING'
+          );
+        })
+      );
+    };
+
+    const preloadRemainingFrames = async () => {
+      let nextIndex = 0;
+
+      const worker = async () => {
+        while (!destroyed) {
+          while (
+            nextIndex < FRAME_COUNT &&
+            frameBlobs[nextIndex]
+          ) {
+            nextIndex += 1;
+          }
+
+          const index = nextIndex;
+          nextIndex += 1;
+
+          if (index >= FRAME_COUNT) return;
+
+          await ensureFrameBlob(index);
+        }
       };
+
+      await Promise.all(
+        Array.from(
+          {
+            length:
+              BACKGROUND_PRELOAD_CONCURRENCY,
+          },
+          () => worker()
+        )
+      );
+    };
 
     const start = async () => {
       try {
-        setBootProgress(
-          0,
-          'LOADING ORIGINAL FRAMES'
-        );
+        setBootProgress(0, 'STARTING');
 
-        // All 82 original 1920x1080 WebP files are fetched before the
-        // experience starts. Scrolling never waits on the network.
-        await preloadAllFrames();
+        // Only the opening frames and exact final frame 081 block startup.
+        // The remaining frames stream in immediately after the hero appears.
+        await preloadInitialFrames();
 
         if (destroyed) return;
 
-        setBootProgress(
-          1,
-          'DECODING'
-        );
-
-        // Prime the opening motion, useful jump points, and the true final
-        // frame so frame 081 is guaranteed to be immediately available.
         await Promise.all([
           decodeFrame(0),
           decodeFrame(1),
           decodeFrame(2),
           decodeFrame(3),
           decodeFrame(4),
-          decodeFrame(20),
-          decodeFrame(40),
-          decodeFrame(60),
-          decodeFrame(
-            FRAME_COUNT - 1
-          ),
+          decodeFrame(LAST_FRAME_INDEX),
         ]);
 
         if (destroyed) return;
@@ -677,19 +625,16 @@ export function CinematicHero() {
         readScroll();
 
         const initial =
-          nearestDecoded(
-            requestedFrame
-          );
+          nearestDecoded(requestedFrame);
 
         if (initial) {
           drawCover(initial.frame);
-          paintedFrame =
-            initial.index;
+          paintedFrame = initial.index;
         }
 
         gsap.to(boot, {
           opacity: 0,
-          duration: 0.42,
+          duration: 0.36,
           ease: 'power3.out',
           onComplete: () => {
             boot.classList.add(
@@ -698,9 +643,12 @@ export function CinematicHero() {
             );
           },
         });
+
+        // Fill the complete 000–081 sequence in the background.
+        void preloadRemainingFrames();
       } catch (error) {
         console.error(
-          'Hero frame preload failed:',
+          'Hero startup failed:',
           error
         );
 
@@ -714,9 +662,7 @@ export function CinematicHero() {
 
     const onResize = () => {
       if (resizeRaf) {
-        cancelAnimationFrame(
-          resizeRaf
-        );
+        cancelAnimationFrame(resizeRaf);
       }
 
       resizeRaf =
@@ -729,10 +675,7 @@ export function CinematicHero() {
         });
     };
 
-    lenis.on(
-      'scroll',
-      onLenisScroll
-    );
+    lenis.on('scroll', onLenisScroll);
 
     window.addEventListener(
       'resize',
@@ -748,36 +691,27 @@ export function CinematicHero() {
       destroyed = true;
 
       if (renderRaf) {
-        cancelAnimationFrame(
-          renderRaf
-        );
+        cancelAnimationFrame(renderRaf);
       }
 
       if (resizeRaf) {
-        cancelAnimationFrame(
-          resizeRaf
-        );
+        cancelAnimationFrame(resizeRaf);
       }
 
-      lenis.off(
-        'scroll',
-        onLenisScroll
-      );
-
+      lenis.off('scroll', onLenisScroll);
       window.removeEventListener(
         'resize',
         onResize
       );
 
-      decodedFrames.forEach(
-        (frame) => {
-          closeFrame(frame);
-        }
-      );
+      decodedFrames.forEach((frame) => {
+        closeFrame(frame);
+      });
 
       decodedFrames.clear();
       decodingFrames.clear();
       decodeUse.clear();
+      frameRequests.clear();
     };
   }, [lenis]);
 
@@ -801,7 +735,7 @@ export function CinematicHero() {
           id="bootPct"
           className="text-[10px] font-medium tracking-[0.16em] text-white/55"
         >
-          LOADING ORIGINAL FRAMES 0%
+          STARTING 0%
         </p>
       </div>
 

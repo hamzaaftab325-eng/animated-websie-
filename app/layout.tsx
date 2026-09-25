@@ -46,6 +46,8 @@ export default function RootLayout({
     <html lang="en" className={interTight.variable}>
       <head>
         <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="anonymous" />
+        <link rel="preload" as="image" type="image/webp" href="/hero-scroll-frames/frame-000.webp" fetchPriority="high" />
+        <link rel="preload" as="image" type="image/webp" href="/hero-scroll-frames/frame-001.webp" fetchPriority="high" />
       </head>
       <body>
         <SmoothScrollProvider>
