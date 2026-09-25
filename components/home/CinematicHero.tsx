@@ -14,13 +14,18 @@ const CLOUDINARY_ASSET =
   'v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v';
 
 const CUES = [
-  [0.0, 0.018, 0.25, 0.31],
-  [0.34, 0.395, 0.59, 0.65],
-  [0.68, 0.735, 1.04, 1.1],
+  [0.0, 0.015, 0.255, 0.31],
+  [0.345, 0.39, 0.595, 0.65],
+  [0.685, 0.73, 1.04, 1.1],
 ] as const;
 
-const DRIFT = 12;
-const FRAME_CACHE_LIMIT = 30;
+const DRIFT = 10;
+const DECODE_CACHE_LIMIT = 18;
+const PRELOAD_CONCURRENCY = 10;
+
+type DecodedFrame = CanvasImageSource & {
+  close?: () => void;
+};
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -93,44 +98,45 @@ export function CinematicHero() {
 
     const context = canvas.getContext('2d', {
       alpha: false,
+      desynchronized: true,
     });
 
     if (!context) return;
 
-    let progress = 0;
+    let destroyed = false;
+    let started = false;
     let duration = 0;
-    let frameCount =
-      window.innerWidth >= 900 ? 120 : 84;
-    let frameWidth =
-      window.innerWidth >= 900 ? 1440 : 960;
-    let currentFrame = 0;
-    let drawnFrame = -1;
+    let frameCount = 0;
+    let frameWidth = 0;
+    let progress = 0;
+    let framePosition = 0;
     let renderRaf = 0;
     let resizeRaf = 0;
-    let started = false;
-    let destroyed = false;
-    let dpr = 1;
 
-    const loadedFrames =
-      new Map<number, HTMLImageElement>();
-    const loadingFrames =
-      new Map<number, Promise<HTMLImageElement | null>>();
-    const lastUsed =
-      new Map<number, number>();
+    const frameBlobs: Array<Blob | null> = [];
+    const frameUrls: string[] = [];
+    const decodedFrames = new Map<number, DecodedFrame>();
+    const decodingFrames =
+      new Map<number, Promise<DecodedFrame | null>>();
+    const decodeUse = new Map<number, number>();
 
-    const setBootProgress = (value: number) => {
+    const setBootProgress = (
+      value: number,
+      label = 'LOADING'
+    ) => {
       const normalized = clamp(value, 0, 1);
+
       bootBar.style.transform =
         `scaleX(${normalized})`;
       bootPct.textContent =
-        `LOADING ${Math.round(normalized * 100)}%`;
+        `${label} ${Math.round(normalized * 100)}%`;
     };
 
     const frameTime = (index: number) => {
       if (!duration || frameCount <= 1) return 0;
 
       const safeDuration =
-        Math.max(0, duration - 0.04);
+        Math.max(0, duration - 0.035);
 
       return (
         safeDuration *
@@ -138,27 +144,102 @@ export function CinematicHero() {
       );
     };
 
-    const frameUrl = (index: number) =>
+    const getFrameUrl = (index: number) =>
       buildFrameUrl(
         frameTime(index),
         frameWidth
       );
 
-    const touchFrame = (index: number) => {
-      lastUsed.set(index, performance.now());
+    const configureSequence = () => {
+      const viewportWidth = window.innerWidth;
+
+      if (viewportWidth >= 1280) {
+        frameCount = 96;
+        frameWidth = 1280;
+      } else if (viewportWidth >= 768) {
+        frameCount = 84;
+        frameWidth = 1080;
+      } else {
+        frameCount = 72;
+        frameWidth = 760;
+      }
+
+      frameBlobs.length = frameCount;
+      frameUrls.length = frameCount;
+
+      for (let index = 0; index < frameCount; index += 1) {
+        frameBlobs[index] = null;
+        frameUrls[index] = getFrameUrl(index);
+      }
     };
 
-    const trimFrameCache = (focusIndex: number) => {
+    const preloadSequence = async () => {
+      let nextIndex = 0;
+      let completed = 0;
+
+      const worker = async () => {
+        while (!destroyed) {
+          const index = nextIndex;
+          nextIndex += 1;
+
+          if (index >= frameCount) return;
+
+          try {
+            const response = await fetch(frameUrls[index], {
+              cache: 'force-cache',
+              mode: 'cors',
+            });
+
+            if (!response.ok) {
+              throw new Error('Frame request failed');
+            }
+
+            frameBlobs[index] = await response.blob();
+          } catch {
+            // Remote URL remains available as a direct image fallback.
+            frameBlobs[index] = null;
+          }
+
+          completed += 1;
+          setBootProgress(
+            0.08 + (completed / frameCount) * 0.82,
+            'PREPARING FRAMES'
+          );
+        }
+      };
+
+      await Promise.all(
+        Array.from(
+          { length: PRELOAD_CONCURRENCY },
+          () => worker()
+        )
+      );
+    };
+
+    const closeDecodedFrame = (
+      frame: DecodedFrame | undefined
+    ) => {
+      try {
+        frame?.close?.();
+      } catch {}
+    };
+
+    const trimDecodeCache = (
+      focusIndex: number
+    ) => {
       if (
-        loadedFrames.size <= FRAME_CACHE_LIMIT
+        decodedFrames.size <= DECODE_CACHE_LIMIT
       ) {
         return;
       }
 
-      const candidates = Array.from(
-        loadedFrames.keys()
+      const removable = Array.from(
+        decodedFrames.keys()
       )
-        .filter((index) => index !== 0)
+        .filter(
+          (index) =>
+            Math.abs(index - focusIndex) > 4
+        )
         .sort((a, b) => {
           const distanceA =
             Math.abs(a - focusIndex);
@@ -170,36 +251,69 @@ export function CinematicHero() {
           }
 
           return (
-            (lastUsed.get(a) ?? 0) -
-            (lastUsed.get(b) ?? 0)
+            (decodeUse.get(a) ?? 0) -
+            (decodeUse.get(b) ?? 0)
           );
         });
 
       while (
-        loadedFrames.size >
-          FRAME_CACHE_LIMIT &&
-        candidates.length
+        decodedFrames.size >
+          DECODE_CACHE_LIMIT &&
+        removable.length
       ) {
-        const index = candidates.shift();
+        const index = removable.shift();
+
         if (index == null) break;
 
-        const image =
-          loadedFrames.get(index);
-
-        loadedFrames.delete(index);
-        lastUsed.delete(index);
-
-        if (image) {
-          image.src = '';
-        }
+        closeDecodedFrame(
+          decodedFrames.get(index)
+        );
+        decodedFrames.delete(index);
+        decodeUse.delete(index);
       }
     };
 
-    const loadFrame = (
-      index: number,
-      priority: 'high' | 'low' | 'auto' = 'auto',
-      attempt = 0
-    ): Promise<HTMLImageElement | null> => {
+    const decodeViaImage = (
+      index: number
+    ) =>
+      new Promise<DecodedFrame | null>(
+        (resolve) => {
+          const image = new Image();
+          image.decoding = 'async';
+          image.crossOrigin = 'anonymous';
+
+          let localUrl = '';
+
+          image.onload = () => {
+            if (localUrl) {
+              URL.revokeObjectURL(localUrl);
+            }
+
+            resolve(image);
+          };
+
+          image.onerror = () => {
+            if (localUrl) {
+              URL.revokeObjectURL(localUrl);
+            }
+
+            resolve(null);
+          };
+
+          const blob = frameBlobs[index];
+
+          if (blob) {
+            localUrl = URL.createObjectURL(blob);
+            image.src = localUrl;
+          } else {
+            image.src = frameUrls[index];
+          }
+        }
+      );
+
+    const decodeFrame = (
+      index: number
+    ): Promise<DecodedFrame | null> => {
       const boundedIndex = clamp(
         Math.round(index),
         0,
@@ -207,81 +321,80 @@ export function CinematicHero() {
       );
 
       const cached =
-        loadedFrames.get(boundedIndex);
+        decodedFrames.get(boundedIndex);
 
       if (cached) {
-        touchFrame(boundedIndex);
+        decodeUse.set(
+          boundedIndex,
+          performance.now()
+        );
+
         return Promise.resolve(cached);
       }
 
       const existing =
-        loadingFrames.get(boundedIndex);
+        decodingFrames.get(boundedIndex);
 
       if (existing) {
         return existing;
       }
 
-      const request =
-        new Promise<HTMLImageElement | null>(
-          (resolve) => {
-            const image = new Image();
-            image.decoding = 'async';
-            image.crossOrigin = 'anonymous';
-            image.fetchPriority = priority;
+      const request = (async () => {
+        let decoded: DecodedFrame | null = null;
+        const blob = frameBlobs[boundedIndex];
 
-            image.onload = () => {
-              loadingFrames.delete(
-                boundedIndex
-              );
+        if (
+          blob &&
+          typeof createImageBitmap === 'function'
+        ) {
+          try {
+            decoded =
+              (await createImageBitmap(
+                blob
+              )) as DecodedFrame;
+          } catch {
+            decoded = null;
+          }
+        }
 
-              if (destroyed) {
-                resolve(null);
-                return;
-              }
-
-              loadedFrames.set(
-                boundedIndex,
-                image
-              );
-              touchFrame(boundedIndex);
-              trimFrameCache(currentFrame);
-
-              if (boundedIndex === currentFrame) {
-                scheduleRender();
-              }
-
-              resolve(image);
-            };
-
-            image.onerror = () => {
-              loadingFrames.delete(
-                boundedIndex
-              );
-
-              if (
-                attempt < 2 &&
-                !destroyed
-              ) {
-                window.setTimeout(() => {
-                  loadFrame(
-                    boundedIndex,
-                    priority,
-                    attempt + 1
-                  ).then(resolve);
-                }, 450 * (attempt + 1));
-                return;
-              }
-
-              resolve(null);
-            };
-
-            image.src = frameUrl(
+        if (!decoded) {
+          decoded =
+            await decodeViaImage(
               boundedIndex
             );
-          }
+        }
+
+        decodingFrames.delete(
+          boundedIndex
         );
 
-      loadingFrames.set(
+        if (
+          decoded &&
+          !destroyed
+        ) {
+          decodedFrames.set(
+            boundedIndex,
+            decoded
+          );
+          decodeUse.set(
+            boundedIndex,
+            performance.now()
+          );
+          trimDecodeCache(
+            Math.round(framePosition)
+          );
+          scheduleRender();
+          return decoded;
+        }
+
+        closeDecodedFrame(
+          decoded ?? undefined
+        );
+
+        return null;
+      })();
+
+      decodingFrames.set(
         boundedIndex,
         request
       );
@@ -289,56 +402,40 @@ export function CinematicHero() {
       return request;
     };
 
-    const nearestLoadedFrame = (
-      target: number
+    const primeDecodedWindow = async (
+      focusIndex: number
     ) => {
-      const exact =
-        loadedFrames.get(target);
+      const order = [
+        0,
+        1,
+        -1,
+        2,
+        -2,
+        3,
+        -3,
+        4,
+        -4,
+        5,
+        -5,
+      ];
 
-      if (exact) {
-        touchFrame(target);
-        return {
-          index: target,
-          image: exact,
-        };
-      }
-
-      let nearestIndex = -1;
-      let nearestDistance =
-        Number.POSITIVE_INFINITY;
-
-      loadedFrames.forEach(
-        (image, index) => {
-          const distance =
-            Math.abs(index - target);
-
-          if (
-            distance < nearestDistance
-          ) {
-            nearestDistance = distance;
-            nearestIndex = index;
-          }
-        }
+      await Promise.all(
+        order.map((offset) =>
+          decodeFrame(
+            clamp(
+              focusIndex + offset,
+              0,
+              frameCount - 1
+            )
+          )
+        )
       );
-
-      if (nearestIndex < 0) {
-        return null;
-      }
-
-      touchFrame(nearestIndex);
-
-      return {
-        index: nearestIndex,
-        image:
-          loadedFrames.get(nearestIndex)!,
-      };
     };
 
     const resizeCanvas = () => {
       const rect =
         canvas.getBoundingClientRect();
-
-      dpr = Math.min(
+      const dpr = Math.min(
         window.devicePixelRatio || 1,
         1.5
       );
@@ -361,72 +458,134 @@ export function CinematicHero() {
       }
     };
 
-    const drawFrame = (
-      image: HTMLImageElement
+    const drawCover = (
+      frame: CanvasImageSource,
+      alpha: number
     ) => {
-      const canvasWidth = canvas.width;
-      const canvasHeight = canvas.height;
-      const imageWidth =
-        image.naturalWidth;
-      const imageHeight =
-        image.naturalHeight;
+      const sourceWidth =
+        'naturalWidth' in frame
+          ? frame.naturalWidth
+          : 'width' in frame
+          ? Number(frame.width)
+          : 0;
+      const sourceHeight =
+        'naturalHeight' in frame
+          ? frame.naturalHeight
+          : 'height' in frame
+          ? Number(frame.height)
+          : 0;
 
       if (
-        !canvasWidth ||
-        !canvasHeight ||
-        !imageWidth ||
-        !imageHeight
+        !sourceWidth ||
+        !sourceHeight
       ) {
         return;
       }
 
       const scale = Math.max(
-        canvasWidth / imageWidth,
-        canvasHeight / imageHeight
+        canvas.width / sourceWidth,
+        canvas.height / sourceHeight
       );
 
-      const drawWidth =
-        imageWidth * scale;
-      const drawHeight =
-        imageHeight * scale;
+      const width =
+        sourceWidth * scale;
+      const height =
+        sourceHeight * scale;
       const x =
-        (canvasWidth - drawWidth) * 0.5;
+        (canvas.width - width) * 0.5;
       const y =
-        (canvasHeight - drawHeight) * 0.5;
+        (canvas.height - height) * 0.5;
 
+      context.globalAlpha = alpha;
+      context.drawImage(
+        frame,
+        x,
+        y,
+        width,
+        height
+      );
+    };
+
+    const nearestDecoded = (
+      index: number
+    ) => {
+      const exact =
+        decodedFrames.get(index);
+
+      if (exact) return exact;
+
+      for (
+        let distance = 1;
+        distance < 8;
+        distance += 1
+      ) {
+        const before =
+          decodedFrames.get(
+            index - distance
+          );
+        if (before) return before;
+
+        const after =
+          decodedFrames.get(
+            index + distance
+          );
+        if (after) return after;
+      }
+
+      return null;
+    };
+
+    const renderCanvas = () => {
+      renderRaf = 0;
+
+      if (!frameCount) return;
+
+      const lower = clamp(
+        Math.floor(framePosition),
+        0,
+        frameCount - 1
+      );
+      const upper = clamp(
+        lower + 1,
+        0,
+        frameCount - 1
+      );
+      const mix =
+        framePosition - lower;
+
+      const lowerFrame =
+        nearestDecoded(lower);
+      const upperFrame =
+        nearestDecoded(upper);
+
+      if (!lowerFrame && !upperFrame) {
+        return;
+      }
+
+      context.globalAlpha = 1;
       context.fillStyle = '#11131a';
       context.fillRect(
         0,
         0,
-        canvasWidth,
-        canvasHeight
+        canvas.width,
+        canvas.height
       );
 
-      context.drawImage(
-        image,
-        x,
-        y,
-        drawWidth,
-        drawHeight
-      );
-    };
-
-    const renderFrame = () => {
-      renderRaf = 0;
-
-      const frame =
-        nearestLoadedFrame(
-          currentFrame
+      if (lowerFrame) {
+        drawCover(
+          lowerFrame,
+          upperFrame ? 1 - mix : 1
         );
-
-      if (!frame) return;
-
-      if (
-        frame.index !== drawnFrame
-      ) {
-        drawFrame(frame.image);
-        drawnFrame = frame.index;
       }
+
+      if (upperFrame && upper !== lower) {
+        drawCover(
+          upperFrame,
+          lowerFrame ? mix : 1
+        );
+      }
+
+      context.globalAlpha = 1;
     };
 
     function scheduleRender() {
@@ -434,106 +593,9 @@ export function CinematicHero() {
 
       renderRaf =
         requestAnimationFrame(
-          renderFrame
+          renderCanvas
         );
     }
-
-    const loadAround = (
-      target: number
-    ) => {
-      const offsets = [
-        0,
-        1,
-        -1,
-        2,
-        -2,
-        3,
-        -3,
-        4,
-        -4,
-        6,
-        -6,
-        8,
-        -8,
-      ];
-
-      offsets.forEach(
-        (offset, position) => {
-          const index = clamp(
-            target + offset,
-            0,
-            frameCount - 1
-          );
-
-          void loadFrame(
-            index,
-            position < 5
-              ? 'high'
-              : 'auto'
-          );
-        }
-      );
-    };
-
-    const prefetchFrame = async (
-      index: number
-    ) => {
-      try {
-        await fetch(frameUrl(index), {
-          cache: 'force-cache',
-          mode: 'cors',
-          priority: 'low',
-        } as RequestInit);
-      } catch {
-        // Prefetch is opportunistic. The focused loader retries when needed.
-      }
-    };
-
-    const startBackgroundPrefetch =
-      () => {
-        const anchors = new Set<number>();
-
-        for (
-          let index = 0;
-          index < frameCount;
-          index += 12
-        ) {
-          anchors.add(index);
-        }
-
-        anchors.add(frameCount - 1);
-
-        anchors.forEach((index) => {
-          void loadFrame(index, 'low');
-        });
-
-        let next = 0;
-        const workers = 2;
-
-        const runWorker = async () => {
-          while (
-            next < frameCount &&
-            !destroyed
-          ) {
-            const index = next;
-            next += 1;
-
-            if (
-              !anchors.has(index)
-            ) {
-              await prefetchFrame(index);
-            }
-          }
-        };
-
-        for (
-          let worker = 0;
-          worker < workers;
-          worker += 1
-        ) {
-          void runWorker();
-        }
-      };
 
     const paintPanels = () => {
       meter.style.transform =
@@ -559,14 +621,11 @@ export function CinematicHero() {
           const y =
             (1 - enter) * DRIFT -
             leave * DRIFT;
-          const scale =
-            0.996 +
-            opacity * 0.004;
 
           panel.style.opacity =
             opacity.toFixed(4);
           panel.style.transform =
-            `translate3d(0,${y.toFixed(2)}px,0) scale(${scale.toFixed(4)})`;
+            `translate3d(0,${y.toFixed(2)}px,0)`;
           panel.style.pointerEvents =
             opacity > 0.62
               ? 'auto'
@@ -575,7 +634,7 @@ export function CinematicHero() {
       );
     };
 
-    const updateProgress = () => {
+    const updateFromScroll = () => {
       const range = Math.max(
         1,
         track.offsetHeight -
@@ -583,17 +642,22 @@ export function CinematicHero() {
       );
 
       progress = clamp(
-        lenis.scroll / range,
+        lenis.animatedScroll / range,
         0,
         1
       );
 
-      currentFrame = Math.round(
+      framePosition =
         progress *
-          (frameCount - 1)
+        (frameCount - 1);
+
+      const focus =
+        Math.round(framePosition);
+
+      void primeDecodedWindow(
+        focus
       );
 
-      loadAround(currentFrame);
       paintPanels();
       scheduleRender();
     };
@@ -602,9 +666,11 @@ export function CinematicHero() {
       if (started) return;
       started = true;
 
+      setBootProgress(1, 'READY');
+
       gsap.to(boot, {
         opacity: 0,
-        duration: 0.46,
+        duration: 0.42,
         ease: 'power3.out',
         onComplete: () => {
           boot.classList.add(
@@ -614,8 +680,7 @@ export function CinematicHero() {
         },
       });
 
-      startBackgroundPrefetch();
-      updateProgress();
+      updateFromScroll();
     };
 
     const initializeSequence = async () => {
@@ -626,41 +691,52 @@ export function CinematicHero() {
           ? metadataVideo.duration
           : 0;
 
-      if (!duration) return;
-
-      frameCount =
-        window.innerWidth >= 900
-          ? 120
-          : 84;
-      frameWidth =
-        window.innerWidth >= 900
-          ? 1440
-          : 960;
-
-      resizeCanvas();
-      setBootProgress(0.24);
-
-      const firstFrame =
-        await loadFrame(0, 'high');
-
-      if (!firstFrame) {
-        setBootProgress(1);
+      if (!duration) {
         start();
         return;
       }
 
-      drawFrame(firstFrame);
-      drawnFrame = 0;
-      setBootProgress(0.7);
+      configureSequence();
+      resizeCanvas();
 
-      await Promise.all([
-        loadFrame(1, 'high'),
-        loadFrame(2, 'high'),
-        loadFrame(3, 'high'),
-        loadFrame(4, 'high'),
-      ]);
+      setBootProgress(
+        0.05,
+        'PREPARING FRAMES'
+      );
 
-      setBootProgress(1);
+      await preloadSequence();
+
+      if (destroyed) return;
+
+      const initialFocus = Math.round(
+        clamp(
+          lenis.animatedScroll /
+            Math.max(
+              1,
+              track.offsetHeight -
+                window.innerHeight
+            ),
+          0,
+          1
+        ) *
+          (frameCount - 1)
+      );
+
+      setBootProgress(
+        0.92,
+        'DECODING'
+      );
+
+      await primeDecodedWindow(
+        initialFocus
+      );
+
+      if (destroyed) return;
+
+      framePosition =
+        initialFocus;
+
+      renderCanvas();
       start();
     };
 
@@ -669,7 +745,6 @@ export function CinematicHero() {
     };
 
     const onMetadataError = () => {
-      setBootProgress(1);
       start();
     };
 
@@ -686,7 +761,7 @@ export function CinematicHero() {
     metadataVideo.load();
 
     const onLenisScroll =
-      () => updateProgress();
+      () => updateFromScroll();
 
     const onResize = () => {
       if (resizeRaf) {
@@ -700,8 +775,7 @@ export function CinematicHero() {
           resizeRaf = 0;
           lenis.resize();
           resizeCanvas();
-          drawnFrame = -1;
-          updateProgress();
+          updateFromScroll();
         });
     };
 
@@ -753,15 +827,17 @@ export function CinematicHero() {
         onResize
       );
 
-      loadedFrames.forEach(
-        (image) => {
-          image.src = '';
+      decodedFrames.forEach(
+        (frame) => {
+          closeDecodedFrame(frame);
         }
       );
 
-      loadedFrames.clear();
-      loadingFrames.clear();
-      lastUsed.clear();
+      decodedFrames.clear();
+      decodingFrames.clear();
+      decodeUse.clear();
+      frameBlobs.length = 0;
+      frameUrls.length = 0;
     };
   }, [lenis]);
 
@@ -882,7 +958,7 @@ export function CinematicHero() {
       <div
         data-hero-track
         aria-hidden="true"
-        className="relative z-[1] h-[360vh] min-h-[2200px]"
+        className="relative z-[1] h-[280vh] min-h-[1800px]"
       />
     </div>
   );
