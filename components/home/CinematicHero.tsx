@@ -12,7 +12,7 @@ const LAST_FRAME_INDEX = 81;
 const SOURCE_WIDTH = 1920;
 const SOURCE_HEIGHT = 1080;
 const ANIMATION_COMPLETE_PROGRESS = 0.95;
-const BACKGROUND_PRELOAD_CONCURRENCY = 10;
+const BACKGROUND_PRELOAD_CONCURRENCY = 4;
 const INITIAL_FRAMES = [
   0, 1, 2, 3, 4, 5, 6, 7, LAST_FRAME_INDEX,
 ] as const;
@@ -116,6 +116,7 @@ export function CinematicHero() {
     let paintedFrame = -1;
     let renderRaf = 0;
     let resizeRaf = 0;
+    let backgroundPreloadTimer = 0;
     let heroReady = false;
 
     const prefersReducedMotion =
@@ -297,6 +298,7 @@ export function CinematicHero() {
         .filter(
           (index) =>
             index !== requestedFrame &&
+            index !== paintedFrame &&
             index !== 0 &&
             index !== LAST_FRAME_INDEX
         )
@@ -473,12 +475,47 @@ export function CinematicHero() {
       return request;
     };
 
-    const primeDecodeWindow = (focus: number) => {
+    const primeDecodeWindow = (
+      focus: number,
+      direction: 1 | -1
+    ) => {
+      // Always decode the exact requested frame first. The old window loop
+      // could spend time decoding neighbors while the visible frame waited.
+      void decodeFrame(focus);
+
+      const primaryCount =
+        direction > 0
+          ? decodeAhead
+          : decodeBehind;
+      const secondaryCount =
+        direction > 0
+          ? decodeBehind
+          : decodeAhead;
+
       for (
-        let index = focus - decodeBehind;
-        index <= focus + decodeAhead;
-        index += 1
+        let step = 1;
+        step <= primaryCount;
+        step += 1
       ) {
+        const index =
+          focus + direction * step;
+
+        if (
+          index >= 0 &&
+          index < FRAME_COUNT
+        ) {
+          void decodeFrame(index);
+        }
+      }
+
+      for (
+        let step = 1;
+        step <= secondaryCount;
+        step += 1
+      ) {
+        const index =
+          focus - direction * step;
+
         if (
           index >= 0 &&
           index < FRAME_COUNT
@@ -572,60 +609,26 @@ export function CinematicHero() {
       );
     };
 
-    const nearestDecoded = (
-      target: number
-    ) => {
-      const exact = decodedFrames.get(target);
-
-      if (exact) {
-        decodeUse.set(target, performance.now());
-        return {
-          index: target,
-          frame: exact,
-        };
-      }
-
-      let bestIndex = -1;
-      let bestDistance =
-        Number.POSITIVE_INFINITY;
-
-      decodedFrames.forEach((frame, index) => {
-        const distance =
-          Math.abs(index - target);
-
-        if (distance < bestDistance) {
-          bestDistance = distance;
-          bestIndex = index;
-        }
-      });
-
-      if (bestIndex < 0) return null;
-
-      decodeUse.set(bestIndex, performance.now());
-
-      return {
-        index: bestIndex,
-        frame: decodedFrames.get(bestIndex)!,
-      };
-    };
-
     const render = () => {
       renderRaf = 0;
 
-      const resolved =
-        nearestDecoded(requestedFrame);
+      const exact =
+        decodedFrames.get(requestedFrame);
 
-      if (!resolved) return;
-
-      if (
-        resolved.index === paintedFrame &&
-        requestedFrame === paintedFrame
-      ) {
+      // Never substitute a different cached frame for the requested one.
+      // That fallback was the source of visible stepping/backtracking when
+      // scrolling quickly through the sequence.
+      if (!exact) return;
+      if (requestedFrame === paintedFrame) {
         return;
       }
 
-      drawCover(resolved.frame);
-      paintedFrame = resolved.index;
+      decodeUse.set(
+        requestedFrame,
+        performance.now()
+      );
+      drawCover(exact);
+      paintedFrame = requestedFrame;
     };
 
     function scheduleRender() {
@@ -711,15 +714,22 @@ export function CinematicHero() {
         1
       );
 
-      requestedFrame =
+      const nextFrame =
         sequenceProgress >= 1
           ? LAST_FRAME_INDEX
           : Math.round(
               sequenceProgress *
                 LAST_FRAME_INDEX
             );
+      const direction: 1 | -1 =
+        nextFrame >= requestedFrame ? 1 : -1;
 
-      primeDecodeWindow(requestedFrame);
+      requestedFrame = nextFrame;
+
+      primeDecodeWindow(
+        requestedFrame,
+        direction
+      );
       paintPanels();
       scheduleRender();
     };
@@ -805,11 +815,13 @@ export function CinematicHero() {
         readScroll();
 
         const initial =
-          nearestDecoded(requestedFrame);
+          await decodeFrame(requestedFrame);
+
+        if (destroyed) return;
 
         if (initial) {
-          drawCover(initial.frame);
-          paintedFrame = initial.index;
+          drawCover(initial);
+          paintedFrame = requestedFrame;
         }
 
         gsap.to(boot, {
@@ -830,8 +842,12 @@ export function CinematicHero() {
           },
         });
 
-        // Fill the complete 000–081 sequence in the background.
-        void preloadRemainingFrames();
+        // Let interactive decode requests win the first moments after reveal,
+        // then fill the remaining 000–081 sequence quietly in the background.
+        backgroundPreloadTimer =
+          window.setTimeout(() => {
+            void preloadRemainingFrames();
+          }, 320);
       } catch (error) {
         console.error(
           'Hero startup failed:',
@@ -882,6 +898,12 @@ export function CinematicHero() {
 
       if (resizeRaf) {
         cancelAnimationFrame(resizeRaf);
+      }
+
+      if (backgroundPreloadTimer) {
+        window.clearTimeout(
+          backgroundPreloadTimer
+        );
       }
 
       lenis.off('scroll', onLenisScroll);
