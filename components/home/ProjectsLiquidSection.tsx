@@ -396,7 +396,10 @@ export function ProjectsLiquidSection() {
         1
       );
     const quadScene = new THREE.Scene();
-    const quad = new THREE.Mesh(
+    const quad: THREE.Mesh<
+      THREE.PlaneGeometry,
+      THREE.Material
+    > = new THREE.Mesh(
       quadGeometry,
       new THREE.MeshBasicMaterial()
     );
