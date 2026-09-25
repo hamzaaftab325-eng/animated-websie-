@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
 import SplitType from 'split-type';
+import { ArrowUpRight } from 'lucide-react';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const FRAME_COUNT = 82;
@@ -1027,6 +1028,121 @@ export function CinematicHero() {
   );
 }
 
+const SCRAMBLE_GLYPHS =
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+function PremiumCta({
+  href,
+  label,
+}: {
+  href: string;
+  label: string;
+}) {
+  const [active, setActive] = useState(false);
+
+  return (
+    <Link
+      href={href}
+      onMouseEnter={() => setActive(true)}
+      onMouseLeave={() => setActive(false)}
+      onFocus={() => setActive(true)}
+      onBlur={() => setActive(false)}
+      className="group relative isolate inline-flex h-[46px] min-w-[154px] overflow-hidden rounded-full bg-white/[0.18] p-px shadow-[0_10px_28px_rgba(22,15,30,.10)] transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[1px] hover:shadow-[0_16px_36px_rgba(22,15,30,.14)] active:translate-y-0 active:scale-[0.992] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+    >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -inset-[80%] opacity-0 transition-opacity duration-700 group-hover:opacity-100 motion-safe:group-hover:animate-[spin_3.8s_linear_infinite] [background:conic-gradient(from_0deg,transparent_0deg,rgba(255,255,255,.04)_80deg,rgba(255,255,255,.62)_138deg,rgba(255,255,255,.10)_185deg,transparent_255deg)]"
+      />
+
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-px rounded-full bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,.15),inset_0_-1px_0_rgba(255,255,255,.025)] backdrop-blur-[20px] transition-[background-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:bg-white/[0.075] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-1px_0_rgba(255,255,255,.05)]"
+      />
+
+      <span className="relative z-10 flex h-full w-full items-center justify-center gap-3 rounded-full px-6 text-[11px] font-medium tracking-[0.045em] text-white">
+        <LetterSwapLabel
+          label={label}
+          active={active}
+        />
+
+        <ArrowUpRight
+          aria-hidden="true"
+          className="h-[14px] w-[14px] shrink-0 stroke-[1.45] text-white/80 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[2px] group-hover:-translate-y-[2px] group-hover:rotate-[6deg] group-hover:text-white"
+        />
+      </span>
+    </Link>
+  );
+}
+
+function LetterSwapLabel({
+  label,
+  active,
+}: {
+  label: string;
+  active: boolean;
+}) {
+  const [display, setDisplay] =
+    useState(label);
+
+  useEffect(() => {
+    if (!active) {
+      setDisplay(label);
+      return;
+    }
+
+    let frame = 0;
+    const letters = label.split('');
+    const totalFrames =
+      Math.max(10, letters.length * 2 + 4);
+
+    const timer = window.setInterval(() => {
+      frame += 1;
+
+      const resolved = Math.floor(
+        Math.max(0, frame - 2) / 2
+      );
+
+      setDisplay(
+        letters
+          .map((letter, index) => {
+            if (letter === ' ') return ' ';
+            if (index < resolved) return letter;
+
+            const glyphIndex =
+              (frame * 5 + index * 7) %
+              SCRAMBLE_GLYPHS.length;
+
+            return SCRAMBLE_GLYPHS[glyphIndex];
+          })
+          .join('')
+      );
+
+      if (
+        frame >= totalFrames ||
+        resolved >= letters.length
+      ) {
+        window.clearInterval(timer);
+        setDisplay(label);
+      }
+    }, 46);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [active, label]);
+
+  return (
+    <span
+      aria-label={label}
+      className="min-w-[8ch] text-center [font-variant-numeric:tabular-nums]"
+    >
+      <span aria-hidden="true">
+        {display}
+      </span>
+    </span>
+  );
+}
+
 function HeroPanel({
   eyebrow,
   title,
@@ -1068,43 +1184,7 @@ function HeroPanel({
             data-hero-button
             className="pointer-events-auto hidden pb-1 md:block"
           >
-            <Link
-              href={href}
-              className="group relative isolate inline-flex h-[46px] min-w-[150px] items-center justify-center overflow-hidden rounded-full border border-white/[0.22] bg-white/[0.05] px-7 text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15),inset_0_-1px_0_rgba(255,255,255,.025),0_10px_28px_rgba(22,15,30,.10)] backdrop-blur-[20px] transition-[background-color,border-color,box-shadow] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] hover:border-white/[0.37] hover:bg-white/[0.072] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-1px_0_rgba(255,255,255,.05),0_15px_34px_rgba(22,15,30,.13)] active:bg-white/[0.085] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-            >
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-[1px] rounded-full border border-white/[0.055] transition-[border-color,opacity] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/[0.11]"
-              />
-
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-[18px] top-[7px] h-px origin-center scale-x-[0.18] bg-white/[0.14] opacity-55 transition-[transform,opacity] duration-[1000ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100 group-hover:opacity-100"
-              />
-
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-[18px] bottom-[7px] h-px origin-center scale-x-[0.18] bg-white/[0.08] opacity-35 transition-[transform,opacity] duration-[1000ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100 group-hover:opacity-75"
-              />
-
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-y-[5px] left-1/2 w-[34%] -translate-x-1/2 scale-x-[0.22] rounded-full border-x border-white/[0.08] bg-white/[0.028] opacity-0 backdrop-blur-[2px] transition-[transform,opacity] duration-[1000ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100 group-hover:opacity-100"
-              />
-
-              <span className="relative z-10 h-[14px] overflow-hidden leading-[14px]">
-                <span className="block transition-[transform,filter,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-[14px] group-hover:blur-[3px] group-hover:opacity-0">
-                  {cta}
-                </span>
-
-                <span
-                  aria-hidden="true"
-                  className="absolute left-0 top-0 translate-y-[14px] blur-[3px] opacity-0 transition-[transform,filter,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-y-0 group-hover:blur-0 group-hover:opacity-100"
-                >
-                  {cta}
-                </span>
-              </span>
-            </Link>
+            <PremiumCta href={href} label={cta} />
           </div>
         </div>
       </div>

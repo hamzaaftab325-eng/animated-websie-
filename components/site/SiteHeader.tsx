@@ -115,12 +115,12 @@ export function SiteHeader() {
     return (
       <header
         ref={headerRef}
-        className="pointer-events-none fixed inset-x-0 top-[18px] z-[75] flex justify-center px-3"
+        className="pointer-events-none fixed inset-x-0 top-[20px] z-[75] flex justify-center px-3"
       >
         <nav
           data-header-nav
           aria-label="Primary navigation"
-          className="pointer-events-auto flex h-[36px] items-center rounded-full border border-white/[0.16] bg-white/[0.095] px-2 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.13),0_10px_32px_rgba(35,26,45,.08)] backdrop-blur-xl"
+          className="pointer-events-auto flex h-[42px] items-center rounded-full border border-white/[0.17] bg-white/[0.10] px-2.5 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.14),0_12px_34px_rgba(35,26,45,.09)] backdrop-blur-xl"
         >
           <HeaderLink href="/about" label="About" hiddenOnMobile />
           <HeaderLink href="/work" label="Work" hiddenOnMobile />
@@ -128,12 +128,12 @@ export function SiteHeader() {
           <Link
             data-header-item
             href="/"
-            className="group relative isolate overflow-hidden rounded-full px-4 py-1 text-[14px] font-medium tracking-[-0.015em] text-white"
+            className="group relative isolate overflow-hidden rounded-full px-5 py-2 text-[15px] font-medium tracking-[-0.015em] text-white"
             aria-label="Frame & Form Studio home"
           >
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 scale-x-75 rounded-full bg-white/[0.06] opacity-0 blur-[7px] transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100 group-hover:opacity-100"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 scale-[0.35] rounded-full bg-white/[0.08] opacity-0 blur-[1px] transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[3.8] group-hover:opacity-100"
             />
             <span className="relative z-10">
               Frame &amp; Form
@@ -176,16 +176,24 @@ export function SiteHeader() {
           <Link
             data-header-item
             href="/work"
-            className="text-[14px] tracking-[-0.01em] text-white/70 transition-colors duration-300 hover:text-white"
+            className="group relative isolate overflow-hidden rounded-full px-3 py-2 text-[14px] tracking-[-0.01em] text-white/70 transition-colors duration-500 hover:text-white"
           >
-            Work
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 scale-[0.35] rounded-full bg-white/[0.08] opacity-0 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[3] group-hover:opacity-100"
+            />
+            <span className="relative z-10">Work</span>
           </Link>
           <Link
             data-header-item
             href="/about"
             className="text-[14px] tracking-[-0.01em] text-white/70 transition-colors duration-300 hover:text-white"
           >
-            About
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 scale-[0.35] rounded-full bg-white/[0.08] opacity-0 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[3] group-hover:opacity-100"
+            />
+            <span className="relative z-10">About</span>
           </Link>
         </div>
 
@@ -214,13 +222,13 @@ function HeaderLink({
     <Link
       data-header-item
       href={href}
-      className={`group relative isolate overflow-hidden rounded-full px-3 py-1 text-[9px] font-medium uppercase tracking-[0.03em] text-white/88 transition-colors duration-700 hover:text-white ${
+      className={`group relative isolate overflow-hidden rounded-full px-4 py-2 text-[10px] font-medium uppercase tracking-[0.035em] text-white/88 transition-colors duration-700 hover:text-white ${
         hiddenOnMobile ? 'hidden sm:block' : ''
       }`}
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-1 bottom-0 h-[65%] translate-y-[72%] rounded-full bg-white/[0.08] opacity-0 blur-[5px] transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-y-[38%] group-hover:opacity-100"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 scale-[0.35] rounded-full bg-white/[0.09] opacity-0 blur-[1px] transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[3.4] group-hover:opacity-100"
       />
       <span className="relative z-10">
         {label}
