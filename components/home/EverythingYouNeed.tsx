@@ -96,7 +96,7 @@ export function EverythingYouNeed() {
           </p>
         </div>
 
-        <div className="relative mt-[clamp(2.9rem,5.4vh,4.6rem)] grid w-full max-w-[880px] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[14px] lg:[transform:translateY(68px)_scale(0.92)]">
+        <div className="relative mt-[clamp(2.9rem,5.4vh,4.6rem)] grid w-full max-w-[880px] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[14px] lg:[transform:translateY(50px)_scale(0.92)]">
           <div
             aria-hidden="true"
             className="pointer-events-none absolute -bottom-[5px] left-1/2 hidden h-[14px] w-[72%] -translate-x-1/2 rounded-[50%] bg-[#5c3733]/14 blur-[11px] lg:block"
