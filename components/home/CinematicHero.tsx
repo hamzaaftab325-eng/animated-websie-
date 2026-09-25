@@ -9,14 +9,14 @@ const VIDEO_URL =
   'https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4';
 
 const CUES = [
-  [0.0, 0.018, 0.25, 0.31],
-  [0.34, 0.395, 0.59, 0.65],
-  [0.68, 0.735, 1.04, 1.1],
+  [0.0, 0.012, 0.235, 0.29],
+  [0.32, 0.365, 0.555, 0.61],
+  [0.64, 0.685, 0.925, 0.985],
 ] as const;
 
-const DRIFT = 14;
-const SEEK_EASE = 0.24;
-const SEEK_INTERVAL = 30;
+const DRIFT = 12;
+const SEEK_EASE = 0.34;
+const SEEK_INTERVAL = 24;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -126,9 +126,16 @@ export function CinematicHero() {
         const gap = seekTarget - seekCurrent;
 
         if (Math.abs(gap) > 0.001) {
-          // Lenis handles scroll smoothing. This smaller video-only damping
-          // removes decode jitter without creating the previous heavy lag.
-          seekCurrent += gap * SEEK_EASE;
+          const nearEnd = progress >= 0.9;
+          const almostSettled = Math.abs(gap) < 0.035;
+          const catchUp = nearEnd ? 0.5 : SEEK_EASE;
+
+          // Avoid the exponential "braking" tail at the end: normal motion
+          // remains damped, while the final portion catches the target quickly.
+          seekCurrent =
+            progress >= 0.995 || almostSettled
+              ? seekTarget
+              : seekCurrent + gap * catchUp;
 
           if (
             time - lastSeekTime >= SEEK_INTERVAL &&
@@ -396,7 +403,7 @@ export function CinematicHero() {
       <div
         data-hero-track
         aria-hidden="true"
-        className="relative z-[1] h-[360vh] min-h-[2200px]"
+        className="relative z-[1] h-[320vh] min-h-[1950px]"
       />
     </div>
   );
