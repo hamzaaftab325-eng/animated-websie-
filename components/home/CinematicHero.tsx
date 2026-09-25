@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
+import SplitType from 'split-type';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const FRAME_COUNT = 82;
@@ -114,6 +115,123 @@ export function CinematicHero() {
     let paintedFrame = -1;
     let renderRaf = 0;
     let resizeRaf = 0;
+    let heroReady = false;
+
+    const prefersReducedMotion =
+      window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+
+    const headingStates = panels
+      .map((panel) => {
+        const heading =
+          panel.querySelector<HTMLElement>(
+            '[data-hero-heading]'
+          );
+
+        if (!heading || prefersReducedMotion) {
+          return null;
+        }
+
+        const split = new SplitType(heading, {
+          types: 'chars',
+          charClass: 'hero-heading-char',
+        });
+
+        const chars = split.chars ?? [];
+
+        gsap.set(chars, {
+          display: 'inline-block',
+          opacity: 0,
+          yPercent: 78,
+          scale: 0.96,
+          rotationX: -16,
+          filter: 'blur(14px)',
+          transformOrigin: '50% 100%',
+          transformPerspective: 900,
+          willChange:
+            'transform, opacity, filter',
+        });
+
+        return {
+          panel,
+          split,
+          chars,
+          visible: false,
+        };
+      })
+      .filter(
+        (
+          state
+        ): state is {
+          panel: HTMLElement;
+          split: SplitType;
+          chars: HTMLElement[];
+          visible: boolean;
+        } => Boolean(state)
+      );
+
+    const revealHeading = (
+      panel: HTMLElement
+    ) => {
+      if (!heroReady || prefersReducedMotion) {
+        return;
+      }
+
+      const state = headingStates.find(
+        (item) => item.panel === panel
+      );
+
+      if (!state || state.visible) return;
+
+      state.visible = true;
+
+      gsap.killTweensOf(state.chars);
+
+      gsap.to(state.chars, {
+        opacity: 1,
+        yPercent: 0,
+        scale: 1,
+        rotationX: 0,
+        filter: 'blur(0px)',
+        duration: 0.95,
+        stagger: {
+          each: 0.026,
+          from: 'start',
+        },
+        ease: 'power4.out',
+        overwrite: true,
+        clearProps:
+          'willChange,transformOrigin,transformPerspective',
+      });
+    };
+
+    const resetHeading = (
+      panel: HTMLElement
+    ) => {
+      if (prefersReducedMotion) return;
+
+      const state = headingStates.find(
+        (item) => item.panel === panel
+      );
+
+      if (!state || !state.visible) return;
+
+      state.visible = false;
+
+      gsap.killTweensOf(state.chars);
+      gsap.set(state.chars, {
+        opacity: 0,
+        yPercent: 78,
+        scale: 0.96,
+        rotationX: -16,
+        filter: 'blur(14px)',
+        transformOrigin: '50% 100%',
+        transformPerspective: 900,
+        willChange:
+          'transform, opacity, filter',
+      });
+    };
 
     const setBootProgress = (
       value: number,
@@ -508,6 +626,12 @@ export function CinematicHero() {
           opacity > 0.62
             ? 'auto'
             : 'none';
+
+        if (opacity > 0.48) {
+          revealHeading(panel);
+        } else if (opacity < 0.08) {
+          resetHeading(panel);
+        }
       });
     };
 
@@ -641,6 +765,9 @@ export function CinematicHero() {
               'pointer-events-none',
               'invisible'
             );
+
+            heroReady = true;
+            paintPanels();
           },
         });
 
@@ -712,6 +839,11 @@ export function CinematicHero() {
       decodingFrames.clear();
       decodeUse.clear();
       frameRequests.clear();
+
+      headingStates.forEach((state) => {
+        gsap.killTweensOf(state.chars);
+        state.split.revert();
+      });
     };
   }, [lenis]);
 
@@ -855,7 +987,10 @@ function HeroPanel({
               {eyebrow}
             </p>
 
-            <h1 className="whitespace-nowrap text-[clamp(2.55rem,5.4vw,4.65rem)] font-normal leading-[0.96] tracking-[0.075em] text-white [text-shadow:0_2px_22px_rgba(20,13,20,.16)]">
+            <h1
+              data-hero-heading
+              className="whitespace-nowrap text-[clamp(2.55rem,5.4vw,4.65rem)] font-normal leading-[0.96] tracking-[0.075em] text-white [text-shadow:0_2px_22px_rgba(20,13,20,.16)]"
+            >
               {title}
             </h1>
 
