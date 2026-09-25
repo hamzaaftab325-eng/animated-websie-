@@ -1052,35 +1052,48 @@ function HeroPanel({
             <Link
               data-hero-button
               href={href}
-              className="group relative isolate inline-flex h-[44px] min-w-[138px] items-center justify-between overflow-hidden rounded-full border border-white/[0.26] bg-white/[0.065] pl-6 pr-[6px] text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.17),inset_0_-1px_0_rgba(255,255,255,.035),0_10px_28px_rgba(24,16,32,.10)] backdrop-blur-[18px] transition-[transform,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[1px] hover:border-white/[0.42] hover:bg-white/[0.09] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-1px_0_rgba(255,255,255,.05),0_14px_36px_rgba(24,16,32,.15)] active:translate-y-0 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="group relative isolate inline-flex h-[44px] min-w-[138px] items-center justify-between overflow-hidden rounded-full border border-white/[0.24] bg-white/[0.06] pl-6 pr-[7px] text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.16),inset_0_-1px_0_rgba(255,255,255,.03),0_10px_26px_rgba(22,15,30,.10)] backdrop-blur-[18px] transition-[transform,background-color,border-color,box-shadow] duration-700 ease-[cubic-bezier(.22,1,.36,1)] hover:-translate-y-[1px] hover:border-white/[0.38] hover:bg-white/[0.085] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-1px_0_rgba(255,255,255,.05),0_16px_36px_rgba(22,15,30,.14)] active:translate-y-0 active:scale-[0.992] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-[1px] rounded-full border border-white/[0.07] transition-[border-color,opacity] duration-500 group-hover:border-white/[0.12]"
+                className="pointer-events-none absolute inset-[1px] rounded-full border border-white/[0.06] transition-[border-color,opacity] duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:border-white/[0.11]"
               />
 
-              <span className="relative z-10 inline-flex flex-col overflow-hidden leading-none">
-                <span className="transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-[1px]">
-                  {cta}
-                </span>
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute right-[7px] top-1/2 h-[30px] w-[30px] -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_35%_28%,rgba(255,255,255,.17),rgba(255,255,255,.06)_48%,rgba(255,255,255,.018)_72%,transparent_74%)] opacity-70 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.08] group-hover:opacity-100"
+              />
 
-                <span
-                  aria-hidden="true"
-                  className="mt-[4px] h-px w-full origin-left scale-x-0 bg-white/70 transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100"
-                />
+              <span className="relative z-10 transition-[transform,letter-spacing,opacity] duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:-translate-x-[1px] group-hover:tracking-[0.052em] group-hover:opacity-95">
+                {cta}
               </span>
 
               <span
                 aria-hidden="true"
-                className="relative z-10 ml-5 flex h-[30px] w-[30px] shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/[0.16] bg-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,.12)] backdrop-blur-md transition-[transform,background-color,border-color] duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.04] group-hover:border-white/[0.30] group-hover:bg-white/[0.075]"
+                className="relative z-10 ml-5 flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-white/[0.15] bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,.11)] backdrop-blur-md transition-[transform,background-color,border-color,box-shadow] duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:scale-[1.035] group-hover:border-white/[0.27] group-hover:bg-white/[0.065] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.17),0_4px_14px_rgba(10,8,14,.08)]"
               >
-                <span className="absolute transition-[transform,opacity] duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[9px] group-hover:-translate-y-[9px] group-hover:opacity-0">
-                  ↗
-                </span>
-
-                <span className="absolute -translate-x-[9px] translate-y-[9px] opacity-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-0 group-hover:translate-y-0 group-hover:opacity-100">
-                  ↗
-                </span>
+                <svg
+                  viewBox="0 0 18 18"
+                  className="h-[14px] w-[14px] overflow-visible"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M5 13L13 5"
+                    stroke="currentColor"
+                    strokeWidth="1.35"
+                    strokeLinecap="round"
+                    className="transition-[transform,opacity] duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:translate-x-[1.5px] group-hover:-translate-y-[1.5px]"
+                  />
+                  <path
+                    d="M7.6 5H13V10.4"
+                    stroke="currentColor"
+                    strokeWidth="1.35"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="transition-[transform,opacity] duration-700 ease-[cubic-bezier(.22,1,.36,1)] group-hover:translate-x-[1.5px] group-hover:-translate-y-[1.5px]"
+                  />
+                </svg>
               </span>
             </Link>
           </div>
