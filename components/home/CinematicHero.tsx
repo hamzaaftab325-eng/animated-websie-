@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
 import SplitType from 'split-type';
+import { ArrowRight } from 'lucide-react';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const FRAME_COUNT = 82;
@@ -823,6 +824,9 @@ export function CinematicHero() {
 
             heroReady = true;
             paintPanels();
+            window.dispatchEvent(
+              new CustomEvent('hero-ready')
+            );
           },
         });
 
@@ -1067,45 +1071,33 @@ function HeroPanel({
           >
             <Link
               href={href}
-              className="group relative isolate inline-flex h-[44px] min-w-[140px] items-center justify-between overflow-hidden rounded-full border border-white/[0.22] bg-white/[0.055] pl-6 pr-[7px] text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15),inset_0_-1px_0_rgba(255,255,255,.025),0_10px_28px_rgba(22,15,30,.10)] backdrop-blur-[18px] transition-[background-color,border-color,box-shadow] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] hover:border-white/[0.36] hover:bg-white/[0.078] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.21),inset_0_-1px_0_rgba(255,255,255,.045),0_14px_34px_rgba(22,15,30,.13)] active:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="group relative isolate inline-flex h-[46px] min-w-[148px] items-center justify-center overflow-hidden rounded-full border border-white/[0.22] bg-white/[0.055] px-7 text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.16),inset_0_-1px_0_rgba(255,255,255,.025),0_10px_30px_rgba(22,15,30,.10)] backdrop-blur-[20px] transition-[border-radius,background-color,border-color,box-shadow] duration-[1100ms] ease-[cubic-bezier(.16,1,.3,1)] hover:rounded-[18px] hover:border-white/[0.38] hover:bg-white/[0.075] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-1px_0_rgba(255,255,255,.05),0_16px_38px_rgba(22,15,30,.14)] active:bg-white/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-[1px] rounded-full border border-white/[0.055] opacity-90 transition-[border-color,opacity] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/[0.10] group-hover:opacity-100"
+                className="pointer-events-none absolute inset-[1px] rounded-[inherit] border border-white/[0.055] opacity-90 transition-[border-color,opacity] duration-[1100ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/[0.11] group-hover:opacity-100"
               />
-
-              <span className="relative z-10 transition-[transform,opacity] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-x-[1px] group-hover:opacity-95">
-                {cta}
-              </span>
 
               <span
                 aria-hidden="true"
-                className="relative z-10 ml-5 flex h-[30px] w-[30px] shrink-0 items-center justify-end overflow-hidden rounded-full border border-white/[0.14] bg-white/[0.032] shadow-[inset_0_1px_0_rgba(255,255,255,.10)] backdrop-blur-md transition-[width,background-color,border-color,box-shadow] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:w-[44px] group-hover:border-white/[0.25] group-hover:bg-white/[0.06] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.15),0_5px_16px_rgba(10,8,14,.07)]"
+                className="pointer-events-none absolute right-[7px] top-1/2 h-[32px] w-[32px] -translate-y-1/2 overflow-hidden rounded-full border border-white/[0.12] bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,.13),0_4px_16px_rgba(8,6,12,.06)] backdrop-blur-xl transition-[width,border-radius,background-color,border-color,box-shadow] duration-[1150ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:w-[calc(100%-14px)] group-hover:rounded-[14px] group-hover:border-white/[0.18] group-hover:bg-white/[0.095] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.20),0_7px_20px_rgba(8,6,12,.08)]"
               >
-                <span className="absolute left-[9px] top-1/2 h-px w-0 -translate-y-1/2 bg-white/45 opacity-0 transition-[width,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:w-[8px] group-hover:opacity-100" />
+                <span className="absolute -right-2 top-[-8px] h-[36px] w-[36px] rounded-full bg-white/[0.09] blur-[8px] transition-[transform,opacity] duration-[1200ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-x-[38px] group-hover:translate-y-[8px] group-hover:scale-[1.35] group-hover:opacity-80" />
+                <span className="absolute bottom-[-12px] right-[18px] h-[34px] w-[44px] rounded-full bg-white/[0.07] blur-[10px] transition-[transform,opacity] duration-[1250ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-x-[46px] group-hover:-translate-y-[7px] group-hover:scale-[1.25] group-hover:opacity-90" />
+              </span>
 
-                <span className="mr-[7px] flex h-[16px] w-[16px] items-center justify-center transition-[transform,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[1px] group-hover:opacity-100">
-                  <svg
-                    viewBox="0 0 18 18"
-                    className="h-[14px] w-[14px]"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M5 13L13 5"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M7.6 5H13V10.4"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
+              <ArrowRight
+                aria-hidden="true"
+                className="absolute right-[14px] z-20 h-[14px] w-[14px] stroke-[1.5] text-white/88 transition-[transform,opacity] duration-[1050ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[7px] group-hover:opacity-0"
+              />
+
+              <ArrowRight
+                aria-hidden="true"
+                className="absolute left-[14px] z-20 h-[14px] w-[14px] -translate-x-[7px] stroke-[1.5] text-white/88 opacity-0 transition-[transform,opacity] duration-[1050ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-0 group-hover:opacity-100"
+              />
+
+              <span className="relative z-10 -translate-x-[5px] transition-[transform,opacity] duration-[1050ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[7px] group-hover:opacity-95">
+                {cta}
               </span>
             </Link>
           </div>
