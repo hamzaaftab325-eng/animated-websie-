@@ -122,8 +122,25 @@ export function CinematicHero() {
         '(prefers-reduced-motion: reduce)'
       ).matches;
 
-    const headingStates = panels
-      .map((panel) => {
+    const hiddenHeadingState = {
+      opacity: 0.04,
+      yPercent: 62,
+      scale: 0.965,
+      rotationX: -12,
+      filter: 'blur(20px)',
+      transformOrigin: '50% 72%',
+      transformPerspective: 1100,
+      force3D: true,
+      willChange:
+        'transform, opacity, filter',
+    };
+
+    // Keep the state array aligned with the panel array. The previous
+    // implementation searched by DOM node and triggered from panel opacity;
+    // an explicit scene index makes every chapter, especially EXPLORE,
+    // deterministic.
+    const headingStates = panels.map(
+      (panel, index) => {
         const heading =
           panel.querySelector<HTMLElement>(
             '[data-hero-heading]'
@@ -146,15 +163,7 @@ export function CinematicHero() {
 
         gsap.set(chars, {
           display: 'inline-block',
-          opacity: 0,
-          yPercent: 78,
-          scale: 0.96,
-          rotationX: -16,
-          filter: 'blur(14px)',
-          transformOrigin: '50% 100%',
-          transformPerspective: 900,
-          willChange:
-            'transform, opacity, filter',
+          ...hiddenHeadingState,
         });
 
         if (button) {
@@ -169,35 +178,23 @@ export function CinematicHero() {
         }
 
         return {
-          panel,
+          index,
           split,
           chars,
           button,
           visible: false,
         };
-      })
-      .filter(
-        (
-          state
-        ): state is {
-          panel: HTMLElement;
-          split: SplitType;
-          chars: HTMLElement[];
-          button: HTMLElement | null;
-          visible: boolean;
-        } => Boolean(state)
-      );
+      }
+    );
 
     const revealHeading = (
-      panel: HTMLElement
+      index: number
     ) => {
       if (!heroReady || prefersReducedMotion) {
         return;
       }
 
-      const state = headingStates.find(
-        (item) => item.panel === panel
-      );
+      const state = headingStates[index];
 
       if (!state || state.visible) return;
 
@@ -205,19 +202,25 @@ export function CinematicHero() {
 
       gsap.killTweensOf(state.chars);
 
+      // Re-assert the full blur state before every reveal so all three
+      // headings play the same animation on forward and reverse scrolling.
+      gsap.set(state.chars, {
+        ...hiddenHeadingState,
+      });
+
       gsap.to(state.chars, {
         opacity: 1,
         yPercent: 0,
         scale: 1,
         rotationX: 0,
         filter: 'blur(0px)',
-        duration: 0.95,
+        duration: 1.12,
         stagger: {
-          each: 0.026,
+          each: 0.032,
           from: 'start',
         },
-        ease: 'power4.out',
-        overwrite: true,
+        ease: 'expo.out',
+        overwrite: 'auto',
         clearProps:
           'willChange,transformOrigin,transformPerspective',
       });
@@ -230,7 +233,7 @@ export function CinematicHero() {
           scale: 1,
           filter: 'blur(0px)',
           duration: 0.72,
-          delay: 0.16,
+          delay: 0.18,
           ease: 'power3.out',
           overwrite: true,
           clearProps:
@@ -240,13 +243,11 @@ export function CinematicHero() {
     };
 
     const resetHeading = (
-      panel: HTMLElement
+      index: number
     ) => {
       if (prefersReducedMotion) return;
 
-      const state = headingStates.find(
-        (item) => item.panel === panel
-      );
+      const state = headingStates[index];
 
       if (!state || !state.visible) return;
 
@@ -254,15 +255,7 @@ export function CinematicHero() {
 
       gsap.killTweensOf(state.chars);
       gsap.set(state.chars, {
-        opacity: 0,
-        yPercent: 78,
-        scale: 0.96,
-        rotationX: -16,
-        filter: 'blur(14px)',
-        transformOrigin: '50% 100%',
-        transformPerspective: 900,
-        willChange:
-          'transform, opacity, filter',
+        ...hiddenHeadingState,
       });
 
       if (state.button) {
@@ -672,10 +665,27 @@ export function CinematicHero() {
             ? 'auto'
             : 'none';
 
-        if (opacity > 0.48) {
-          revealHeading(panel);
-        } else if (opacity < 0.08) {
-          resetHeading(panel);
+        const revealPoint =
+          index === 0
+            ? 0
+            : cue[0] +
+              (cue[1] - cue[0]) * 0.12;
+        const resetPoint =
+          cue[3] + 0.012;
+
+        // Trigger from the chapter's own cue range instead of waiting for
+        // panel opacity to cross a threshold. This prevents the second
+        // heading's blur reveal from being visually swallowed by its fade.
+        if (
+          progress >= revealPoint &&
+          progress < cue[3]
+        ) {
+          revealHeading(index);
+        } else if (
+          progress < cue[0] ||
+          progress > resetPoint
+        ) {
+          resetHeading(index);
         }
       });
     };
@@ -886,6 +896,8 @@ export function CinematicHero() {
       frameRequests.clear();
 
       headingStates.forEach((state) => {
+        if (!state) return;
+
         gsap.killTweensOf(state.chars);
 
         if (state.button) {
