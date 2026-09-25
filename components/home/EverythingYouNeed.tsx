@@ -47,7 +47,7 @@ export function EverythingYouNeed() {
   return (
     <section
       id="possibilities"
-      className="relative z-40 isolate min-h-[100svh] overflow-hidden bg-[#e7b6a9] text-[#302b2a]"
+      className="relative z-40 isolate min-h-[100svh] overflow-hidden bg-[#e7b6a9] text-white"
     >
       <div
         aria-hidden="true"
@@ -59,36 +59,38 @@ export function EverythingYouNeed() {
 
       <div
         aria-hidden="true"
-        className="absolute inset-0"
+        className="pointer-events-none absolute inset-0 z-[1]"
         style={{
           background:
-            'linear-gradient(180deg,rgba(255,239,226,.06) 0%,rgba(255,226,211,.035) 42%,rgba(64,42,39,.10) 100%)',
+            'linear-gradient(180deg,rgba(68,78,103,.16) 0%,rgba(173,117,137,.08) 45%,rgba(157,101,117,.16) 100%), linear-gradient(180deg,rgba(8,10,15,.05) 0%,rgba(8,10,15,.01) 55%,rgba(8,10,15,.22) 100%)',
         }}
       />
 
       <div
         aria-hidden="true"
-        className="absolute inset-0"
+        className="pointer-events-none absolute inset-0 z-[2]"
         style={{
           background:
-            'radial-gradient(ellipse at 50% 29%,rgba(255,248,237,.20) 0%,rgba(255,239,227,.07) 36%,rgba(70,45,41,.04) 76%,rgba(42,28,25,.10) 100%)',
+            'radial-gradient(ellipse at 50% 38%,rgba(7,9,13,0) 32%,rgba(7,9,13,.055) 68%,rgba(7,9,13,.18) 100%), linear-gradient(90deg,rgba(7,9,13,.10) 0%,rgba(7,9,13,0) 24%,rgba(7,9,13,0) 76%,rgba(7,9,13,.10) 100%)',
         }}
       />
+
+      <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[3] opacity-[.045] mix-blend-soft-light" />
 
       <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[1180px] flex-col items-center px-5 pb-16 pt-[clamp(7.5rem,12vh,9.5rem)] md:px-8 md:pb-20">
         <div
           data-reveal
           className="mx-auto max-w-[760px] text-center"
         >
-          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.34em] text-[#4e4643]/86 md:text-[11px]">
+          <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.34em] text-white/72 [text-shadow:0_2px_14px_rgba(17,12,16,.24)] md:text-[11px]">
             Discover the possibilities
           </p>
 
-          <h2 className="font-serif text-[clamp(2.7rem,5.2vw,4.7rem)] font-normal leading-[0.94] tracking-[-0.035em] text-[#2c2a29] [text-shadow:0_1px_12px_rgba(255,255,255,.20)]">
+          <h2 className="font-serif text-[clamp(2.7rem,5.2vw,4.7rem)] font-normal leading-[0.94] tracking-[-0.035em] text-white [text-shadow:0_2px_24px_rgba(24,14,20,.30)]">
             Everything You Need
           </h2>
 
-          <p className="mx-auto mt-4 max-w-[650px] text-[clamp(.98rem,1.35vw,1.18rem)] leading-[1.45] tracking-[-0.01em] text-[#514845]/86">
+          <p className="mx-auto mt-4 max-w-[650px] text-[clamp(.98rem,1.35vw,1.18rem)] leading-[1.45] tracking-[-0.01em] text-white/82 [text-shadow:0_2px_14px_rgba(24,14,20,.24)]">
             Powerful tools, boundless creativity, and a more
             beautiful future — all in one place.
           </p>
