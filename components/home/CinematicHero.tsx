@@ -1047,12 +1047,14 @@ function PremiumCta({
       onMouseLeave={() => setActive(false)}
       onFocus={() => setActive(true)}
       onBlur={() => setActive(false)}
-      className="group relative isolate inline-flex h-[46px] min-w-[154px] overflow-hidden rounded-full bg-white/[0.18] p-px shadow-[0_10px_28px_rgba(22,15,30,.10)] transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[1px] hover:shadow-[0_16px_36px_rgba(22,15,30,.14)] active:translate-y-0 active:scale-[0.992] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+      className="group relative isolate inline-flex h-[46px] min-w-[154px] overflow-hidden rounded-full bg-white/[0.16] p-px shadow-[0_10px_28px_rgba(22,15,30,.10)] transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[1px] hover:shadow-[0_16px_36px_rgba(22,15,30,.14)] active:translate-y-0 active:scale-[0.992] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-[80%] opacity-0 transition-opacity duration-700 group-hover:opacity-100 motion-safe:group-hover:animate-[spin_3.8s_linear_infinite] [background:conic-gradient(from_0deg,transparent_0deg,rgba(255,255,255,.04)_80deg,rgba(255,255,255,.62)_138deg,rgba(255,255,255,.10)_185deg,transparent_255deg)]"
-      />
+        className="pointer-events-none absolute inset-0 rounded-full p-px opacity-0 transition-opacity duration-700 group-hover:opacity-100 [mask:linear-gradient(#000_0_0)_content-box,linear-gradient(#000_0_0)] [mask-composite:exclude] [-webkit-mask:linear-gradient(#000_0_0)_content-box,linear-gradient(#000_0_0)] [-webkit-mask-composite:xor]"
+      >
+        <span className="absolute -inset-[170%] motion-safe:group-hover:animate-[spin_3.8s_linear_infinite] [background:conic-gradient(from_0deg,transparent_0deg,rgba(255,255,255,.03)_78deg,rgba(255,255,255,.68)_136deg,rgba(255,255,255,.12)_182deg,transparent_252deg)]" />
+      </span>
 
       <span
         aria-hidden="true"
