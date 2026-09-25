@@ -8,24 +8,15 @@ import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 const VIDEO_URL =
   'https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4';
 
-const CLOUDINARY_BASE =
-  'https://res.cloudinary.com/diometfe9/video/upload';
-const CLOUDINARY_ASSET =
-  'v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v';
-
 const CUES = [
-  [0.0, 0.015, 0.255, 0.31],
-  [0.345, 0.39, 0.595, 0.65],
-  [0.685, 0.73, 1.04, 1.1],
+  [0.0, 0.018, 0.25, 0.31],
+  [0.34, 0.395, 0.59, 0.65],
+  [0.68, 0.735, 1.04, 1.1],
 ] as const;
 
-const DRIFT = 10;
-const DECODE_CACHE_LIMIT = 18;
-const PRELOAD_CONCURRENCY = 10;
-
-type DecodedFrame = CanvasImageSource & {
-  close?: () => void;
-};
+const DRIFT = 14;
+const SEEK_EASE = 0.24;
+const SEEK_INTERVAL = 30;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -47,17 +38,6 @@ const ramp = (
   );
 };
 
-function buildFrameUrl(
-  time: number,
-  width: number
-) {
-  return (
-    `${CLOUDINARY_BASE}/` +
-    `so_${time.toFixed(3)},c_scale,w_${width},q_auto:good,f_webp/` +
-    `${CLOUDINARY_ASSET}.webp`
-  );
-}
-
 export function CinematicHero() {
   const { lenis } = useSmoothScroll();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -66,28 +46,19 @@ export function CinematicHero() {
     if (!lenis || !rootRef.current) return;
 
     const root = rootRef.current;
-    const track =
-      root.querySelector<HTMLElement>('[data-hero-track]');
-    const canvas =
-      root.querySelector<HTMLCanvasElement>('#frameCanvas');
-    const metadataVideo =
-      root.querySelector<HTMLVideoElement>('#frameMetadata');
-    const boot =
-      root.querySelector<HTMLElement>('#boot');
-    const bootBar =
-      root.querySelector<HTMLElement>('#bootBar');
-    const bootPct =
-      root.querySelector<HTMLElement>('#bootPct');
-    const meter =
-      root.querySelector<HTMLElement>('#meter');
+    const track = root.querySelector<HTMLElement>('[data-hero-track]');
+    const clip = root.querySelector<HTMLVideoElement>('#clip');
+    const boot = root.querySelector<HTMLElement>('#boot');
+    const bootBar = root.querySelector<HTMLElement>('#bootBar');
+    const bootPct = root.querySelector<HTMLElement>('#bootPct');
+    const meter = root.querySelector<HTMLElement>('#meter');
     const panels = Array.from(
       root.querySelectorAll<HTMLElement>('[data-panel]')
     );
 
     if (
       !track ||
-      !canvas ||
-      !metadataVideo ||
+      !clip ||
       !boot ||
       !bootBar ||
       !bootPct ||
@@ -96,581 +67,105 @@ export function CinematicHero() {
       return;
     }
 
-    const context = canvas.getContext('2d', {
-      alpha: false,
-      desynchronized: true,
-    });
-
-    if (!context) return;
-
-    let destroyed = false;
-    let started = false;
-    let duration = 0;
-    let frameCount = 0;
-    let frameWidth = 0;
     let progress = 0;
-    let framePosition = 0;
-    let renderRaf = 0;
-    let resizeRaf = 0;
+    let seekTarget = 0;
+    let seekCurrent = 0;
+    let duration = 0;
+    let ready = false;
+    let started = false;
+    let rafId = 0;
+    let lastSeekTime = 0;
+    let fallbackTimer = 0;
 
-    const frameBlobs: Array<Blob | null> = [];
-    const frameUrls: string[] = [];
-    const decodedFrames = new Map<number, DecodedFrame>();
-    const decodingFrames =
-      new Map<number, Promise<DecodedFrame | null>>();
-    const decodeUse = new Map<number, number>();
-
-    const setBootProgress = (
-      value: number,
-      label = 'LOADING'
-    ) => {
-      const normalized = clamp(value, 0, 1);
-
+    const setBootProgress = (value: number) => {
+      const progressValue = clamp(value, 0, 1);
       bootBar.style.transform =
-        `scaleX(${normalized})`;
+        `scaleX(${progressValue})`;
       bootPct.textContent =
-        `${label} ${Math.round(normalized * 100)}%`;
+        `LOADING ${Math.round(progressValue * 100)}%`;
     };
 
-    const frameTime = (index: number) => {
-      if (!duration || frameCount <= 1) return 0;
-
-      const safeDuration =
-        Math.max(0, duration - 0.035);
-
-      return (
-        safeDuration *
-        (index / (frameCount - 1))
-      );
-    };
-
-    const getFrameUrl = (index: number) =>
-      buildFrameUrl(
-        frameTime(index),
-        frameWidth
-      );
-
-    const configureSequence = () => {
-      const viewportWidth = window.innerWidth;
-
-      if (viewportWidth >= 1280) {
-        frameCount = 96;
-        frameWidth = 1280;
-      } else if (viewportWidth >= 768) {
-        frameCount = 84;
-        frameWidth = 1080;
-      } else {
-        frameCount = 72;
-        frameWidth = 760;
-      }
-
-      frameBlobs.length = frameCount;
-      frameUrls.length = frameCount;
-
-      for (let index = 0; index < frameCount; index += 1) {
-        frameBlobs[index] = null;
-        frameUrls[index] = getFrameUrl(index);
-      }
-    };
-
-    const preloadSequence = async () => {
-      let nextIndex = 0;
-      let completed = 0;
-
-      const worker = async () => {
-        while (!destroyed) {
-          const index = nextIndex;
-          nextIndex += 1;
-
-          if (index >= frameCount) return;
-
-          try {
-            const response = await fetch(frameUrls[index], {
-              cache: 'force-cache',
-              mode: 'cors',
-            });
-
-            if (!response.ok) {
-              throw new Error('Frame request failed');
-            }
-
-            frameBlobs[index] = await response.blob();
-          } catch {
-            // Remote URL remains available as a direct image fallback.
-            frameBlobs[index] = null;
-          }
-
-          completed += 1;
-          setBootProgress(
-            0.08 + (completed / frameCount) * 0.82,
-            'PREPARING FRAMES'
-          );
-        }
-      };
-
-      await Promise.all(
-        Array.from(
-          { length: PRELOAD_CONCURRENCY },
-          () => worker()
-        )
-      );
-    };
-
-    const closeDecodedFrame = (
-      frame: DecodedFrame | undefined
-    ) => {
-      try {
-        frame?.close?.();
-      } catch {}
-    };
-
-    const trimDecodeCache = (
-      focusIndex: number
-    ) => {
-      if (
-        decodedFrames.size <= DECODE_CACHE_LIMIT
-      ) {
-        return;
-      }
-
-      const removable = Array.from(
-        decodedFrames.keys()
-      )
-        .filter(
-          (index) =>
-            Math.abs(index - focusIndex) > 4
-        )
-        .sort((a, b) => {
-          const distanceA =
-            Math.abs(a - focusIndex);
-          const distanceB =
-            Math.abs(b - focusIndex);
-
-          if (distanceA !== distanceB) {
-            return distanceB - distanceA;
-          }
-
-          return (
-            (decodeUse.get(a) ?? 0) -
-            (decodeUse.get(b) ?? 0)
-          );
-        });
-
-      while (
-        decodedFrames.size >
-          DECODE_CACHE_LIMIT &&
-        removable.length
-      ) {
-        const index = removable.shift();
-
-        if (index == null) break;
-
-        closeDecodedFrame(
-          decodedFrames.get(index)
-        );
-        decodedFrames.delete(index);
-        decodeUse.delete(index);
-      }
-    };
-
-    const decodeViaImage = (
-      index: number
-    ) =>
-      new Promise<DecodedFrame | null>(
-        (resolve) => {
-          const image = new Image();
-          image.decoding = 'async';
-          image.crossOrigin = 'anonymous';
-
-          let localUrl = '';
-
-          image.onload = () => {
-            if (localUrl) {
-              URL.revokeObjectURL(localUrl);
-            }
-
-            resolve(image);
-          };
-
-          image.onerror = () => {
-            if (localUrl) {
-              URL.revokeObjectURL(localUrl);
-            }
-
-            resolve(null);
-          };
-
-          const blob = frameBlobs[index];
-
-          if (blob) {
-            localUrl = URL.createObjectURL(blob);
-            image.src = localUrl;
-          } else {
-            image.src = frameUrls[index];
-          }
-        }
-      );
-
-    const decodeFrame = (
-      index: number
-    ): Promise<DecodedFrame | null> => {
-      const boundedIndex = clamp(
-        Math.round(index),
-        0,
-        frameCount - 1
-      );
-
-      const cached =
-        decodedFrames.get(boundedIndex);
-
-      if (cached) {
-        decodeUse.set(
-          boundedIndex,
-          performance.now()
-        );
-
-        return Promise.resolve(cached);
-      }
-
-      const existing =
-        decodingFrames.get(boundedIndex);
-
-      if (existing) {
-        return existing;
-      }
-
-      const request = (async () => {
-        let decoded: DecodedFrame | null = null;
-        const blob = frameBlobs[boundedIndex];
-
-        if (
-          blob &&
-          typeof createImageBitmap === 'function'
-        ) {
-          try {
-            decoded =
-              (await createImageBitmap(
-                blob
-              )) as DecodedFrame;
-          } catch {
-            decoded = null;
-          }
-        }
-
-        if (!decoded) {
-          decoded =
-            await decodeViaImage(
-              boundedIndex
-            );
-        }
-
-        decodingFrames.delete(
-          boundedIndex
-        );
-
-        if (
-          decoded &&
-          !destroyed
-        ) {
-          decodedFrames.set(
-            boundedIndex,
-            decoded
-          );
-          decodeUse.set(
-            boundedIndex,
-            performance.now()
-          );
-          trimDecodeCache(
-            Math.round(framePosition)
-          );
-          scheduleRender();
-          return decoded;
-        }
-
-        closeDecodedFrame(
-          decoded ?? undefined
-        );
-
-        return null;
-      })();
-
-      decodingFrames.set(
-        boundedIndex,
-        request
-      );
-
-      return request;
-    };
-
-    const primeDecodedWindow = async (
-      focusIndex: number
-    ) => {
-      const order = [
-        0,
-        1,
-        -1,
-        2,
-        -2,
-        3,
-        -3,
-        4,
-        -4,
-        5,
-        -5,
-      ];
-
-      await Promise.all(
-        order.map((offset) =>
-          decodeFrame(
-            clamp(
-              focusIndex + offset,
-              0,
-              frameCount - 1
-            )
-          )
-        )
-      );
-    };
-
-    const resizeCanvas = () => {
-      const rect =
-        canvas.getBoundingClientRect();
-      const dpr = Math.min(
-        window.devicePixelRatio || 1,
-        1.5
-      );
-
-      const width = Math.max(
-        1,
-        Math.round(rect.width * dpr)
-      );
-      const height = Math.max(
-        1,
-        Math.round(rect.height * dpr)
-      );
-
-      if (
-        canvas.width !== width ||
-        canvas.height !== height
-      ) {
-        canvas.width = width;
-        canvas.height = height;
-      }
-    };
-
-    const drawCover = (
-      frame: CanvasImageSource,
-      alpha: number
-    ) => {
-      const sourceWidth =
-        'naturalWidth' in frame
-          ? frame.naturalWidth
-          : 'width' in frame
-          ? Number(frame.width)
-          : 0;
-      const sourceHeight =
-        'naturalHeight' in frame
-          ? frame.naturalHeight
-          : 'height' in frame
-          ? Number(frame.height)
-          : 0;
-
-      if (
-        !sourceWidth ||
-        !sourceHeight
-      ) {
-        return;
-      }
-
-      const scale = Math.max(
-        canvas.width / sourceWidth,
-        canvas.height / sourceHeight
-      );
-
-      const width =
-        sourceWidth * scale;
-      const height =
-        sourceHeight * scale;
-      const x =
-        (canvas.width - width) * 0.5;
-      const y =
-        (canvas.height - height) * 0.5;
-
-      context.globalAlpha = alpha;
-      context.drawImage(
-        frame,
-        x,
-        y,
-        width,
-        height
-      );
-    };
-
-    const nearestDecoded = (
-      index: number
-    ) => {
-      const exact =
-        decodedFrames.get(index);
-
-      if (exact) return exact;
-
-      for (
-        let distance = 1;
-        distance < 8;
-        distance += 1
-      ) {
-        const before =
-          decodedFrames.get(
-            index - distance
-          );
-        if (before) return before;
-
-        const after =
-          decodedFrames.get(
-            index + distance
-          );
-        if (after) return after;
-      }
-
-      return null;
-    };
-
-    const renderCanvas = () => {
-      renderRaf = 0;
-
-      if (!frameCount) return;
-
-      const lower = clamp(
-        Math.floor(framePosition),
-        0,
-        frameCount - 1
-      );
-      const upper = clamp(
-        lower + 1,
-        0,
-        frameCount - 1
-      );
-      const mix =
-        framePosition - lower;
-
-      const lowerFrame =
-        nearestDecoded(lower);
-      const upperFrame =
-        nearestDecoded(upper);
-
-      if (!lowerFrame && !upperFrame) {
-        return;
-      }
-
-      context.globalAlpha = 1;
-      context.fillStyle = '#11131a';
-      context.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-
-      if (lowerFrame) {
-        drawCover(
-          lowerFrame,
-          upperFrame ? 1 - mix : 1
-        );
-      }
-
-      if (upperFrame && upper !== lower) {
-        drawCover(
-          upperFrame,
-          lowerFrame ? mix : 1
-        );
-      }
-
-      context.globalAlpha = 1;
-    };
-
-    function scheduleRender() {
-      if (renderRaf) return;
-
-      renderRaf =
-        requestAnimationFrame(
-          renderCanvas
-        );
-    }
-
-    const paintPanels = () => {
-      meter.style.transform =
-        `scaleX(${progress})`;
-
-      panels.forEach(
-        (panel, index) => {
-          const cue = CUES[index];
-          if (!cue) return;
-
-          const enter = ramp(
-            progress,
-            cue[0],
-            cue[1]
-          );
-          const leave = ramp(
-            progress,
-            cue[2],
-            cue[3]
-          );
-          const opacity =
-            enter * (1 - leave);
-          const y =
-            (1 - enter) * DRIFT -
-            leave * DRIFT;
-
-          panel.style.opacity =
-            opacity.toFixed(4);
-          panel.style.transform =
-            `translate3d(0,${y.toFixed(2)}px,0)`;
-          panel.style.pointerEvents =
-            opacity > 0.62
-              ? 'auto'
-              : 'none';
-        }
-      );
-    };
-
-    const updateFromScroll = () => {
+    const readScroll = () => {
       const range = Math.max(
         1,
-        track.offsetHeight -
-          window.innerHeight
+        track.offsetHeight - window.innerHeight
       );
 
-      progress = clamp(
-        lenis.animatedScroll / range,
-        0,
-        1
-      );
+      progress = clamp(lenis.scroll / range, 0, 1);
 
-      framePosition =
-        progress *
-        (frameCount - 1);
+      if (duration) {
+        seekTarget = progress * duration;
+      }
+    };
 
-      const focus =
-        Math.round(framePosition);
+    const paintPanels = () => {
+      meter.style.transform = `scaleX(${progress})`;
 
-      void primeDecodedWindow(
-        focus
-      );
+      panels.forEach((panel, index) => {
+        const cue = CUES[index];
+        if (!cue) return;
+
+        const enter = ramp(progress, cue[0], cue[1]);
+        const leave = ramp(progress, cue[2], cue[3]);
+        const opacity = enter * (1 - leave);
+        const y =
+          (1 - enter) * DRIFT -
+          leave * DRIFT;
+        const scale = 0.994 + opacity * 0.006;
+
+        panel.style.opacity = opacity.toFixed(4);
+        panel.style.transform =
+          `translate3d(0,${y.toFixed(2)}px,0) scale(${scale.toFixed(4)})`;
+        panel.style.pointerEvents =
+          opacity > 0.62 ? 'auto' : 'none';
+      });
+    };
+
+    const renderFrame = (time: number) => {
+      if (ready && duration) {
+        const gap = seekTarget - seekCurrent;
+
+        if (Math.abs(gap) > 0.001) {
+          // Lenis handles scroll smoothing. This smaller video-only damping
+          // removes decode jitter without creating the previous heavy lag.
+          seekCurrent += gap * SEEK_EASE;
+
+          if (
+            time - lastSeekTime >= SEEK_INTERVAL &&
+            clip.readyState >= 2 &&
+            !clip.seeking
+          ) {
+            lastSeekTime = time;
+
+            try {
+              clip.currentTime = clamp(
+                seekCurrent,
+                0,
+                Math.max(0, duration - 0.016)
+              );
+            } catch {}
+          }
+        }
+      }
 
       paintPanels();
-      scheduleRender();
+      rafId = requestAnimationFrame(renderFrame);
     };
 
     const start = () => {
       if (started) return;
       started = true;
+      ready = true;
+      readScroll();
+      seekCurrent = seekTarget;
 
-      setBootProgress(1, 'READY');
+      try {
+        clip.currentTime = seekCurrent;
+      } catch {}
 
       gsap.to(boot, {
         opacity: 0,
-        duration: 0.42,
+        duration: 0.48,
         ease: 'power3.out',
         onComplete: () => {
           boot.classList.add(
@@ -679,165 +174,118 @@ export function CinematicHero() {
           );
         },
       });
-
-      updateFromScroll();
-    };
-
-    const initializeSequence = async () => {
-      duration =
-        Number.isFinite(
-          metadataVideo.duration
-        )
-          ? metadataVideo.duration
-          : 0;
-
-      if (!duration) {
-        start();
-        return;
-      }
-
-      configureSequence();
-      resizeCanvas();
-
-      setBootProgress(
-        0.05,
-        'PREPARING FRAMES'
-      );
-
-      await preloadSequence();
-
-      if (destroyed) return;
-
-      const initialFocus = Math.round(
-        clamp(
-          lenis.animatedScroll /
-            Math.max(
-              1,
-              track.offsetHeight -
-                window.innerHeight
-            ),
-          0,
-          1
-        ) *
-          (frameCount - 1)
-      );
-
-      setBootProgress(
-        0.92,
-        'DECODING'
-      );
-
-      await primeDecodedWindow(
-        initialFocus
-      );
-
-      if (destroyed) return;
-
-      framePosition =
-        initialFocus;
-
-      renderCanvas();
-      start();
     };
 
     const onMetadata = () => {
-      void initializeSequence();
+      duration =
+        Number.isFinite(clip.duration) ? clip.duration : 0;
+      clip.pause();
+      setBootProgress(0.72);
+      readScroll();
+      seekCurrent = seekTarget;
+
+      try {
+        clip.currentTime = seekCurrent;
+      } catch {}
     };
 
-    const onMetadataError = () => {
+    const onProgress = () => {
+      if (!clip.duration || !clip.buffered.length) return;
+
+      const end =
+        clip.buffered.end(clip.buffered.length - 1);
+      setBootProgress(
+        Math.max(0.72, Math.min(0.98, end / clip.duration))
+      );
+    };
+
+    const onReady = () => {
+      setBootProgress(1);
       start();
     };
 
-    metadataVideo.addEventListener(
-      'loadedmetadata',
-      onMetadata
-    );
-    metadataVideo.addEventListener(
-      'error',
-      onMetadataError
-    );
-
-    metadataVideo.src = VIDEO_URL;
-    metadataVideo.load();
-
-    const onLenisScroll =
-      () => updateFromScroll();
-
-    const onResize = () => {
-      if (resizeRaf) {
-        cancelAnimationFrame(
-          resizeRaf
-        );
-      }
-
-      resizeRaf =
-        requestAnimationFrame(() => {
-          resizeRaf = 0;
-          lenis.resize();
-          resizeCanvas();
-          updateFromScroll();
-        });
+    const onError = () => {
+      setBootProgress(1);
+      start();
     };
 
-    lenis.on(
-      'scroll',
-      onLenisScroll
-    );
+    clip.addEventListener('loadedmetadata', onMetadata);
+    clip.addEventListener('progress', onProgress);
+    clip.addEventListener('loadeddata', onReady);
+    clip.addEventListener('canplaythrough', onReady);
+    clip.addEventListener('error', onError);
 
-    window.addEventListener(
-      'resize',
-      onResize,
-      { passive: true }
-    );
+    // Production path: let the browser/CDN buffer the MP4 immediately.
+    // Waiting for a full Blob download made the experience feel unnecessarily slow.
+    clip.src = VIDEO_URL;
+    clip.load();
 
-    resizeCanvas();
+    fallbackTimer = window.setTimeout(start, 4500);
+
+    const unlock = () => {
+      const playback = clip.play();
+
+      if (playback && typeof playback.then === 'function') {
+        playback
+          .then(() => clip.pause())
+          .catch(() => {});
+      } else {
+        clip.pause();
+      }
+    };
+
+    const unlockEvents: Array<keyof WindowEventMap> = [
+      'touchstart',
+      'pointerdown',
+      'wheel',
+      'keydown',
+    ];
+
+    unlockEvents.forEach((eventName) => {
+      window.addEventListener(eventName, unlock, {
+        once: true,
+        passive: true,
+      });
+    });
+
+    const onLenisScroll = () => readScroll();
+    const onResize = () => {
+      lenis.resize();
+      readScroll();
+      paintPanels();
+    };
+
+    lenis.on('scroll', onLenisScroll);
+    window.addEventListener('resize', onResize, {
+      passive: true,
+    });
+
+    readScroll();
     paintPanels();
+    rafId = requestAnimationFrame(renderFrame);
 
     return () => {
-      destroyed = true;
+      cancelAnimationFrame(rafId);
+      window.clearTimeout(fallbackTimer);
 
-      if (renderRaf) {
-        cancelAnimationFrame(
-          renderRaf
-        );
-      }
-
-      if (resizeRaf) {
-        cancelAnimationFrame(
-          resizeRaf
-        );
-      }
-
-      metadataVideo.removeEventListener(
+      clip.removeEventListener(
         'loadedmetadata',
         onMetadata
       );
-      metadataVideo.removeEventListener(
-        'error',
-        onMetadataError
+      clip.removeEventListener('progress', onProgress);
+      clip.removeEventListener('loadeddata', onReady);
+      clip.removeEventListener(
+        'canplaythrough',
+        onReady
       );
+      clip.removeEventListener('error', onError);
 
-      lenis.off(
-        'scroll',
-        onLenisScroll
-      );
+      lenis.off('scroll', onLenisScroll);
+      window.removeEventListener('resize', onResize);
 
-      window.removeEventListener(
-        'resize',
-        onResize
-      );
-
-      decodedFrames.forEach(
-        (frame) => {
-          closeDecodedFrame(frame);
-        }
-      );
-
-      decodedFrames.clear();
-      decodingFrames.clear();
-      decodeUse.clear();
-      frameBlobs.length = 0;
-      frameUrls.length = 0;
+      unlockEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, unlock);
+      });
     };
   }, [lenis]);
 
@@ -864,20 +312,14 @@ export function CinematicHero() {
         </p>
       </div>
 
-      <video
-        id="frameMetadata"
-        aria-hidden="true"
-        muted
-        playsInline
-        preload="metadata"
-        className="hidden"
-      />
-
       <div className="fixed inset-0 z-0 overflow-hidden bg-[#11131a]">
-        <canvas
-          id="frameCanvas"
-          className="absolute inset-0 h-full w-full"
-          aria-hidden="true"
+        <video
+          id="clip"
+          muted
+          playsInline
+          preload="auto"
+          disablePictureInPicture
+          className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 scale-[1.025] object-cover"
         />
 
         <div
@@ -902,11 +344,7 @@ export function CinematicHero() {
           title="FRAME & FORM"
           subtitle={
             <>
-              Where your{' '}
-              <em className="font-normal italic">
-                Vision
-              </em>{' '}
-              meets Reality
+              Where your <em className="font-normal italic">Vision</em> meets Reality
             </>
           }
           href="/contact"
@@ -958,7 +396,7 @@ export function CinematicHero() {
       <div
         data-hero-track
         aria-hidden="true"
-        className="relative z-[1] h-[280vh] min-h-[1800px]"
+        className="relative z-[1] h-[360vh] min-h-[2200px]"
       />
     </div>
   );
