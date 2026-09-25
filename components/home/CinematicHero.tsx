@@ -4,7 +4,6 @@ import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
 import SplitType from 'split-type';
-import { ArrowRight } from 'lucide-react';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const FRAME_COUNT = 82;
@@ -1071,37 +1070,39 @@ function HeroPanel({
           >
             <Link
               href={href}
-              className="group relative isolate inline-flex h-[46px] min-w-[150px] items-center justify-between overflow-hidden rounded-full border border-white/[0.22] bg-white/[0.052] pl-6 pr-[7px] text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15),inset_0_-1px_0_rgba(255,255,255,.025),0_10px_28px_rgba(22,15,30,.10)] backdrop-blur-[20px] transition-[background-color,border-color,box-shadow] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] hover:border-white/[0.36] hover:bg-white/[0.072] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.21),inset_0_-1px_0_rgba(255,255,255,.05),0_15px_34px_rgba(22,15,30,.13)] active:bg-white/[0.085] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="group relative isolate inline-flex h-[46px] min-w-[150px] items-center justify-center overflow-hidden rounded-full border border-white/[0.22] bg-white/[0.05] px-7 text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.15),inset_0_-1px_0_rgba(255,255,255,.025),0_10px_28px_rgba(22,15,30,.10)] backdrop-blur-[20px] transition-[background-color,border-color,box-shadow] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] hover:border-white/[0.37] hover:bg-white/[0.072] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-1px_0_rgba(255,255,255,.05),0_15px_34px_rgba(22,15,30,.13)] active:bg-white/[0.085] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-[1px] rounded-full border border-white/[0.055] transition-[border-color,opacity] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/[0.105]"
+                className="pointer-events-none absolute inset-[1px] rounded-full border border-white/[0.055] transition-[border-color,opacity] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/[0.11]"
               />
 
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute right-[7px] top-1/2 h-[32px] w-[32px] -translate-y-1/2 rounded-full border border-white/[0.13] bg-white/[0.038] shadow-[inset_0_1px_0_rgba(255,255,255,.12)] backdrop-blur-xl transition-[transform,background-color,border-color,box-shadow] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-x-[3px] group-hover:scale-[1.045] group-hover:border-white/[0.24] group-hover:bg-white/[0.07] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_5px_16px_rgba(8,6,12,.07)]"
+                className="pointer-events-none absolute inset-x-[18px] top-[7px] h-px origin-center scale-x-[0.18] bg-white/[0.14] opacity-55 transition-[transform,opacity] duration-[1000ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100 group-hover:opacity-100"
               />
 
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute right-[43px] top-1/2 h-[22px] w-px origin-center -translate-y-1/2 scale-y-[0.35] bg-white/[0.12] opacity-50 transition-[transform,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-y-100 group-hover:opacity-100"
+                className="pointer-events-none absolute inset-x-[18px] bottom-[7px] h-px origin-center scale-x-[0.18] bg-white/[0.08] opacity-35 transition-[transform,opacity] duration-[1000ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100 group-hover:opacity-75"
               />
 
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute right-[45px] top-1/2 h-[18px] w-0 -translate-y-1/2 overflow-hidden rounded-full border-y border-white/[0.10] bg-white/[0.025] backdrop-blur-xl transition-[width,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:w-[16px] group-hover:opacity-100"
+                className="pointer-events-none absolute inset-y-[5px] left-1/2 w-[34%] -translate-x-1/2 scale-x-[0.22] rounded-full border-x border-white/[0.08] bg-white/[0.028] opacity-0 backdrop-blur-[2px] transition-[transform,opacity] duration-[1000ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100 group-hover:opacity-100"
               />
 
-              <span className="relative z-10 transition-[transform,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-x-[2px] group-hover:opacity-95">
-                {cta}
-              </span>
+              <span className="relative z-10 h-[14px] overflow-hidden leading-[14px]">
+                <span className="block transition-[transform,filter,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-[14px] group-hover:blur-[3px] group-hover:opacity-0">
+                  {cta}
+                </span>
 
-              <span className="relative z-10 ml-5 flex h-[32px] w-[32px] shrink-0 items-center justify-center">
-                <ArrowRight
+                <span
                   aria-hidden="true"
-                  className="h-[14px] w-[14px] stroke-[1.45] text-white/88 transition-[transform,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:-rotate-45 group-hover:translate-x-[1px] group-hover:-translate-y-[1px] group-hover:opacity-100"
-                />
+                  className="absolute left-0 top-0 translate-y-[14px] blur-[3px] opacity-0 transition-[transform,filter,opacity] duration-[950ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-y-0 group-hover:blur-0 group-hover:opacity-100"
+                >
+                  {cta}
+                </span>
               </span>
             </Link>
           </div>
