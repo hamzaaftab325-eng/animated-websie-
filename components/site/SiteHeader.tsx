@@ -16,6 +16,8 @@ export function SiteHeader() {
   const homeNavRef = useRef<HTMLElement>(null);
   const compactButtonRef =
     useRef<HTMLButtonElement>(null);
+  const liquidMorphRef =
+    useRef<HTMLSpanElement>(null);
   const menuPanelRef =
     useRef<HTMLDivElement>(null);
   const menuBackdropRef =
@@ -179,71 +181,195 @@ export function SiteHeader() {
 
     const nav = homeNavRef.current;
     const button = compactButtonRef.current;
+    const liquid = liquidMorphRef.current;
 
-    if (!nav || !button) return;
+    if (!nav || !button || !liquid) return;
 
     const centerOffset = Math.max(
       0,
       window.innerWidth * 0.5 - 42
     );
 
-    gsap.killTweensOf([nav, button]);
+    gsap.killTweensOf([
+      nav,
+      button,
+      liquid,
+    ]);
+
+    const tl = gsap.timeline({
+      defaults: {
+        ease: 'expo.inOut',
+      },
+    });
 
     if (compact) {
       setMenuOpen(false);
 
-      gsap.to(nav, {
+      gsap.set(liquid, {
         autoAlpha: 0,
-        y: -8,
-        scale: 0.82,
-        filter: 'blur(10px)',
-        duration: 0.5,
-        ease: 'power4.out',
-        pointerEvents: 'none',
+        x: centerOffset,
+        scaleX: 5.4,
+        scaleY: 0.76,
+        rotate: -3,
+        filter: 'blur(8px)',
       });
 
-      gsap.fromTo(
-        button,
+      tl.to(
+        nav,
         {
           autoAlpha: 0,
-          x: centerOffset,
-          scale: 0.72,
-          filter: 'blur(10px)',
+          y: -4,
+          scale: 0.88,
+          filter: 'blur(12px)',
+          duration: 0.95,
+          ease: 'power4.inOut',
+          pointerEvents: 'none',
         },
-        {
-          autoAlpha: 1,
-          x: 0,
-          scale: 1,
-          filter: 'blur(0px)',
-          duration: 0.78,
-          ease: 'expo.out',
-          pointerEvents: 'auto',
-          overwrite: true,
-        }
-      );
+        0
+      )
+        .to(
+          liquid,
+          {
+            autoAlpha: 0.96,
+            x: centerOffset * 0.58,
+            scaleX: 3.35,
+            scaleY: 0.88,
+            rotate: -1.5,
+            filter: 'blur(3px)',
+            duration: 0.48,
+            ease: 'power3.out',
+          },
+          0.08
+        )
+        .to(
+          liquid,
+          {
+            x: 0,
+            scaleX: 1,
+            scaleY: 1,
+            rotate: 0,
+            filter: 'blur(0px)',
+            duration: 0.82,
+            ease: 'expo.out',
+          },
+          0.38
+        )
+        .fromTo(
+          button,
+          {
+            autoAlpha: 0,
+            scale: 0.64,
+            filter: 'blur(10px)',
+          },
+          {
+            autoAlpha: 1,
+            scale: 1,
+            filter: 'blur(0px)',
+            duration: 0.72,
+            ease: 'expo.out',
+            pointerEvents: 'auto',
+            overwrite: true,
+          },
+          0.62
+        )
+        .to(
+          liquid,
+          {
+            autoAlpha: 0,
+            scale: 0.86,
+            duration: 0.36,
+            ease: 'power2.out',
+          },
+          0.98
+        );
     } else {
       setMenuOpen(false);
 
-      gsap.to(button, {
+      gsap.set(liquid, {
         autoAlpha: 0,
-        x: centerOffset,
-        scale: 0.74,
-        filter: 'blur(8px)',
-        duration: 0.48,
-        ease: 'power3.inOut',
-        pointerEvents: 'none',
+        x: 0,
+        scaleX: 1,
+        scaleY: 1,
+        rotate: 0,
+        filter: 'blur(0px)',
       });
 
-      gsap.to(nav, {
-        autoAlpha: 1,
-        y: 0,
-        scale: 1,
-        filter: 'blur(0px)',
-        duration: 0.78,
-        delay: 0.06,
-        ease: 'expo.out',
-        pointerEvents: 'auto',
-      });
+      tl.to(
+        button,
+        {
+          autoAlpha: 0,
+          scale: 0.7,
+          filter: 'blur(8px)',
+          duration: 0.54,
+          ease: 'power3.inOut',
+          pointerEvents: 'none',
+        },
+        0
+      )
+        .to(
+          liquid,
+          {
+            autoAlpha: 0.94,
+            scaleX: 1.12,
+            scaleY: 0.92,
+            duration: 0.28,
+            ease: 'power2.out',
+          },
+          0.08
+        )
+        .to(
+          liquid,
+          {
+            x: centerOffset * 0.58,
+            scaleX: 3.2,
+            scaleY: 0.86,
+            rotate: 1.5,
+            filter: 'blur(3px)',
+            duration: 0.66,
+            ease: 'power3.inOut',
+          },
+          0.22
+        )
+        .to(
+          liquid,
+          {
+            x: centerOffset,
+            scaleX: 5.2,
+            scaleY: 0.78,
+            filter: 'blur(7px)',
+            duration: 0.5,
+            ease: 'expo.in',
+          },
+          0.66
+        )
+        .to(
+          liquid,
+          {
+            autoAlpha: 0,
+            duration: 0.24,
+            ease: 'power2.out',
+          },
+          0.98
+        )
+        .fromTo(
+          nav,
+          {
+            autoAlpha: 0,
+            y: -4,
+            scale: 0.88,
+            filter: 'blur(12px)',
+          },
+          {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            filter: 'blur(0px)',
+            duration: 1,
+            ease: 'expo.out',
+            pointerEvents: 'auto',
+          },
+          0.58
+        );
     }
   }, [compact, homeNavReady, isHome]);
 
@@ -323,7 +449,7 @@ export function SiteHeader() {
           filter: 'blur(0px)',
           clipPath:
             'inset(0 0 0% 0 round 28px)',
-          duration: 0.7,
+          duration: 0.88,
           ease: 'expo.out',
           pointerEvents: 'auto',
         }
@@ -342,9 +468,9 @@ export function SiteHeader() {
           x: 0,
           y: 0,
           filter: 'blur(0px)',
-          duration: 0.72,
-          stagger: 0.055,
-          delay: 0.12,
+          duration: 0.82,
+          stagger: 0.07,
+          delay: 0.16,
           ease: 'expo.out',
         }
       );
@@ -455,6 +581,12 @@ export function SiteHeader() {
             />
           </nav>
         </div>
+
+        <span
+          ref={liquidMorphRef}
+          aria-hidden="true"
+          className="pointer-events-none absolute left-[18px] top-[18px] z-[28] h-[48px] w-[48px] rounded-full border border-white/[0.15] bg-white/[0.08] opacity-0 shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_30px_rgba(27,18,34,.12)] backdrop-blur-2xl will-change-transform md:left-[24px]"
+        />
 
         <button
           ref={compactButtonRef}
