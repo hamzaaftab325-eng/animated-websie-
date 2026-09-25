@@ -25,17 +25,17 @@ const shippori = Shippori_Mincho({
 });
 
 export const metadata: Metadata = {
-  title: 'Cast & Render — 3D Object Studio & Endless Possibilities',
-  description: 'A scroll-scrubbed cinematic 3D experience and boundless possibilities suite with GSAP and Lenis smooth scrolling.',
+  title: 'Frame & Form — Digital Experiences in Motion',
+  description: 'Frame & Form is a cinematic digital studio shaping ideas through motion, interaction, and visual craft.',
   openGraph: {
-    title: 'Cast & Render — 3D Object Studio & Endless Possibilities',
-    description: 'A scroll-scrubbed cinematic 3D experience with GSAP and Lenis smooth scrolling.',
+    title: 'Frame & Form — Digital Experiences in Motion',
+    description: 'A cinematic digital studio shaping ideas through motion, interaction, and visual craft.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Cast & Render — 3D Object Studio & Endless Possibilities',
-    description: 'A scroll-scrubbed cinematic 3D experience with GSAP and Lenis smooth scrolling.',
+    title: 'Frame & Form — Digital Experiences in Motion',
+    description: 'A cinematic digital studio shaping ideas through motion, interaction, and visual craft.',
   },
 };
 
