@@ -91,3 +91,26 @@ a {
     opacity: 1 !important;
   }
 }
+
+
+@keyframes feature-icon-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -5px, 0);
+  }
+}
+
+.feature-icon-float {
+  animation: feature-icon-float 5.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-icon-float {
+    animation: none !important;
+  }
+}

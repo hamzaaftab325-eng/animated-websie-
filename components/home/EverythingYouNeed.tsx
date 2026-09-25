@@ -103,17 +103,17 @@ export function EverythingYouNeed() {
         </div>
 
         <div className="mt-[clamp(4rem,8vh,7rem)] grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4 xl:gap-5">
-          {FEATURES.map((feature) => {
+          {FEATURES.map((feature, index) => {
             const Icon = feature.icon;
 
             return (
               <article
                 key={feature.title}
                 data-reveal
-                className="group relative min-h-[290px] overflow-hidden rounded-[24px] border border-white/45 bg-white/[0.16] px-6 py-7 text-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,.55),inset_0_-1px_0_rgba(255,255,255,.10),0_18px_50px_rgba(77,45,40,.18)] backdrop-blur-[18px] transition-[transform,background-color,border-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[5px] hover:border-white/65 hover:bg-white/[0.20] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.72),inset_0_-1px_0_rgba(255,255,255,.13),0_24px_60px_rgba(77,45,40,.22)]"
+                className="group relative min-h-[304px] overflow-hidden rounded-[24px] border border-white/45 bg-white/[0.16] px-6 py-7 text-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,.58),inset_0_-1px_0_rgba(255,255,255,.10),0_18px_50px_rgba(77,45,40,.18)] backdrop-blur-[18px] transition-[transform,background-color,border-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[7px] hover:scale-[1.008] hover:border-white/70 hover:bg-white/[0.20] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.76),inset_0_-1px_0_rgba(255,255,255,.13),0_28px_68px_rgba(77,45,40,.24)]"
                 style={{
                   backgroundImage:
-                    'linear-gradient(145deg,rgba(255,230,219,.24),rgba(200,141,140,.20))',
+                    'linear-gradient(145deg,rgba(255,230,219,.25),rgba(200,141,140,.20))',
                 }}
               >
                 <div
@@ -121,15 +121,45 @@ export function EverythingYouNeed() {
                   className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/[0.16]"
                 />
 
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-6 top-0 h-px origin-center scale-x-[0.24] bg-white/55 opacity-40 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-x-100 group-hover:opacity-85"
+                />
+
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-1/2 top-[76px] h-[96px] w-[96px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,221,203,.22)_0%,rgba(255,221,203,.08)_48%,transparent_72%)] opacity-70 blur-[16px] transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.18] group-hover:opacity-95"
+                />
+
                 <div className="relative z-10 flex h-full flex-col items-center">
-                  <div className="flex h-[74px] w-[74px] items-center justify-center rounded-full border border-white/45 bg-white/[0.15] shadow-[inset_0_1px_0_rgba(255,255,255,.52),0_8px_26px_rgba(112,63,57,.16)] backdrop-blur-xl transition-[transform,background-color,border-color] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.04] group-hover:border-white/70 group-hover:bg-white/[0.19]">
-                    <Icon
-                      className="h-[31px] w-[31px] stroke-[1.45]"
-                      aria-hidden="true"
-                    />
+                  <div
+                    className="feature-icon-float relative h-[84px] w-[84px] [perspective:800px]"
+                    style={{
+                      animationDelay: `-${index * 0.72}s`,
+                    }}
+                  >
+                    <div className="absolute inset-0 [transform-style:preserve-3d] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:[transform:rotateX(7deg)_rotateY(-9deg)_translateY(-4px)]">
+                      <div className="absolute inset-[2px] rounded-full border border-white/55 bg-[radial-gradient(circle_at_34%_24%,rgba(255,255,255,.72)_0%,rgba(255,239,231,.30)_24%,rgba(218,145,139,.18)_58%,rgba(155,84,78,.16)_100%)] shadow-[inset_0_2px_3px_rgba(255,255,255,.62),inset_0_-9px_18px_rgba(120,65,59,.12),0_12px_30px_rgba(95,49,45,.22)] backdrop-blur-xl [transform:translateZ(0)] transition-[border-color,box-shadow] duration-700 group-hover:border-white/80 group-hover:shadow-[inset_0_2px_3px_rgba(255,255,255,.76),inset_0_-10px_20px_rgba(120,65,59,.14),0_18px_34px_rgba(95,49,45,.28)]" />
+
+                      <div className="absolute inset-[9px] rounded-full border border-white/20 bg-white/[0.045] shadow-[inset_0_1px_0_rgba(255,255,255,.40)] [transform:translateZ(8px)]" />
+
+                      <div className="absolute left-[17px] top-[13px] h-[22px] w-[36px] -rotate-[24deg] rounded-full bg-white/28 blur-[5px] [transform:translateZ(12px)] transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[4px] group-hover:-translate-y-[2px] group-hover:opacity-90" />
+
+                      <Icon
+                        aria-hidden="true"
+                        className="absolute left-1/2 top-1/2 h-[33px] w-[33px] -translate-x-[calc(50%-1.5px)] -translate-y-[calc(50%-2px)] stroke-[1.7] text-[#9f5c58]/50 blur-[.35px] [transform:translateZ(13px)]"
+                      />
+
+                      <Icon
+                        aria-hidden="true"
+                        className="absolute left-1/2 top-1/2 h-[33px] w-[33px] -translate-x-1/2 -translate-y-1/2 stroke-[1.55] text-white drop-shadow-[0_2px_5px_rgba(112,57,52,.26)] [transform:translateZ(18px)] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.08]"
+                      />
+
+                      <div className="absolute inset-[1px] rounded-full border border-white/20 [transform:translateZ(20px)]" />
+                    </div>
                   </div>
 
-                  <h3 className="mt-5 font-serif text-[1.7rem] font-normal leading-none tracking-[-0.025em] text-white [text-shadow:0_1px_12px_rgba(91,47,44,.20)]">
+                  <h3 className="mt-5 font-serif text-[1.7rem] font-normal leading-none tracking-[-0.025em] text-white [text-shadow:0_1px_12px_rgba(91,47,44,.20)] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-[1px]">
                     {feature.title}
                   </h3>
 
@@ -140,7 +170,7 @@ export function EverythingYouNeed() {
                   <Link
                     href={feature.href}
                     aria-label={`${feature.title} — learn more`}
-                    className="mt-auto flex h-[38px] min-w-[92px] items-center justify-center rounded-full border border-white/55 bg-white/[0.14] px-5 shadow-[inset_0_1px_0_rgba(255,255,255,.48),0_5px_18px_rgba(93,50,46,.12)] backdrop-blur-xl transition-[transform,background-color,border-color] duration-600 ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/75 group-hover:bg-white/[0.19]"
+                    className="mt-auto flex h-[38px] min-w-[92px] items-center justify-center rounded-full border border-white/55 bg-white/[0.14] px-5 shadow-[inset_0_1px_0_rgba(255,255,255,.48),0_5px_18px_rgba(93,50,46,.12)] backdrop-blur-xl transition-[transform,background-color,border-color,box-shadow] duration-600 ease-[cubic-bezier(.16,1,.3,1)] group-hover:border-white/80 group-hover:bg-white/[0.19] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.60),0_8px_20px_rgba(93,50,46,.16)]"
                   >
                     <ArrowRight className="h-5 w-5 stroke-[1.45] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[3px]" />
                   </Link>
