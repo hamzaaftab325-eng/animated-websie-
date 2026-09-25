@@ -1052,20 +1052,25 @@ function HeroPanel({
             <Link
               data-hero-button
               href={href}
-              className="group relative isolate inline-flex h-[44px] min-w-[132px] items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/[0.10] px-7 text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_34px_rgba(34,20,37,.12)] backdrop-blur-md transition-[transform,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[2px] hover:scale-[1.02] hover:border-white/55 hover:bg-white/[0.17] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.24),0_16px_44px_rgba(34,20,37,.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+              className="group relative isolate inline-flex h-[44px] min-w-[132px] items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/[0.10] px-7 text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_34px_rgba(34,20,37,.12)] backdrop-blur-md transition-[transform,border-color,box-shadow] duration-500 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[2px] hover:scale-[1.015] hover:border-white/70 hover:shadow-[inset_0_1px_0_rgba(255,255,255,.26),0_16px_44px_rgba(34,20,37,.18)] active:translate-y-0 active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-y-[-35%] left-[-55%] w-[42%] -skew-x-[18deg] bg-gradient-to-r from-transparent via-white/30 to-transparent blur-[1px] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[380%]"
+                className="pointer-events-none absolute right-[15px] top-1/2 z-0 h-[8px] w-[8px] -translate-y-1/2 rounded-full bg-white opacity-85 transition-[transform,opacity] duration-[650ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[24] group-hover:opacity-100"
               />
 
-              <span className="relative z-10 transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-[1px]">
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute right-[11px] top-1/2 z-[1] h-[16px] w-[16px] -translate-y-1/2 rounded-full border border-white/45 opacity-70 transition-[transform,opacity,border-color] duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:scale-[1.35] group-hover:border-black/15 group-hover:opacity-0"
+              />
+
+              <span className="relative z-10 transition-[transform,color,letter-spacing] duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-x-1 group-hover:tracking-[0.065em] group-hover:text-black">
                 {cta}
               </span>
 
               <span
                 aria-hidden="true"
-                className="relative z-10 ml-2 translate-x-0 text-[13px] opacity-70 transition-[transform,opacity] duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-1 group-hover:opacity-100"
+                className="relative z-10 ml-2 translate-x-0 translate-y-0 text-[13px] opacity-75 transition-[transform,color,opacity] duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[3px] group-hover:-translate-y-[2px] group-hover:text-black group-hover:opacity-100"
               >
                 ↗
               </span>
