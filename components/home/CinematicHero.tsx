@@ -952,7 +952,16 @@ export function CinematicHero() {
           }}
         />
 
-        <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[2] opacity-[.055] mix-blend-soft-light" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-[2]"
+          style={{
+            background:
+              'radial-gradient(ellipse at 50% 38%,rgba(7,9,13,0) 32%,rgba(7,9,13,.055) 68%,rgba(7,9,13,.18) 100%), linear-gradient(90deg,rgba(7,9,13,.10) 0%,rgba(7,9,13,0) 24%,rgba(7,9,13,0) 76%,rgba(7,9,13,.10) 100%)',
+          }}
+        />
+
+        <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[3] opacity-[.05] mix-blend-soft-light" />
       </div>
 
       <i
@@ -1039,14 +1048,61 @@ function PremiumCta({
   label: string;
 }) {
   const [active, setActive] = useState(false);
+  const activatedAtRef = useRef(0);
+  const releaseTimerRef =
+    useRef<number | null>(null);
+
+  const activate = () => {
+    if (releaseTimerRef.current !== null) {
+      window.clearTimeout(
+        releaseTimerRef.current
+      );
+      releaseTimerRef.current = null;
+    }
+
+    activatedAtRef.current = performance.now();
+    setActive(true);
+  };
+
+  const release = () => {
+    const elapsed =
+      performance.now() -
+      activatedAtRef.current;
+    const remaining = Math.max(
+      0,
+      720 - elapsed
+    );
+
+    if (releaseTimerRef.current !== null) {
+      window.clearTimeout(
+        releaseTimerRef.current
+      );
+    }
+
+    releaseTimerRef.current =
+      window.setTimeout(() => {
+        setActive(false);
+        releaseTimerRef.current = null;
+      }, remaining);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (releaseTimerRef.current !== null) {
+        window.clearTimeout(
+          releaseTimerRef.current
+        );
+      }
+    };
+  }, []);
 
   return (
     <Link
       href={href}
-      onMouseEnter={() => setActive(true)}
-      onMouseLeave={() => setActive(false)}
-      onFocus={() => setActive(true)}
-      onBlur={() => setActive(false)}
+      onPointerEnter={activate}
+      onPointerLeave={release}
+      onFocus={activate}
+      onBlur={release}
       className="group relative isolate inline-flex h-[46px] w-[154px] overflow-hidden rounded-full shadow-[0_10px_28px_rgba(22,15,30,.10)] transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] active:scale-[0.992] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
     >
       <span
