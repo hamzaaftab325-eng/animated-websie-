@@ -17,7 +17,7 @@ const INITIAL_FRAMES = [
 ] as const;
 
 const CUES = [
-  [0.0, 0.012, 0.235, 0.29],
+  [0.0, 0.0, 0.235, 0.29],
   [0.32, 0.365, 0.555, 0.61],
   [0.64, 0.685, 1.2, 1.25],
 ] as const;
@@ -139,6 +139,10 @@ export function CinematicHero() {
         });
 
         const chars = split.chars ?? [];
+        const button =
+          panel.querySelector<HTMLElement>(
+            '[data-hero-button]'
+          );
 
         gsap.set(chars, {
           display: 'inline-block',
@@ -153,10 +157,22 @@ export function CinematicHero() {
             'transform, opacity, filter',
         });
 
+        if (button) {
+          gsap.set(button, {
+            opacity: 0,
+            y: 12,
+            scale: 0.96,
+            filter: 'blur(5px)',
+            willChange:
+              'transform, opacity, filter',
+          });
+        }
+
         return {
           panel,
           split,
           chars,
+          button,
           visible: false,
         };
       })
@@ -167,6 +183,7 @@ export function CinematicHero() {
           panel: HTMLElement;
           split: SplitType;
           chars: HTMLElement[];
+          button: HTMLElement | null;
           visible: boolean;
         } => Boolean(state)
       );
@@ -204,6 +221,21 @@ export function CinematicHero() {
         clearProps:
           'willChange,transformOrigin,transformPerspective',
       });
+
+      if (state.button) {
+        gsap.killTweensOf(state.button);
+        gsap.to(state.button, {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          filter: 'blur(0px)',
+          duration: 0.72,
+          delay: 0.16,
+          ease: 'power3.out',
+          overwrite: true,
+          clearProps: 'willChange',
+        });
+      }
     };
 
     const resetHeading = (
@@ -231,6 +263,18 @@ export function CinematicHero() {
         willChange:
           'transform, opacity, filter',
       });
+
+      if (state.button) {
+        gsap.killTweensOf(state.button);
+        gsap.set(state.button, {
+          opacity: 0,
+          y: 12,
+          scale: 0.96,
+          filter: 'blur(5px)',
+          willChange:
+            'transform, opacity, filter',
+        });
+      }
     };
 
     const setBootProgress = (
@@ -842,6 +886,11 @@ export function CinematicHero() {
 
       headingStates.forEach((state) => {
         gsap.killTweensOf(state.chars);
+
+        if (state.button) {
+          gsap.killTweensOf(state.button);
+        }
+
         state.split.revert();
       });
     };
@@ -1001,10 +1050,25 @@ function HeroPanel({
 
           <div className="pointer-events-auto hidden pb-1 md:block">
             <Link
+              data-hero-button
               href={href}
-              className="inline-flex h-[38px] min-w-[116px] items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 text-[11px] font-medium tracking-[0.04em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_8px_30px_rgba(40,20,35,.10)] backdrop-blur-md transition-[transform,background-color] duration-500 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-0.5 hover:bg-white/18"
+              className="group relative isolate inline-flex h-[44px] min-w-[132px] items-center justify-center overflow-hidden rounded-full border border-white/30 bg-white/[0.10] px-7 text-[11px] font-medium tracking-[0.045em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_34px_rgba(34,20,37,.12)] backdrop-blur-md transition-[transform,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[2px] hover:scale-[1.02] hover:border-white/55 hover:bg-white/[0.17] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.24),0_16px_44px_rgba(34,20,37,.18)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
             >
-              {cta}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-y-[-35%] left-[-55%] w-[42%] -skew-x-[18deg] bg-gradient-to-r from-transparent via-white/30 to-transparent blur-[1px] transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[380%]"
+              />
+
+              <span className="relative z-10 transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-[1px]">
+                {cta}
+              </span>
+
+              <span
+                aria-hidden="true"
+                className="relative z-10 ml-2 translate-x-0 text-[13px] opacity-70 transition-[transform,opacity] duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-1 group-hover:opacity-100"
+              >
+                ↗
+              </span>
             </Link>
           </div>
         </div>
