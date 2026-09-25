@@ -11,12 +11,13 @@ const VIDEO_URL =
 const CUES = [
   [0.0, 0.012, 0.235, 0.29],
   [0.32, 0.365, 0.555, 0.61],
-  [0.64, 0.685, 0.925, 0.985],
+  [0.64, 0.685, 1.2, 1.25],
 ] as const;
 
 const DRIFT = 12;
 const SEEK_EASE = 0.34;
 const SEEK_INTERVAL = 24;
+const VIDEO_COMPLETE_PROGRESS = 0.93;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -94,7 +95,18 @@ export function CinematicHero() {
       progress = clamp(lenis.scroll / range, 0, 1);
 
       if (duration) {
-        seekTarget = progress * duration;
+        const videoProgress = clamp(
+          progress / VIDEO_COMPLETE_PROGRESS,
+          0,
+          1
+        );
+        const finalFrameTime = Math.max(
+          0,
+          duration - 0.001
+        );
+
+        seekTarget =
+          videoProgress * finalFrameTime;
       }
     };
 
@@ -126,14 +138,18 @@ export function CinematicHero() {
         const gap = seekTarget - seekCurrent;
 
         if (Math.abs(gap) > 0.001) {
-          const nearEnd = progress >= 0.9;
-          const almostSettled = Math.abs(gap) < 0.035;
-          const catchUp = nearEnd ? 0.5 : SEEK_EASE;
+          const nearEnd =
+            progress >= VIDEO_COMPLETE_PROGRESS - 0.05;
+          const almostSettled =
+            Math.abs(gap) < 0.035;
+          const catchUp =
+            nearEnd ? 0.62 : SEEK_EASE;
 
           // Avoid the exponential "braking" tail at the end: normal motion
           // remains damped, while the final portion catches the target quickly.
           seekCurrent =
-            progress >= 0.995 || almostSettled
+            progress >= VIDEO_COMPLETE_PROGRESS ||
+            almostSettled
               ? seekTarget
               : seekCurrent + gap * catchUp;
 
@@ -148,7 +164,7 @@ export function CinematicHero() {
               clip.currentTime = clamp(
                 seekCurrent,
                 0,
-                Math.max(0, duration - 0.016)
+                Math.max(0, duration - 0.001)
               );
             } catch {}
           }
