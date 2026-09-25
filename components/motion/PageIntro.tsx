@@ -2,7 +2,7 @@
 
 import { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { SplitText } from 'gsap/SplitText';
+import SplitType from 'split-type';
 
 type PageIntroProps = {
   eyebrow: string;
@@ -20,31 +20,27 @@ export function PageIntro({
   const bodyRef = useRef<HTMLParagraphElement>(null);
 
   useLayoutEffect(() => {
-    gsap.registerPlugin(SplitText);
-
     if (!root.current || !titleRef.current || !bodyRef.current) {
       return;
     }
 
     const context = gsap.context(() => {
-      const titleSplit = SplitText.create(titleRef.current!, {
-        type: 'lines',
-        mask: 'lines',
-        linesClass: 'split-mask',
+      const titleSplit = new SplitType(titleRef.current!, {
+        types: 'lines',
+        lineClass: 'split-mask',
       });
 
-      const bodySplit = SplitText.create(bodyRef.current!, {
-        type: 'lines',
-        mask: 'lines',
-        linesClass: 'split-mask',
+      const bodySplit = new SplitType(bodyRef.current!, {
+        types: 'lines',
+        lineClass: 'split-mask',
       });
 
-      gsap.set(titleSplit.lines, {
+      gsap.set(titleSplit.lines ?? [], {
         yPercent: 108,
         opacity: 0,
       });
 
-      gsap.set(bodySplit.lines, {
+      gsap.set(bodySplit.lines ?? [], {
         yPercent: 80,
         opacity: 0,
       });
@@ -63,7 +59,7 @@ export function PageIntro({
           0
         )
         .to(
-          titleSplit.lines,
+          titleSplit.lines ?? [],
           {
             yPercent: 0,
             opacity: 1,
@@ -73,7 +69,7 @@ export function PageIntro({
           0.08
         )
         .to(
-          bodySplit.lines,
+          bodySplit.lines ?? [],
           {
             yPercent: 0,
             opacity: 1,

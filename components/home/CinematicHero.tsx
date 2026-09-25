@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
-import { SplitText } from 'gsap/SplitText';
+import SplitType from 'split-type';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const VIDEO_URL =
@@ -42,8 +42,6 @@ export function CinematicHero() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    gsap.registerPlugin(SplitText);
-
     if (!rootRef.current) return;
 
     const context = gsap.context(() => {
@@ -55,26 +53,24 @@ export function CinematicHero() {
 
         if (!title || !copy) return;
 
-        const titleSplit = SplitText.create(title, {
-          type: 'lines',
-          mask: 'lines',
-          linesClass: 'split-mask',
+        const titleSplit = new SplitType(title, {
+          types: 'lines',
+          lineClass: 'split-mask',
         });
 
-        const copySplit = SplitText.create(copy, {
-          type: 'lines',
-          mask: 'lines',
-          linesClass: 'split-mask',
+        const copySplit = new SplitType(copy, {
+          types: 'lines',
+          lineClass: 'split-mask',
         });
 
         panel.dataset.splitReady = 'true';
 
-        gsap.set(titleSplit.lines, {
+        gsap.set(titleSplit.lines ?? [], {
           yPercent: 105,
           opacity: 0,
         });
 
-        gsap.set(copySplit.lines, {
+        gsap.set(copySplit.lines ?? [], {
           yPercent: 70,
           opacity: 0,
         });
@@ -87,7 +83,7 @@ export function CinematicHero() {
 
           gsap
             .timeline()
-            .to(titleSplit.lines, {
+            .to(titleSplit.lines ?? [], {
               yPercent: 0,
               opacity: 1,
               duration: 1,
@@ -95,7 +91,7 @@ export function CinematicHero() {
               ease: 'expo.out',
             })
             .to(
-              copySplit.lines,
+              copySplit.lines ?? [],
               {
                 yPercent: 0,
                 opacity: 1,
