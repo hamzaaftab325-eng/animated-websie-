@@ -3,11 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "node scripts/extract-hero-frames.mjs && next dev",
+    "build": "node scripts/extract-hero-frames.mjs && next build",
     "start": "next start",
     "lint": "eslint .",
-    "clean": "next clean"
+    "clean": "next clean",
+    "prepare:hero-frames": "node scripts/extract-hero-frames.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
