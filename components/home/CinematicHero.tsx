@@ -1,26 +1,27 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
-import SplitType from 'split-type';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const VIDEO_URL =
   'https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4';
 
 const CUES = [
-  [0.0, 0.0, 0.15, 0.23],
-  [0.35, 0.43, 0.57, 0.65],
-  [0.77, 0.85, 1.1, 1.2],
+  [0.0, 0.018, 0.25, 0.31],
+  [0.34, 0.395, 0.59, 0.65],
+  [0.68, 0.735, 1.04, 1.1],
 ] as const;
 
-const DRIFT = 22;
+const DRIFT = 14;
+const SEEK_EASE = 0.24;
+const SEEK_INTERVAL = 30;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
 
-const smooth = (value: number) =>
+const smoothstep = (value: number) =>
   value * value * (3 - 2 * value);
 
 const ramp = (
@@ -32,7 +33,7 @@ const ramp = (
     return progress >= end ? 1 : 0;
   }
 
-  return smooth(
+  return smoothstep(
     clamp((progress - start) / (end - start), 0, 1)
   );
 };
@@ -41,80 +42,11 @@ export function CinematicHero() {
   const { lenis } = useSmoothScroll();
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
-    if (!rootRef.current) return;
-
-    const context = gsap.context(() => {
-      const panels = gsap.utils.toArray<HTMLElement>('[data-panel]');
-
-      panels.forEach((panel) => {
-        const title = panel.querySelector<HTMLElement>('[data-hero-title]');
-        const copy = panel.querySelector<HTMLElement>('[data-hero-copy]');
-
-        if (!title || !copy) return;
-
-        const titleSplit = new SplitType(title, {
-          types: 'lines',
-          lineClass: 'split-mask',
-        });
-
-        const copySplit = new SplitType(copy, {
-          types: 'lines',
-          lineClass: 'split-mask',
-        });
-
-        panel.dataset.splitReady = 'true';
-
-        gsap.set(titleSplit.lines ?? [], {
-          yPercent: 105,
-          opacity: 0,
-        });
-
-        gsap.set(copySplit.lines ?? [], {
-          yPercent: 70,
-          opacity: 0,
-        });
-
-        panel.dataset.revealed = 'false';
-
-        const reveal = () => {
-          if (panel.dataset.revealed === 'true') return;
-          panel.dataset.revealed = 'true';
-
-          gsap
-            .timeline()
-            .to(titleSplit.lines ?? [], {
-              yPercent: 0,
-              opacity: 1,
-              duration: 1,
-              stagger: 0.06,
-              ease: 'expo.out',
-            })
-            .to(
-              copySplit.lines ?? [],
-              {
-                yPercent: 0,
-                opacity: 1,
-                duration: 0.9,
-                stagger: 0.04,
-                ease: 'power4.out',
-              },
-              0.22
-            );
-        };
-
-        (panel as HTMLElement & { __reveal?: () => void }).__reveal =
-          reveal;
-      });
-    }, rootRef);
-
-    return () => context.revert();
-  }, []);
-
   useEffect(() => {
     if (!lenis || !rootRef.current) return;
 
     const root = rootRef.current;
+    const track = root.querySelector<HTMLElement>('[data-hero-track]');
     const clip = root.querySelector<HTMLVideoElement>('#clip');
     const boot = root.querySelector<HTMLElement>('#boot');
     const bootBar = root.querySelector<HTMLElement>('#bootBar');
@@ -124,47 +56,49 @@ export function CinematicHero() {
       root.querySelectorAll<HTMLElement>('[data-panel]')
     );
 
-    if (!clip || !boot || !bootBar || !bootPct || !meter) {
+    if (
+      !track ||
+      !clip ||
+      !boot ||
+      !bootBar ||
+      !bootPct ||
+      !meter
+    ) {
       return;
     }
 
     let progress = 0;
-    let seekTo = 0;
-    let seekAt = 0;
+    let seekTarget = 0;
+    let seekCurrent = 0;
     let duration = 0;
     let ready = false;
     let started = false;
-    let attached = false;
     let rafId = 0;
-    let blobUrl = '';
-    let bailTimer = 0;
-    let startTimer = 0;
-    let abortController: AbortController | null = null;
-    let detachVideo: (() => void) | undefined;
+    let lastSeekTime = 0;
+    let fallbackTimer = 0;
 
-    const setProgress = (fraction: number) => {
-      const value = clamp(fraction, 0, 1);
-      bootBar.style.transform = `scaleX(${value})`;
+    const setBootProgress = (value: number) => {
+      const progressValue = clamp(value, 0, 1);
+      bootBar.style.transform =
+        `scaleX(${progressValue})`;
       bootPct.textContent =
-        `LOADING ${Math.round(value * 100)}%`;
+        `LOADING ${Math.round(progressValue * 100)}%`;
     };
 
     const readScroll = () => {
-      const max =
-        document.documentElement.scrollHeight -
-        window.innerHeight;
+      const range = Math.max(
+        1,
+        track.offsetHeight - window.innerHeight
+      );
 
-      progress =
-        max > 0
-          ? clamp(lenis.scroll / max, 0, 1)
-          : 0;
+      progress = clamp(lenis.scroll / range, 0, 1);
 
       if (duration) {
-        seekTo = progress * duration;
+        seekTarget = progress * duration;
       }
     };
 
-    const paint = () => {
+    const paintPanels = () => {
       meter.style.transform = `scaleX(${progress})`;
 
       panels.forEach((panel, index) => {
@@ -177,41 +111,45 @@ export function CinematicHero() {
         const y =
           (1 - enter) * DRIFT -
           leave * DRIFT;
+        const scale = 0.994 + opacity * 0.006;
 
-        panel.style.opacity = String(opacity);
+        panel.style.opacity = opacity.toFixed(4);
         panel.style.transform =
-          `translate3d(0,${y}px,0)`;
+          `translate3d(0,${y.toFixed(2)}px,0) scale(${scale.toFixed(4)})`;
         panel.style.pointerEvents =
-          opacity > 0.6 ? 'auto' : 'none';
-
-        if (opacity > 0.55) {
-          (
-            panel as HTMLElement & {
-              __reveal?: () => void;
-            }
-          ).__reveal?.();
-        }
+          opacity > 0.62 ? 'auto' : 'none';
       });
     };
 
-    const frame = () => {
+    const renderFrame = (time: number) => {
       if (ready && duration) {
-        const gap = seekTo - seekAt;
+        const gap = seekTarget - seekCurrent;
 
-        if (Math.abs(gap) > 0.0008) {
-          // Same interpolation as the supplied scrub reference.
-          seekAt += gap * 0.115;
+        if (Math.abs(gap) > 0.001) {
+          // Lenis handles scroll smoothing. This smaller video-only damping
+          // removes decode jitter without creating the previous heavy lag.
+          seekCurrent += gap * SEEK_EASE;
 
-          if (clip.readyState >= 2 && !clip.seeking) {
+          if (
+            time - lastSeekTime >= SEEK_INTERVAL &&
+            clip.readyState >= 2 &&
+            !clip.seeking
+          ) {
+            lastSeekTime = time;
+
             try {
-              clip.currentTime = seekAt;
+              clip.currentTime = clamp(
+                seekCurrent,
+                0,
+                Math.max(0, duration - 0.016)
+              );
             } catch {}
           }
         }
       }
 
-      paint();
-      rafId = requestAnimationFrame(frame);
+      paintPanels();
+      rafId = requestAnimationFrame(renderFrame);
     };
 
     const start = () => {
@@ -219,122 +157,76 @@ export function CinematicHero() {
       started = true;
       ready = true;
       readScroll();
-      seekAt = seekTo;
+      seekCurrent = seekTarget;
+
+      try {
+        clip.currentTime = seekCurrent;
+      } catch {}
 
       gsap.to(boot, {
         opacity: 0,
-        duration: 0.72,
+        duration: 0.48,
         ease: 'power3.out',
         onComplete: () => {
-          boot.classList.add('pointer-events-none', 'invisible');
+          boot.classList.add(
+            'pointer-events-none',
+            'invisible'
+          );
         },
       });
     };
 
-    const attach = (src: string) => {
-      if (attached) return undefined;
-      attached = true;
-
-      const onMetadata = () => {
-        duration = clip.duration || 0;
-        clip.pause();
-        readScroll();
-        seekAt = seekTo;
-
-        try {
-          clip.currentTime = seekAt;
-        } catch {}
-      };
-
-      const onReady = () => start();
-      const onError = () => start();
-
-      clip.addEventListener('loadedmetadata', onMetadata);
-      clip.addEventListener('loadeddata', onReady);
-      clip.addEventListener('canplaythrough', onReady);
-      clip.addEventListener('error', onError);
-
-      clip.src = src;
-      clip.load();
-
-      startTimer = window.setTimeout(start, 12000);
-
-      return () => {
-        clip.removeEventListener('loadedmetadata', onMetadata);
-        clip.removeEventListener('loadeddata', onReady);
-        clip.removeEventListener('canplaythrough', onReady);
-        clip.removeEventListener('error', onError);
-      };
-    };
-
-    const preload = async () => {
-      abortController =
-        typeof AbortController !== 'undefined'
-          ? new AbortController()
-          : null;
-
-      bailTimer = window.setTimeout(() => {
-        if (attached) return;
-        abortController?.abort();
-        setProgress(1);
-        detachVideo = attach(VIDEO_URL);
-      }, 15000);
+    const onMetadata = () => {
+      duration =
+        Number.isFinite(clip.duration) ? clip.duration : 0;
+      clip.pause();
+      setBootProgress(0.72);
+      readScroll();
+      seekCurrent = seekTarget;
 
       try {
-        const response = await fetch(VIDEO_URL, {
-          signal: abortController?.signal,
-        });
-
-        if (!response.ok || !response.body) {
-          throw new Error('Video preload unavailable');
-        }
-
-        const total = Number(
-          response.headers.get('content-length') || 0
-        );
-        const reader = response.body.getReader();
-        const chunks: ArrayBuffer[] = [];
-        let received = 0;
-
-        while (true) {
-          const { done, value } = await reader.read();
-
-          if (done) break;
-
-          if (value) {
-            const copy = new Uint8Array(value.byteLength);
-            copy.set(value);
-            chunks.push(copy.buffer);
-            received += value.byteLength;
-
-            setProgress(
-              total
-                ? received / total
-                : Math.min(received / 11e6, 0.95)
-            );
-          }
-        }
-
-        window.clearTimeout(bailTimer);
-        setProgress(1);
-
-        blobUrl = URL.createObjectURL(
-          new Blob(chunks, { type: 'video/mp4' })
-        );
-
-        detachVideo = attach(blobUrl);
-      } catch {
-        window.clearTimeout(bailTimer);
-        setProgress(1);
-        detachVideo = attach(VIDEO_URL);
-      }
+        clip.currentTime = seekCurrent;
+      } catch {}
     };
 
-    const unlock = () => {
-      const promise = clip.play();
+    const onProgress = () => {
+      if (!clip.duration || !clip.buffered.length) return;
 
-      if (promise && typeof promise.then === 'function') {
-        promise
+      const end =
+        clip.buffered.end(clip.buffered.length - 1);
+      setBootProgress(
+        Math.max(0.72, Math.min(0.98, end / clip.duration))
+      );
+    };
+
+    const onReady = () => {
+      setBootProgress(1);
+      start();
+    };
+
+    const onError = () => {
+      setBootProgress(1);
+      start();
+    };
+
+    clip.addEventListener('loadedmetadata', onMetadata);
+    clip.addEventListener('progress', onProgress);
+    clip.addEventListener('loadeddata', onReady);
+    clip.addEventListener('canplaythrough', onReady);
+    clip.addEventListener('error', onError);
+
+    // Production path: let the browser/CDN buffer the MP4 immediately.
+    // Waiting for a full Blob download made the experience feel unnecessarily slow.
+    clip.src = VIDEO_URL;
+    clip.load();
+
+    fallbackTimer = window.setTimeout(start, 4500);
+
+    const unlock = () => {
+      const playback = clip.play();
+
+      if (playback && typeof playback.then === 'function') {
+        playback
           .then(() => clip.pause())
           .catch(() => {});
       } else {
@@ -357,42 +249,56 @@ export function CinematicHero() {
     });
 
     const onLenisScroll = () => readScroll();
-    const onResize = () => readScroll();
+    const onResize = () => {
+      lenis.resize();
+      readScroll();
+      paintPanels();
+    };
 
     lenis.on('scroll', onLenisScroll);
-    window.addEventListener('resize', onResize);
+    window.addEventListener('resize', onResize, {
+      passive: true,
+    });
 
     readScroll();
-    paint();
-    preload();
-    rafId = requestAnimationFrame(frame);
+    paintPanels();
+    rafId = requestAnimationFrame(renderFrame);
 
     return () => {
       cancelAnimationFrame(rafId);
-      window.clearTimeout(bailTimer);
-      window.clearTimeout(startTimer);
-      abortController?.abort();
-      detachVideo?.();
+      window.clearTimeout(fallbackTimer);
+
+      clip.removeEventListener(
+        'loadedmetadata',
+        onMetadata
+      );
+      clip.removeEventListener('progress', onProgress);
+      clip.removeEventListener('loadeddata', onReady);
+      clip.removeEventListener(
+        'canplaythrough',
+        onReady
+      );
+      clip.removeEventListener('error', onError);
+
       lenis.off('scroll', onLenisScroll);
       window.removeEventListener('resize', onResize);
 
       unlockEvents.forEach((eventName) => {
         window.removeEventListener(eventName, unlock);
       });
-
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl);
-      }
     };
   }, [lenis]);
 
   return (
-    <div ref={rootRef} className="relative bg-[#09090b]">
+    <div
+      ref={rootRef}
+      className="relative min-h-screen overflow-x-clip bg-[#09090b]"
+    >
       <div
         id="boot"
-        className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-4 bg-[#09090b]"
+        className="fixed inset-0 z-[90] flex flex-col items-center justify-center gap-4 bg-[#11131a]"
       >
-        <div className="h-px w-[154px] overflow-hidden bg-white/15">
+        <div className="h-px w-[150px] overflow-hidden bg-white/20">
           <i
             id="bootBar"
             className="block h-full w-full origin-left scale-x-0 bg-white"
@@ -400,71 +306,97 @@ export function CinematicHero() {
         </div>
         <p
           id="bootPct"
-          className="text-[11px] font-medium tracking-[0.16em] text-white/50"
+          className="text-[10px] font-medium tracking-[0.16em] text-white/55"
         >
           LOADING 0%
         </p>
       </div>
 
-      <div className="fixed inset-0 z-0 overflow-hidden bg-black">
+      <div className="fixed inset-0 z-0 overflow-hidden bg-[#11131a]">
         <video
           id="clip"
           muted
           playsInline
           preload="auto"
           disablePictureInPicture
-          className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 scale-[1.045] object-cover contrast-[1.03] saturate-[.92]"
+          className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 scale-[1.025] object-cover"
         />
+
         <div
           className="pointer-events-none absolute inset-0 z-[1]"
           style={{
             background:
-              'linear-gradient(180deg,rgba(5,6,9,.56) 0%,rgba(5,6,9,.10) 25%,rgba(5,6,9,.08) 66%,rgba(5,6,9,.64) 100%), radial-gradient(110% 90% at 60% 42%,rgba(6,6,8,0) 0%,rgba(4,4,6,.38) 100%)',
+              'linear-gradient(180deg,rgba(68,78,103,.20) 0%,rgba(173,117,137,.12) 45%,rgba(157,101,117,.22) 100%), linear-gradient(180deg,rgba(8,10,15,.08) 0%,rgba(8,10,15,.02) 55%,rgba(8,10,15,.30) 100%)',
           }}
         />
-        <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[2] opacity-[.08] mix-blend-soft-light" />
+
+        <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[2] opacity-[.075] mix-blend-soft-light" />
       </div>
 
       <i
         id="meter"
-        className="fixed left-0 top-0 z-[80] h-[2px] w-full origin-left scale-x-0 bg-white/85"
+        className="fixed left-0 top-0 z-[80] h-px w-full origin-left scale-x-0 bg-white/65"
       />
 
       <main className="pointer-events-none fixed inset-0 z-20">
         <HeroPanel
-          eyebrow="CREATIVE DIRECTION · DIGITAL CRAFT"
-          title={<>Create what<br />doesn&apos;t exist yet.</>}
-          copy="Ideas become visual systems, motion, and experiences built to feel unmistakably yours."
-          href="/work"
-          cta="View selected work"
-        />
-
-        <HeroPanel
-          eyebrow="IMMERSIVE EXPERIENCE · MOTION DESIGN"
-          title={<>See every idea<br />from a new angle.</>}
-          copy="Cinematic interaction and precise motion turn exploration into part of the story."
-          href="/about"
-          cta="Discover the studio"
-        />
-
-        <HeroPanel
-          eyebrow="FRAME & FORM · CREATIVE STUDIO"
-          title={<>Transform vision<br />into something real.</>}
-          copy="We shape digital ideas into refined, memorable experiences with depth and intent."
+          eyebrow="FRAME & FORM"
+          title="FRAME & FORM"
+          subtitle={
+            <>
+              Where your <em className="font-normal italic">Vision</em> meets Reality
+            </>
+          }
           href="/contact"
-          cta="Start a project"
+          cta="TRY NOW"
+        />
+
+        <HeroPanel
+          eyebrow="EXPLORE THE UNSEEN"
+          title="EXPLORE"
+          subtitle="See every idea from a new perspective"
+          href="/work"
+          cta="VIEW WORK"
+        />
+
+        <HeroPanel
+          eyebrow="DIGITAL EXPERIENCES"
+          title="TRANSFORM"
+          subtitle="Turn imagination into a living experience"
+          href="/about"
+          cta="OUR STUDIO"
         />
       </main>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-end px-5 pb-[max(18px,calc(env(safe-area-inset-bottom)+14px))] md:px-10 lg:px-14">
-        <p className="text-[10px] tracking-[0.08em] text-white/38 md:text-[11px]">
-          FRAME &amp; FORM — DIGITAL EXPERIENCES IN MOTION
-        </p>
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 px-5 pb-[max(20px,calc(env(safe-area-inset-bottom)+12px))] md:px-7 lg:px-8">
+        <div className="grid min-h-[74px] grid-cols-2 gap-x-5 border-t border-white/25 pt-4 text-[10px] leading-[1.25] text-white/88 md:grid-cols-[1fr_1fr_1.55fr_36px] md:items-start md:gap-8">
+          <p className="font-medium">
+            Explore your creativity
+          </p>
+
+          <p className="font-medium">
+            Frame &amp; Form AI
+          </p>
+
+          <p className="hidden max-w-[330px] justify-self-end md:block">
+            Turn the imaginative creativity of your mind to reality
+            with Frame &amp; Form. Your ideas, shaped into refined
+            digital experiences.
+          </p>
+
+          <span
+            aria-hidden="true"
+            className="hidden justify-self-end text-[28px] leading-none text-white/40 md:block"
+          >
+            ✦
+          </span>
+        </div>
       </div>
 
       <div
+        data-hero-track
         aria-hidden="true"
-        className="relative z-[1] h-[560vh] min-h-[3200px]"
+        className="relative z-[1] h-[360vh] min-h-[2200px]"
       />
     </div>
   );
@@ -473,47 +405,45 @@ export function CinematicHero() {
 function HeroPanel({
   eyebrow,
   title,
-  copy,
+  subtitle,
   href,
   cta,
 }: {
   eyebrow: string;
-  title: React.ReactNode;
-  copy: string;
+  title: string;
+  subtitle: React.ReactNode;
   href: string;
   cta: string;
 }) {
   return (
     <section
       data-panel
-      className="absolute inset-0 flex items-end justify-start px-5 pb-[max(86px,calc(env(safe-area-inset-bottom)+72px))] pt-[max(110px,calc(env(safe-area-inset-top)+94px))] opacity-0 md:px-10 lg:px-[clamp(40px,5vw,72px)]"
+      className="absolute inset-0 opacity-0 will-change-[opacity,transform]"
     >
-      <div className="w-full max-w-[760px] text-left">
-        <p className="mb-4 text-[10px] font-medium uppercase tracking-[0.15em] text-white/55 md:text-[11px]">
-          {eyebrow}
-        </p>
+      <div className="absolute inset-x-0 bottom-[104px] px-5 md:bottom-[112px] md:px-7 lg:px-8">
+        <div className="grid items-end gap-5 md:grid-cols-[1fr_auto]">
+          <div className="max-w-[720px]">
+            <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.14em] text-white/60 md:text-[10px]">
+              {eyebrow}
+            </p>
 
-        <h1
-          data-hero-title
-          className="max-w-[11ch] text-[clamp(3rem,6.8vw,6.6rem)] font-normal leading-[0.91] tracking-[-0.055em] text-white [text-wrap:balance]"
-        >
-          {title}
-        </h1>
+            <h1 className="whitespace-nowrap text-[clamp(2.55rem,5.4vw,4.65rem)] font-normal leading-[0.96] tracking-[0.075em] text-white [text-shadow:0_2px_22px_rgba(20,13,20,.16)]">
+              {title}
+            </h1>
 
-        <p
-          data-hero-copy
-          className="mt-6 max-w-[42ch] text-[clamp(.95rem,1.2vw,1.15rem)] leading-7 tracking-[-0.012em] text-white/68"
-        >
-          {copy}
-        </p>
+            <p className="mt-2 text-[clamp(.9rem,1.35vw,1.12rem)] font-normal tracking-[0.045em] text-white/82">
+              {subtitle}
+            </p>
+          </div>
 
-        <div className="mt-8 flex pointer-events-auto">
-          <Link
-            href={href}
-            className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/15 bg-white px-6 text-[14px] font-medium tracking-[-0.01em] text-black transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-0.5"
-          >
-            {cta}
-          </Link>
+          <div className="pointer-events-auto hidden pb-1 md:block">
+            <Link
+              href={href}
+              className="inline-flex h-[38px] min-w-[116px] items-center justify-center rounded-full border border-white/30 bg-white/10 px-6 text-[11px] font-medium tracking-[0.04em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_8px_30px_rgba(40,20,35,.10)] backdrop-blur-md transition-[transform,background-color] duration-500 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-0.5 hover:bg-white/18"
+            >
+              {cta}
+            </Link>
+          </div>
         </div>
       </div>
     </section>
