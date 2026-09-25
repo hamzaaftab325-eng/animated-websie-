@@ -778,7 +778,7 @@ body {
   opacity: 0.65;
   pointer-events: none;
   filter: drop-shadow(0 3px 6px rgba(105, 43, 56, 0.12));
-  animation: possibilityPetalDrift 16s cubic-bezier(.37, 0, .63, 1) infinite;
+  animation: possibilityPetalDrift 24s linear infinite paused;
   will-change: transform;
 }
 
@@ -789,11 +789,26 @@ body {
 .petal-5 { left: 94%; animation-delay: -9s; animation-duration: 21s; scale: 0.7; }
 
 @keyframes possibilityPetalDrift {
-  0% { translate: 0 -10vh; rotate: 0deg; }
-  25% { translate: 1.2vw 20vh; rotate: 70deg; }
-  55% { translate: -0.8vw 55vh; rotate: 170deg; }
-  80% { translate: 1vw 84vh; rotate: 260deg; }
-  100% { translate: 0 112vh; rotate: 340deg; }
+  0% {
+    translate: 0 -10vh;
+    rotate: 0deg;
+  }
+  25% {
+    translate: 0.9vw 20vh;
+    rotate: 72deg;
+  }
+  55% {
+    translate: -0.6vw 55vh;
+    rotate: 168deg;
+  }
+  80% {
+    translate: 0.8vw 84vh;
+    rotate: 258deg;
+  }
+  100% {
+    translate: 0 112vh;
+    rotate: 340deg;
+  }
 }
 
 /* INTERACTIVE MODAL FOR CARDS */
@@ -1827,27 +1842,56 @@ body {
 
 
 /* ================================================================
-   CLEAN MOTION SYSTEM
-   Lenis owns smoothing; GSAP maps motion without secondary easing layers.
+   REFERENCE-MATCHED MOTION SYSTEM
+   Based on the supplied animation bundle:
+   default Lenis, rAF scroll mapping, IO-triggered line/button reveals.
    ================================================================ */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+.reference-line {
+  display: block;
+  will-change: transform, opacity;
+}
+
+.reference-char {
+  display: inline-block;
+  will-change: opacity;
+}
+
+.possibilities-section.-in-view .possibility-petal {
+  animation-play-state: running;
+}
+
 .panel,
 .content-block,
-.possibilities-header,
 .glass-card,
+.liquid-visual,
 .projects-liquid-title-line,
-.projects-liquid-desc-line,
-.projects-liquid-button-char,
-.liquid-visual {
+.projects-liquid-desc-line {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
 }
 
 .panel,
 .content-block,
-.possibilities-header,
 .glass-card,
 .liquid-visual {
   transform: translateZ(0);
+}
+
+.liquid-section > .liquid-visual {
+  will-change: transform;
 }
 
 @media (min-width: 901px) {
@@ -1858,15 +1902,17 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .possibility-petal {
+    animation: none !important;
+  }
+
+  .reference-line,
+  .reference-char,
   .panel,
   .content-block,
-  .possibilities-header,
   .glass-card,
-  .projects-liquid-title-line,
-  .projects-liquid-desc-line,
-  .projects-liquid-button-char,
   .liquid-visual {
     transform: none !important;
-    filter: none !important;
+    opacity: 1 !important;
   }
 }
