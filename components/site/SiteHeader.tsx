@@ -18,6 +18,8 @@ export function SiteHeader() {
     useRef<HTMLButtonElement>(null);
   const liquidMorphRef =
     useRef<HTMLSpanElement>(null);
+  const hasCompactTransitionedRef =
+    useRef(false);
   const menuPanelRef =
     useRef<HTMLDivElement>(null);
   const menuBackdropRef =
@@ -204,6 +206,7 @@ export function SiteHeader() {
 
     if (compact) {
       setMenuOpen(false);
+      hasCompactTransitionedRef.current = true;
 
       gsap.set(liquid, {
         autoAlpha: 0,
@@ -284,6 +287,37 @@ export function SiteHeader() {
         );
     } else {
       setMenuOpen(false);
+
+      // Initial page load: keep the compact control completely hidden.
+      // Only play the reverse liquid morph after the user has actually
+      // crossed the scroll threshold at least once.
+      if (!hasCompactTransitionedRef.current) {
+        gsap.set(button, {
+          autoAlpha: 0,
+          scale: 0.7,
+          filter: 'blur(8px)',
+          pointerEvents: 'none',
+        });
+
+        gsap.set(liquid, {
+          autoAlpha: 0,
+          x: 0,
+          scaleX: 1,
+          scaleY: 1,
+          rotate: 0,
+          filter: 'blur(0px)',
+        });
+
+        gsap.set(nav, {
+          autoAlpha: 1,
+          y: 0,
+          scale: 1,
+          filter: 'blur(0px)',
+          pointerEvents: 'auto',
+        });
+
+        return;
+      }
 
       gsap.set(liquid, {
         autoAlpha: 0,
@@ -585,7 +619,7 @@ export function SiteHeader() {
         <span
           ref={liquidMorphRef}
           aria-hidden="true"
-          className="pointer-events-none absolute left-[18px] top-[18px] z-[28] h-[48px] w-[48px] rounded-full border border-white/[0.15] bg-white/[0.08] opacity-0 shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_30px_rgba(27,18,34,.12)] backdrop-blur-2xl will-change-transform md:left-[24px]"
+          className="pointer-events-none invisible absolute left-[18px] top-[18px] z-[28] h-[48px] w-[48px] rounded-full border border-white/[0.15] bg-white/[0.08] opacity-0 shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_30px_rgba(27,18,34,.12)] backdrop-blur-2xl will-change-transform md:left-[24px]"
         />
 
         <button
@@ -600,7 +634,7 @@ export function SiteHeader() {
           onClick={() =>
             setMenuOpen((open) => !open)
           }
-          className="pointer-events-none absolute left-[18px] top-[18px] z-30 flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full border border-white/[0.20] bg-white/[0.075] text-white opacity-0 shadow-[inset_0_1px_0_rgba(255,255,255,.17),0_12px_34px_rgba(28,20,36,.12)] backdrop-blur-2xl transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:border-white/[0.34] hover:bg-white/[0.10] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),0_16px_38px_rgba(28,20,36,.16)] md:left-[24px]"
+          className="pointer-events-none invisible absolute left-[18px] top-[18px] z-30 flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full border border-white/[0.20] bg-white/[0.075] text-white opacity-0 shadow-[inset_0_1px_0_rgba(255,255,255,.17),0_12px_34px_rgba(28,20,36,.12)] backdrop-blur-2xl transition-[border-color,background-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:border-white/[0.34] hover:bg-white/[0.10] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),0_16px_38px_rgba(28,20,36,.16)] md:left-[24px]"
         >
           <span
             aria-hidden="true"
