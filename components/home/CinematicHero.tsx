@@ -8,15 +8,19 @@ import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 const VIDEO_URL =
   'https://res.cloudinary.com/diometfe9/video/upload/v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v.mp4';
 
+const CLOUDINARY_BASE =
+  'https://res.cloudinary.com/diometfe9/video/upload';
+const CLOUDINARY_ASSET =
+  'v1790182288/Create_cinematic_zoom_effect_video_20260923214757_m00y5v';
+
 const CUES = [
   [0.0, 0.018, 0.25, 0.31],
   [0.34, 0.395, 0.59, 0.65],
   [0.68, 0.735, 1.04, 1.1],
 ] as const;
 
-const DRIFT = 14;
-const SEEK_EASE = 0.24;
-const SEEK_INTERVAL = 30;
+const DRIFT = 12;
+const FRAME_CACHE_LIMIT = 30;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -38,6 +42,17 @@ const ramp = (
   );
 };
 
+function buildFrameUrl(
+  time: number,
+  width: number
+) {
+  return (
+    `${CLOUDINARY_BASE}/` +
+    `so_${time.toFixed(3)},c_scale,w_${width},q_auto:good,f_webp/` +
+    `${CLOUDINARY_ASSET}.webp`
+  );
+}
+
 export function CinematicHero() {
   const { lenis } = useSmoothScroll();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -46,19 +61,28 @@ export function CinematicHero() {
     if (!lenis || !rootRef.current) return;
 
     const root = rootRef.current;
-    const track = root.querySelector<HTMLElement>('[data-hero-track]');
-    const clip = root.querySelector<HTMLVideoElement>('#clip');
-    const boot = root.querySelector<HTMLElement>('#boot');
-    const bootBar = root.querySelector<HTMLElement>('#bootBar');
-    const bootPct = root.querySelector<HTMLElement>('#bootPct');
-    const meter = root.querySelector<HTMLElement>('#meter');
+    const track =
+      root.querySelector<HTMLElement>('[data-hero-track]');
+    const canvas =
+      root.querySelector<HTMLCanvasElement>('#frameCanvas');
+    const metadataVideo =
+      root.querySelector<HTMLVideoElement>('#frameMetadata');
+    const boot =
+      root.querySelector<HTMLElement>('#boot');
+    const bootBar =
+      root.querySelector<HTMLElement>('#bootBar');
+    const bootPct =
+      root.querySelector<HTMLElement>('#bootPct');
+    const meter =
+      root.querySelector<HTMLElement>('#meter');
     const panels = Array.from(
       root.querySelectorAll<HTMLElement>('[data-panel]')
     );
 
     if (
       !track ||
-      !clip ||
+      !canvas ||
+      !metadataVideo ||
       !boot ||
       !bootBar ||
       !bootPct ||
@@ -67,105 +91,520 @@ export function CinematicHero() {
       return;
     }
 
+    const context = canvas.getContext('2d', {
+      alpha: false,
+    });
+
+    if (!context) return;
+
     let progress = 0;
-    let seekTarget = 0;
-    let seekCurrent = 0;
     let duration = 0;
-    let ready = false;
+    let frameCount =
+      window.innerWidth >= 900 ? 120 : 84;
+    let frameWidth =
+      window.innerWidth >= 900 ? 1440 : 960;
+    let currentFrame = 0;
+    let drawnFrame = -1;
+    let renderRaf = 0;
+    let resizeRaf = 0;
     let started = false;
-    let rafId = 0;
-    let lastSeekTime = 0;
-    let fallbackTimer = 0;
+    let destroyed = false;
+    let dpr = 1;
+
+    const loadedFrames =
+      new Map<number, HTMLImageElement>();
+    const loadingFrames =
+      new Map<number, Promise<HTMLImageElement | null>>();
+    const lastUsed =
+      new Map<number, number>();
 
     const setBootProgress = (value: number) => {
-      const progressValue = clamp(value, 0, 1);
+      const normalized = clamp(value, 0, 1);
       bootBar.style.transform =
-        `scaleX(${progressValue})`;
+        `scaleX(${normalized})`;
       bootPct.textContent =
-        `LOADING ${Math.round(progressValue * 100)}%`;
+        `LOADING ${Math.round(normalized * 100)}%`;
     };
 
-    const readScroll = () => {
-      const range = Math.max(
-        1,
-        track.offsetHeight - window.innerHeight
+    const frameTime = (index: number) => {
+      if (!duration || frameCount <= 1) return 0;
+
+      const safeDuration =
+        Math.max(0, duration - 0.04);
+
+      return (
+        safeDuration *
+        (index / (frameCount - 1))
+      );
+    };
+
+    const frameUrl = (index: number) =>
+      buildFrameUrl(
+        frameTime(index),
+        frameWidth
       );
 
-      progress = clamp(lenis.scroll / range, 0, 1);
+    const touchFrame = (index: number) => {
+      lastUsed.set(index, performance.now());
+    };
 
-      if (duration) {
-        seekTarget = progress * duration;
+    const trimFrameCache = (focusIndex: number) => {
+      if (
+        loadedFrames.size <= FRAME_CACHE_LIMIT
+      ) {
+        return;
       }
-    };
 
-    const paintPanels = () => {
-      meter.style.transform = `scaleX(${progress})`;
+      const candidates = Array.from(
+        loadedFrames.keys()
+      )
+        .filter((index) => index !== 0)
+        .sort((a, b) => {
+          const distanceA =
+            Math.abs(a - focusIndex);
+          const distanceB =
+            Math.abs(b - focusIndex);
 
-      panels.forEach((panel, index) => {
-        const cue = CUES[index];
-        if (!cue) return;
-
-        const enter = ramp(progress, cue[0], cue[1]);
-        const leave = ramp(progress, cue[2], cue[3]);
-        const opacity = enter * (1 - leave);
-        const y =
-          (1 - enter) * DRIFT -
-          leave * DRIFT;
-        const scale = 0.994 + opacity * 0.006;
-
-        panel.style.opacity = opacity.toFixed(4);
-        panel.style.transform =
-          `translate3d(0,${y.toFixed(2)}px,0) scale(${scale.toFixed(4)})`;
-        panel.style.pointerEvents =
-          opacity > 0.62 ? 'auto' : 'none';
-      });
-    };
-
-    const renderFrame = (time: number) => {
-      if (ready && duration) {
-        const gap = seekTarget - seekCurrent;
-
-        if (Math.abs(gap) > 0.001) {
-          // Lenis handles scroll smoothing. This smaller video-only damping
-          // removes decode jitter without creating the previous heavy lag.
-          seekCurrent += gap * SEEK_EASE;
-
-          if (
-            time - lastSeekTime >= SEEK_INTERVAL &&
-            clip.readyState >= 2 &&
-            !clip.seeking
-          ) {
-            lastSeekTime = time;
-
-            try {
-              clip.currentTime = clamp(
-                seekCurrent,
-                0,
-                Math.max(0, duration - 0.016)
-              );
-            } catch {}
+          if (distanceA !== distanceB) {
+            return distanceB - distanceA;
           }
+
+          return (
+            (lastUsed.get(a) ?? 0) -
+            (lastUsed.get(b) ?? 0)
+          );
+        });
+
+      while (
+        loadedFrames.size >
+          FRAME_CACHE_LIMIT &&
+        candidates.length
+      ) {
+        const index = candidates.shift();
+        if (index == null) break;
+
+        const image =
+          loadedFrames.get(index);
+
+        loadedFrames.delete(index);
+        lastUsed.delete(index);
+
+        if (image) {
+          image.src = '';
         }
       }
+    };
 
+    const loadFrame = (
+      index: number,
+      priority: 'high' | 'low' | 'auto' = 'auto',
+      attempt = 0
+    ): Promise<HTMLImageElement | null> => {
+      const boundedIndex = clamp(
+        Math.round(index),
+        0,
+        frameCount - 1
+      );
+
+      const cached =
+        loadedFrames.get(boundedIndex);
+
+      if (cached) {
+        touchFrame(boundedIndex);
+        return Promise.resolve(cached);
+      }
+
+      const existing =
+        loadingFrames.get(boundedIndex);
+
+      if (existing) {
+        return existing;
+      }
+
+      const request =
+        new Promise<HTMLImageElement | null>(
+          (resolve) => {
+            const image = new Image();
+            image.decoding = 'async';
+            image.crossOrigin = 'anonymous';
+            image.fetchPriority = priority;
+
+            image.onload = () => {
+              loadingFrames.delete(
+                boundedIndex
+              );
+
+              if (destroyed) {
+                resolve(null);
+                return;
+              }
+
+              loadedFrames.set(
+                boundedIndex,
+                image
+              );
+              touchFrame(boundedIndex);
+              trimFrameCache(currentFrame);
+
+              if (boundedIndex === currentFrame) {
+                scheduleRender();
+              }
+
+              resolve(image);
+            };
+
+            image.onerror = () => {
+              loadingFrames.delete(
+                boundedIndex
+              );
+
+              if (
+                attempt < 2 &&
+                !destroyed
+              ) {
+                window.setTimeout(() => {
+                  loadFrame(
+                    boundedIndex,
+                    priority,
+                    attempt + 1
+                  ).then(resolve);
+                }, 450 * (attempt + 1));
+                return;
+              }
+
+              resolve(null);
+            };
+
+            image.src = frameUrl(
+              boundedIndex
+            );
+          }
+        );
+
+      loadingFrames.set(
+        boundedIndex,
+        request
+      );
+
+      return request;
+    };
+
+    const nearestLoadedFrame = (
+      target: number
+    ) => {
+      const exact =
+        loadedFrames.get(target);
+
+      if (exact) {
+        touchFrame(target);
+        return {
+          index: target,
+          image: exact,
+        };
+      }
+
+      let nearestIndex = -1;
+      let nearestDistance =
+        Number.POSITIVE_INFINITY;
+
+      loadedFrames.forEach(
+        (image, index) => {
+          const distance =
+            Math.abs(index - target);
+
+          if (
+            distance < nearestDistance
+          ) {
+            nearestDistance = distance;
+            nearestIndex = index;
+          }
+        }
+      );
+
+      if (nearestIndex < 0) {
+        return null;
+      }
+
+      touchFrame(nearestIndex);
+
+      return {
+        index: nearestIndex,
+        image:
+          loadedFrames.get(nearestIndex)!,
+      };
+    };
+
+    const resizeCanvas = () => {
+      const rect =
+        canvas.getBoundingClientRect();
+
+      dpr = Math.min(
+        window.devicePixelRatio || 1,
+        1.5
+      );
+
+      const width = Math.max(
+        1,
+        Math.round(rect.width * dpr)
+      );
+      const height = Math.max(
+        1,
+        Math.round(rect.height * dpr)
+      );
+
+      if (
+        canvas.width !== width ||
+        canvas.height !== height
+      ) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    };
+
+    const drawFrame = (
+      image: HTMLImageElement
+    ) => {
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+      const imageWidth =
+        image.naturalWidth;
+      const imageHeight =
+        image.naturalHeight;
+
+      if (
+        !canvasWidth ||
+        !canvasHeight ||
+        !imageWidth ||
+        !imageHeight
+      ) {
+        return;
+      }
+
+      const scale = Math.max(
+        canvasWidth / imageWidth,
+        canvasHeight / imageHeight
+      );
+
+      const drawWidth =
+        imageWidth * scale;
+      const drawHeight =
+        imageHeight * scale;
+      const x =
+        (canvasWidth - drawWidth) * 0.5;
+      const y =
+        (canvasHeight - drawHeight) * 0.5;
+
+      context.fillStyle = '#11131a';
+      context.fillRect(
+        0,
+        0,
+        canvasWidth,
+        canvasHeight
+      );
+
+      context.drawImage(
+        image,
+        x,
+        y,
+        drawWidth,
+        drawHeight
+      );
+    };
+
+    const renderFrame = () => {
+      renderRaf = 0;
+
+      const frame =
+        nearestLoadedFrame(
+          currentFrame
+        );
+
+      if (!frame) return;
+
+      if (
+        frame.index !== drawnFrame
+      ) {
+        drawFrame(frame.image);
+        drawnFrame = frame.index;
+      }
+    };
+
+    function scheduleRender() {
+      if (renderRaf) return;
+
+      renderRaf =
+        requestAnimationFrame(
+          renderFrame
+        );
+    }
+
+    const loadAround = (
+      target: number
+    ) => {
+      const offsets = [
+        0,
+        1,
+        -1,
+        2,
+        -2,
+        3,
+        -3,
+        4,
+        -4,
+        6,
+        -6,
+        8,
+        -8,
+      ];
+
+      offsets.forEach(
+        (offset, position) => {
+          const index = clamp(
+            target + offset,
+            0,
+            frameCount - 1
+          );
+
+          void loadFrame(
+            index,
+            position < 5
+              ? 'high'
+              : 'auto'
+          );
+        }
+      );
+    };
+
+    const prefetchFrame = async (
+      index: number
+    ) => {
+      try {
+        await fetch(frameUrl(index), {
+          cache: 'force-cache',
+          mode: 'cors',
+          priority: 'low',
+        } as RequestInit);
+      } catch {
+        // Prefetch is opportunistic. The focused loader retries when needed.
+      }
+    };
+
+    const startBackgroundPrefetch =
+      () => {
+        const anchors = new Set<number>();
+
+        for (
+          let index = 0;
+          index < frameCount;
+          index += 12
+        ) {
+          anchors.add(index);
+        }
+
+        anchors.add(frameCount - 1);
+
+        anchors.forEach((index) => {
+          void loadFrame(index, 'low');
+        });
+
+        let next = 0;
+        const workers = 2;
+
+        const runWorker = async () => {
+          while (
+            next < frameCount &&
+            !destroyed
+          ) {
+            const index = next;
+            next += 1;
+
+            if (
+              !anchors.has(index)
+            ) {
+              await prefetchFrame(index);
+            }
+          }
+        };
+
+        for (
+          let worker = 0;
+          worker < workers;
+          worker += 1
+        ) {
+          void runWorker();
+        }
+      };
+
+    const paintPanels = () => {
+      meter.style.transform =
+        `scaleX(${progress})`;
+
+      panels.forEach(
+        (panel, index) => {
+          const cue = CUES[index];
+          if (!cue) return;
+
+          const enter = ramp(
+            progress,
+            cue[0],
+            cue[1]
+          );
+          const leave = ramp(
+            progress,
+            cue[2],
+            cue[3]
+          );
+          const opacity =
+            enter * (1 - leave);
+          const y =
+            (1 - enter) * DRIFT -
+            leave * DRIFT;
+          const scale =
+            0.996 +
+            opacity * 0.004;
+
+          panel.style.opacity =
+            opacity.toFixed(4);
+          panel.style.transform =
+            `translate3d(0,${y.toFixed(2)}px,0) scale(${scale.toFixed(4)})`;
+          panel.style.pointerEvents =
+            opacity > 0.62
+              ? 'auto'
+              : 'none';
+        }
+      );
+    };
+
+    const updateProgress = () => {
+      const range = Math.max(
+        1,
+        track.offsetHeight -
+          window.innerHeight
+      );
+
+      progress = clamp(
+        lenis.scroll / range,
+        0,
+        1
+      );
+
+      currentFrame = Math.round(
+        progress *
+          (frameCount - 1)
+      );
+
+      loadAround(currentFrame);
       paintPanels();
-      rafId = requestAnimationFrame(renderFrame);
+      scheduleRender();
     };
 
     const start = () => {
       if (started) return;
       started = true;
-      ready = true;
-      readScroll();
-      seekCurrent = seekTarget;
-
-      try {
-        clip.currentTime = seekCurrent;
-      } catch {}
 
       gsap.to(boot, {
         opacity: 0,
-        duration: 0.48,
+        duration: 0.46,
         ease: 'power3.out',
         onComplete: () => {
           boot.classList.add(
@@ -174,118 +613,155 @@ export function CinematicHero() {
           );
         },
       });
+
+      startBackgroundPrefetch();
+      updateProgress();
+    };
+
+    const initializeSequence = async () => {
+      duration =
+        Number.isFinite(
+          metadataVideo.duration
+        )
+          ? metadataVideo.duration
+          : 0;
+
+      if (!duration) return;
+
+      frameCount =
+        window.innerWidth >= 900
+          ? 120
+          : 84;
+      frameWidth =
+        window.innerWidth >= 900
+          ? 1440
+          : 960;
+
+      resizeCanvas();
+      setBootProgress(0.24);
+
+      const firstFrame =
+        await loadFrame(0, 'high');
+
+      if (!firstFrame) {
+        setBootProgress(1);
+        start();
+        return;
+      }
+
+      drawFrame(firstFrame);
+      drawnFrame = 0;
+      setBootProgress(0.7);
+
+      await Promise.all([
+        loadFrame(1, 'high'),
+        loadFrame(2, 'high'),
+        loadFrame(3, 'high'),
+        loadFrame(4, 'high'),
+      ]);
+
+      setBootProgress(1);
+      start();
     };
 
     const onMetadata = () => {
-      duration =
-        Number.isFinite(clip.duration) ? clip.duration : 0;
-      clip.pause();
-      setBootProgress(0.72);
-      readScroll();
-      seekCurrent = seekTarget;
-
-      try {
-        clip.currentTime = seekCurrent;
-      } catch {}
+      void initializeSequence();
     };
 
-    const onProgress = () => {
-      if (!clip.duration || !clip.buffered.length) return;
-
-      const end =
-        clip.buffered.end(clip.buffered.length - 1);
-      setBootProgress(
-        Math.max(0.72, Math.min(0.98, end / clip.duration))
-      );
-    };
-
-    const onReady = () => {
+    const onMetadataError = () => {
       setBootProgress(1);
       start();
     };
 
-    const onError = () => {
-      setBootProgress(1);
-      start();
-    };
+    metadataVideo.addEventListener(
+      'loadedmetadata',
+      onMetadata
+    );
+    metadataVideo.addEventListener(
+      'error',
+      onMetadataError
+    );
 
-    clip.addEventListener('loadedmetadata', onMetadata);
-    clip.addEventListener('progress', onProgress);
-    clip.addEventListener('loadeddata', onReady);
-    clip.addEventListener('canplaythrough', onReady);
-    clip.addEventListener('error', onError);
+    metadataVideo.src = VIDEO_URL;
+    metadataVideo.load();
 
-    // Production path: let the browser/CDN buffer the MP4 immediately.
-    // Waiting for a full Blob download made the experience feel unnecessarily slow.
-    clip.src = VIDEO_URL;
-    clip.load();
+    const onLenisScroll =
+      () => updateProgress();
 
-    fallbackTimer = window.setTimeout(start, 4500);
-
-    const unlock = () => {
-      const playback = clip.play();
-
-      if (playback && typeof playback.then === 'function') {
-        playback
-          .then(() => clip.pause())
-          .catch(() => {});
-      } else {
-        clip.pause();
-      }
-    };
-
-    const unlockEvents: Array<keyof WindowEventMap> = [
-      'touchstart',
-      'pointerdown',
-      'wheel',
-      'keydown',
-    ];
-
-    unlockEvents.forEach((eventName) => {
-      window.addEventListener(eventName, unlock, {
-        once: true,
-        passive: true,
-      });
-    });
-
-    const onLenisScroll = () => readScroll();
     const onResize = () => {
-      lenis.resize();
-      readScroll();
-      paintPanels();
+      if (resizeRaf) {
+        cancelAnimationFrame(
+          resizeRaf
+        );
+      }
+
+      resizeRaf =
+        requestAnimationFrame(() => {
+          resizeRaf = 0;
+          lenis.resize();
+          resizeCanvas();
+          drawnFrame = -1;
+          updateProgress();
+        });
     };
 
-    lenis.on('scroll', onLenisScroll);
-    window.addEventListener('resize', onResize, {
-      passive: true,
-    });
+    lenis.on(
+      'scroll',
+      onLenisScroll
+    );
 
-    readScroll();
+    window.addEventListener(
+      'resize',
+      onResize,
+      { passive: true }
+    );
+
+    resizeCanvas();
     paintPanels();
-    rafId = requestAnimationFrame(renderFrame);
 
     return () => {
-      cancelAnimationFrame(rafId);
-      window.clearTimeout(fallbackTimer);
+      destroyed = true;
 
-      clip.removeEventListener(
+      if (renderRaf) {
+        cancelAnimationFrame(
+          renderRaf
+        );
+      }
+
+      if (resizeRaf) {
+        cancelAnimationFrame(
+          resizeRaf
+        );
+      }
+
+      metadataVideo.removeEventListener(
         'loadedmetadata',
         onMetadata
       );
-      clip.removeEventListener('progress', onProgress);
-      clip.removeEventListener('loadeddata', onReady);
-      clip.removeEventListener(
-        'canplaythrough',
-        onReady
+      metadataVideo.removeEventListener(
+        'error',
+        onMetadataError
       );
-      clip.removeEventListener('error', onError);
 
-      lenis.off('scroll', onLenisScroll);
-      window.removeEventListener('resize', onResize);
+      lenis.off(
+        'scroll',
+        onLenisScroll
+      );
 
-      unlockEvents.forEach((eventName) => {
-        window.removeEventListener(eventName, unlock);
-      });
+      window.removeEventListener(
+        'resize',
+        onResize
+      );
+
+      loadedFrames.forEach(
+        (image) => {
+          image.src = '';
+        }
+      );
+
+      loadedFrames.clear();
+      loadingFrames.clear();
+      lastUsed.clear();
     };
   }, [lenis]);
 
@@ -312,14 +788,20 @@ export function CinematicHero() {
         </p>
       </div>
 
+      <video
+        id="frameMetadata"
+        aria-hidden="true"
+        muted
+        playsInline
+        preload="metadata"
+        className="hidden"
+      />
+
       <div className="fixed inset-0 z-0 overflow-hidden bg-[#11131a]">
-        <video
-          id="clip"
-          muted
-          playsInline
-          preload="auto"
-          disablePictureInPicture
-          className="absolute left-1/2 top-1/2 h-full w-full -translate-x-1/2 -translate-y-1/2 scale-[1.025] object-cover"
+        <canvas
+          id="frameCanvas"
+          className="absolute inset-0 h-full w-full"
+          aria-hidden="true"
         />
 
         <div
@@ -344,7 +826,11 @@ export function CinematicHero() {
           title="FRAME & FORM"
           subtitle={
             <>
-              Where your <em className="font-normal italic">Vision</em> meets Reality
+              Where your{' '}
+              <em className="font-normal italic">
+                Vision
+              </em>{' '}
+              meets Reality
             </>
           }
           href="/contact"
