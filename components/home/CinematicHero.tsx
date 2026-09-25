@@ -6,12 +6,11 @@ import gsap from 'gsap';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const FRAME_COUNT = 82;
-const FRAME_RATE = 30;
-const ANIMATION_COMPLETE_PROGRESS = 0.93;
-const FRAME_BASE =
-  'https://res.cloudinary.com/diometfe9/video/upload';
-const FRAME_ASSET =
-  'v1790340573/613a50d4-f1da-4f2d-b494-40cd0f20f141_cd4zyw';
+const SPRITE_COLS = 10;
+const SPRITE_TILE_WIDTH = 720;
+const SPRITE_TILE_HEIGHT = 405;
+const ANIMATION_COMPLETE_PROGRESS = 0.95;
+const SPRITE_URL = '/hero-sequence/cinematic-zoom-82frames.avif';
 
 const CUES = [
   [0.0, 0.012, 0.235, 0.29],
@@ -20,7 +19,6 @@ const CUES = [
 ] as const;
 
 const DRIFT = 10;
-const PRELOAD_CONCURRENCY = 10;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
@@ -33,28 +31,14 @@ const ramp = (
   start: number,
   end: number
 ) => {
-  if (end <= start) return progress >= end ? 1 : 0;
+  if (end <= start) {
+    return progress >= end ? 1 : 0;
+  }
 
   return smoothstep(
     clamp((progress - start) / (end - start), 0, 1)
   );
 };
-
-function getFrameWidth() {
-  if (typeof window === 'undefined') return 1280;
-  if (window.innerWidth < 640) return 800;
-  if (window.innerWidth < 1200) return 1080;
-  return 1280;
-}
-
-function getFrameUrl(index: number, width: number) {
-  const time = index / FRAME_RATE;
-
-  return (
-    `${FRAME_BASE}/so_${time.toFixed(3)},c_scale,w_${width},q_auto:good,f_webp/` +
-    `${FRAME_ASSET}.webp`
-  );
-}
 
 export function CinematicHero() {
   const { lenis } = useSmoothScroll();
@@ -68,7 +52,8 @@ export function CinematicHero() {
       root.querySelector<HTMLElement>('[data-hero-track]');
     const canvas =
       root.querySelector<HTMLCanvasElement>('#heroSequence');
-    const boot = root.querySelector<HTMLElement>('#boot');
+    const boot =
+      root.querySelector<HTMLElement>('#boot');
     const bootBar =
       root.querySelector<HTMLElement>('#bootBar');
     const bootPct =
@@ -97,25 +82,24 @@ export function CinematicHero() {
 
     if (!context) return;
 
-    const frames: Array<HTMLImageElement | null> =
-      new Array(FRAME_COUNT).fill(null);
-
     let destroyed = false;
+    let sprite: HTMLImageElement | null = null;
     let progress = 0;
-    let targetFrame = 0;
-    let paintedFrame = -1;
+    let currentFrame = -1;
+    let requestedFrame = 0;
     let renderRaf = 0;
     let resizeRaf = 0;
-    let started = false;
-    let frameWidth = getFrameWidth();
 
-    const setBootProgress = (value: number) => {
+    const setBootProgress = (
+      value: number,
+      label = 'LOADING'
+    ) => {
       const normalized = clamp(value, 0, 1);
 
       bootBar.style.transform =
         `scaleX(${normalized})`;
       bootPct.textContent =
-        `PREPARING ${Math.round(normalized * 100)}%`;
+        `${label} ${Math.round(normalized * 100)}%`;
     };
 
     const resizeCanvas = () => {
@@ -124,6 +108,7 @@ export function CinematicHero() {
         window.devicePixelRatio || 1,
         1.5
       );
+
       const width = Math.max(
         1,
         Math.round(rect.width * dpr)
@@ -139,28 +124,38 @@ export function CinematicHero() {
       ) {
         canvas.width = width;
         canvas.height = height;
-        paintedFrame = -1;
+        currentFrame = -1;
       }
     };
 
-    const drawCover = (image: HTMLImageElement) => {
-      if (
-        !image.naturalWidth ||
-        !image.naturalHeight ||
-        !canvas.width ||
-        !canvas.height
-      ) {
-        return;
-      }
+    const drawFrame = (frameIndex: number) => {
+      if (!sprite) return;
+
+      const index = clamp(
+        Math.round(frameIndex),
+        0,
+        FRAME_COUNT - 1
+      );
+
+      const sourceX =
+        (index % SPRITE_COLS) * SPRITE_TILE_WIDTH;
+      const sourceY =
+        Math.floor(index / SPRITE_COLS) *
+        SPRITE_TILE_HEIGHT;
 
       const scale = Math.max(
-        canvas.width / image.naturalWidth,
-        canvas.height / image.naturalHeight
+        canvas.width / SPRITE_TILE_WIDTH,
+        canvas.height / SPRITE_TILE_HEIGHT
       );
-      const width = image.naturalWidth * scale;
-      const height = image.naturalHeight * scale;
-      const x = (canvas.width - width) * 0.5;
-      const y = (canvas.height - height) * 0.5;
+
+      const drawWidth =
+        SPRITE_TILE_WIDTH * scale;
+      const drawHeight =
+        SPRITE_TILE_HEIGHT * scale;
+      const x =
+        (canvas.width - drawWidth) * 0.5;
+      const y =
+        (canvas.height - drawHeight) * 0.5;
 
       context.globalAlpha = 1;
       context.fillStyle = '#11131a';
@@ -172,71 +167,82 @@ export function CinematicHero() {
       );
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = 'high';
-      context.drawImage(image, x, y, width, height);
-    };
 
-    const nearestFrame = (index: number) => {
-      const exact = frames[index];
-      if (exact) return exact;
+      context.drawImage(
+        sprite,
+        sourceX,
+        sourceY,
+        SPRITE_TILE_WIDTH,
+        SPRITE_TILE_HEIGHT,
+        x,
+        y,
+        drawWidth,
+        drawHeight
+      );
 
-      for (
-        let distance = 1;
-        distance < FRAME_COUNT;
-        distance += 1
-      ) {
-        const before = frames[index - distance];
-        if (before) return before;
-
-        const after = frames[index + distance];
-        if (after) return after;
-      }
-
-      return null;
+      currentFrame = index;
     };
 
     const render = () => {
       renderRaf = 0;
 
-      if (targetFrame === paintedFrame) return;
+      if (
+        !sprite ||
+        requestedFrame === currentFrame
+      ) {
+        return;
+      }
 
-      const image = nearestFrame(targetFrame);
-      if (!image) return;
-
-      drawCover(image);
-      paintedFrame = targetFrame;
+      drawFrame(requestedFrame);
     };
 
     const scheduleRender = () => {
       if (renderRaf) return;
-      renderRaf = requestAnimationFrame(render);
+
+      renderRaf =
+        requestAnimationFrame(render);
     };
 
     const paintPanels = () => {
-      meter.style.transform = `scaleX(${progress})`;
+      meter.style.transform =
+        `scaleX(${progress})`;
 
       panels.forEach((panel, index) => {
         const cue = CUES[index];
         if (!cue) return;
 
-        const enter = ramp(progress, cue[0], cue[1]);
-        const leave = ramp(progress, cue[2], cue[3]);
-        const opacity = enter * (1 - leave);
+        const enter = ramp(
+          progress,
+          cue[0],
+          cue[1]
+        );
+        const leave = ramp(
+          progress,
+          cue[2],
+          cue[3]
+        );
+        const opacity =
+          enter * (1 - leave);
         const y =
           (1 - enter) * DRIFT -
           leave * DRIFT;
 
-        panel.style.opacity = opacity.toFixed(4);
+        panel.style.opacity =
+          opacity.toFixed(4);
         panel.style.transform =
           `translate3d(0,${y.toFixed(2)}px,0)`;
         panel.style.pointerEvents =
-          opacity > 0.62 ? 'auto' : 'none';
+          opacity > 0.62
+            ? 'auto'
+            : 'none';
       });
     };
 
     const readScroll = () => {
       const range = Math.max(
         1,
-        track.offsetHeight - window.innerHeight
+        track.offsetHeight -
+          window.innerHeight
       );
 
       progress = clamp(
@@ -245,16 +251,19 @@ export function CinematicHero() {
         1
       );
 
-      const animationProgress = clamp(
-        progress / ANIMATION_COMPLETE_PROGRESS,
+      const sequenceProgress = clamp(
+        progress /
+          ANIMATION_COMPLETE_PROGRESS,
         0,
         1
       );
 
-      targetFrame = Math.min(
+      // 0.00 -> frame 000, 1.00 -> frame 081.
+      // The final frame is guaranteed and then held for the last 5%.
+      requestedFrame = Math.min(
         FRAME_COUNT - 1,
-        Math.round(
-          animationProgress * (FRAME_COUNT - 1)
+        Math.floor(
+          sequenceProgress * FRAME_COUNT
         )
       );
 
@@ -262,124 +271,109 @@ export function CinematicHero() {
       scheduleRender();
     };
 
-    const loadFrame = (
-      index: number,
-      attempt = 0
-    ) =>
-      new Promise<void>((resolve) => {
-        const image = new Image();
-        image.decoding = 'async';
-        image.crossOrigin = 'anonymous';
+    const loadSprite = () =>
+      new Promise<HTMLImageElement>(
+        (resolve, reject) => {
+          const image = new Image();
+          image.decoding = 'async';
+          image.fetchPriority = 'high';
 
-        image.onload = async () => {
-          try {
-            await image.decode();
-          } catch {
-            // onload already guarantees the frame is drawable.
-          }
+          image.onload = () => {
+            resolve(image);
+          };
 
-          if (!destroyed) {
-            frames[index] = image;
-          }
+          image.onerror = () => {
+            reject(
+              new Error(
+                'Hero frame sprite failed to load.'
+              )
+            );
+          };
 
-          resolve();
-        };
-
-        image.onerror = () => {
-          if (attempt < 1 && !destroyed) {
-            window.setTimeout(() => {
-              void loadFrame(index, attempt + 1).then(resolve);
-            }, 250);
-            return;
-          }
-
-          resolve();
-        };
-
-        image.src = getFrameUrl(index, frameWidth);
-      });
-
-    const preloadAllFrames = async () => {
-      let nextIndex = 0;
-      let completed = 0;
-
-      const worker = async () => {
-        while (!destroyed) {
-          const index = nextIndex;
-          nextIndex += 1;
-
-          if (index >= FRAME_COUNT) return;
-
-          await loadFrame(index);
-
-          completed += 1;
-          setBootProgress(completed / FRAME_COUNT);
+          image.src = SPRITE_URL;
         }
-      };
-
-      await Promise.all(
-        Array.from(
-          { length: PRELOAD_CONCURRENCY },
-          () => worker()
-        )
       );
-    };
 
     const start = async () => {
-      if (started) return;
-      started = true;
+      setBootProgress(
+        0.15,
+        'LOADING FRAMES'
+      );
 
-      resizeCanvas();
+      try {
+        sprite = await loadSprite();
 
-      // The uploaded archive contains frames 000–081. Load the entire
-      // 82-frame sequence before enabling the experience so scrolling never
-      // waits for network or MP4 seeking.
-      await preloadAllFrames();
+        if (destroyed) return;
 
-      if (destroyed) return;
+        setBootProgress(
+          0.9,
+          'DECODING FRAMES'
+        );
 
-      targetFrame = 0;
-      const firstFrame = nearestFrame(0);
+        try {
+          await sprite.decode();
+        } catch {
+          // onload already guarantees the image is drawable.
+        }
 
-      if (firstFrame) {
-        drawCover(firstFrame);
-        paintedFrame = 0;
+        if (destroyed) return;
+
+        resizeCanvas();
+        readScroll();
+
+        // Force the first exact requested frame to paint before
+        // the loader disappears.
+        drawFrame(requestedFrame);
+
+        setBootProgress(1, 'READY');
+
+        gsap.to(boot, {
+          opacity: 0,
+          duration: 0.45,
+          ease: 'power3.out',
+          onComplete: () => {
+            boot.classList.add(
+              'pointer-events-none',
+              'invisible'
+            );
+          },
+        });
+      } catch {
+        bootPct.textContent =
+          'FRAME SEQUENCE FAILED TO LOAD';
       }
-
-      readScroll();
-
-      gsap.to(boot, {
-        opacity: 0,
-        duration: 0.45,
-        ease: 'power3.out',
-        onComplete: () => {
-          boot.classList.add(
-            'pointer-events-none',
-            'invisible'
-          );
-        },
-      });
     };
 
-    const onLenisScroll = () => readScroll();
+    const onLenisScroll =
+      () => readScroll();
 
     const onResize = () => {
       if (resizeRaf) {
-        cancelAnimationFrame(resizeRaf);
+        cancelAnimationFrame(
+          resizeRaf
+        );
       }
 
-      resizeRaf = requestAnimationFrame(() => {
-        resizeRaf = 0;
-        lenis.resize();
-        resizeCanvas();
-        readScroll();
-      });
+      resizeRaf =
+        requestAnimationFrame(() => {
+          resizeRaf = 0;
+          lenis.resize();
+          resizeCanvas();
+          readScroll();
+          scheduleRender();
+        });
     };
 
-    lenis.on('scroll', onLenisScroll);
-    window.addEventListener('resize', onResize, {
-      passive: true,
-    });
+    lenis.on(
+      'scroll',
+      onLenisScroll
+    );
+
+    window.addEventListener(
+      'resize',
+      onResize,
+      { passive: true }
+    );
 
     resizeCanvas();
     paintPanels();
@@ -389,19 +383,31 @@ export function CinematicHero() {
       destroyed = true;
 
       if (renderRaf) {
-        cancelAnimationFrame(renderRaf);
+        cancelAnimationFrame(
+          renderRaf
+        );
       }
 
       if (resizeRaf) {
-        cancelAnimationFrame(resizeRaf);
+        cancelAnimationFrame(
+          resizeRaf
+        );
       }
 
-      lenis.off('scroll', onLenisScroll);
-      window.removeEventListener('resize', onResize);
+      lenis.off(
+        'scroll',
+        onLenisScroll
+      );
 
-      frames.forEach((image) => {
-        if (image) image.src = '';
-      });
+      window.removeEventListener(
+        'resize',
+        onResize
+      );
+
+      if (sprite) {
+        sprite.src = '';
+        sprite = null;
+      }
     };
   }, [lenis]);
 
@@ -425,7 +431,7 @@ export function CinematicHero() {
           id="bootPct"
           className="text-[10px] font-medium tracking-[0.16em] text-white/55"
         >
-          PREPARING 0%
+          LOADING FRAMES 0%
         </p>
       </div>
 
@@ -440,11 +446,11 @@ export function CinematicHero() {
           className="pointer-events-none absolute inset-0 z-[1]"
           style={{
             background:
-              'linear-gradient(180deg,rgba(68,78,103,.20) 0%,rgba(173,117,137,.12) 45%,rgba(157,101,117,.22) 100%), linear-gradient(180deg,rgba(8,10,15,.08) 0%,rgba(8,10,15,.02) 55%,rgba(8,10,15,.30) 100%)',
+              'linear-gradient(180deg,rgba(68,78,103,.16) 0%,rgba(173,117,137,.08) 45%,rgba(157,101,117,.16) 100%), linear-gradient(180deg,rgba(8,10,15,.05) 0%,rgba(8,10,15,.01) 55%,rgba(8,10,15,.22) 100%)',
           }}
         />
 
-        <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[2] opacity-[.075] mix-blend-soft-light" />
+        <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[2] opacity-[.055] mix-blend-soft-light" />
       </div>
 
       <i
