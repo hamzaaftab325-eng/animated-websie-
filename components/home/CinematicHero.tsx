@@ -1047,18 +1047,18 @@ function PremiumCta({
       onMouseLeave={() => setActive(false)}
       onFocus={() => setActive(true)}
       onBlur={() => setActive(false)}
-      className="group relative isolate inline-flex h-[46px] w-[154px] overflow-hidden rounded-full shadow-[0_10px_28px_rgba(22,15,30,.10)] transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[1px] hover:shadow-[0_16px_36px_rgba(22,15,30,.14)] active:translate-y-0 active:scale-[0.992] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+      className="group relative isolate inline-flex h-[46px] w-[154px] overflow-hidden rounded-full shadow-[0_10px_28px_rgba(22,15,30,.10)] transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] active:scale-[0.992] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
     >
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-[1px] rounded-full bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,.15),inset_0_-1px_0_rgba(255,255,255,.025)] backdrop-blur-[20px] transition-[background-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:bg-white/[0.075] group-hover:shadow-[inset_0_1px_0_rgba(255,255,255,.22),inset_0_-1px_0_rgba(255,255,255,.05)]"
+        className="pointer-events-none absolute inset-[1px] rounded-full bg-white/[0.055] shadow-[inset_0_1px_0_rgba(255,255,255,.15),inset_0_-1px_0_rgba(255,255,255,.025)] backdrop-blur-[20px]"
       />
 
       <svg
         aria-hidden="true"
         viewBox="0 0 154 46"
         preserveAspectRatio="none"
-        className="pointer-events-none absolute inset-0 z-[2] h-full w-full overflow-visible"
+        className="pointer-events-none absolute inset-0 z-[2] h-full w-full"
       >
         <rect
           x="0.75"
@@ -1067,10 +1067,11 @@ function PremiumCta({
           height="44.5"
           rx="22.25"
           fill="none"
-          stroke="rgba(255,255,255,.18)"
+          stroke="rgba(255,255,255,.20)"
           strokeWidth="1.2"
           vectorEffect="non-scaling-stroke"
         />
+
         <rect
           x="0.75"
           y="0.75"
@@ -1079,12 +1080,23 @@ function PremiumCta({
           rx="22.25"
           pathLength="1"
           fill="none"
-          stroke="rgba(255,255,255,.82)"
-          strokeWidth="1.35"
+          stroke="rgba(255,255,255,.90)"
+          strokeWidth="1.45"
           strokeLinecap="round"
           vectorEffect="non-scaling-stroke"
-          className="opacity-0 [stroke-dasharray:.14_.86] [stroke-dashoffset:.14] transition-[stroke-dashoffset,opacity] duration-[1400ms] ease-[cubic-bezier(.16,1,.3,1)] group-hover:opacity-100 group-hover:[stroke-dashoffset:-.86]"
-        />
+          strokeDasharray=".16 .84"
+          className={active ? 'opacity-100' : 'opacity-0'}
+        >
+          {active && (
+            <animate
+              attributeName="stroke-dashoffset"
+              from="0"
+              to="-1"
+              dur="1.7s"
+              repeatCount="indefinite"
+            />
+          )}
+        </rect>
       </svg>
 
       <span className="relative z-10 flex h-full w-full items-center justify-center gap-3 rounded-full px-6 text-[11px] font-medium tracking-[0.045em] text-white">
@@ -1095,7 +1107,7 @@ function PremiumCta({
 
         <ArrowUpRight
           aria-hidden="true"
-          className="h-[14px] w-[14px] shrink-0 stroke-[1.45] text-white/80 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[2px] group-hover:-translate-y-[2px] group-hover:rotate-[6deg] group-hover:text-white"
+          className="h-[14px] w-[14px] shrink-0 stroke-[1.45] text-white/82 transition-transform duration-700 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-x-[1.5px] group-hover:-translate-y-[1.5px]"
         />
       </span>
     </Link>
@@ -1121,13 +1133,14 @@ function LetterSwapLabel({
     let frame = 0;
     const letters = label.split('');
     const totalFrames =
-      Math.max(10, letters.length * 2 + 4);
+      letters.length + 6;
 
     const timer = window.setInterval(() => {
       frame += 1;
 
-      const resolved = Math.floor(
-        Math.max(0, frame - 2) / 2
+      const resolved = Math.max(
+        0,
+        frame - 4
       );
 
       setDisplay(
@@ -1152,7 +1165,7 @@ function LetterSwapLabel({
         window.clearInterval(timer);
         setDisplay(label);
       }
-    }, 46);
+    }, 38);
 
     return () => {
       window.clearInterval(timer);
@@ -1162,9 +1175,18 @@ function LetterSwapLabel({
   return (
     <span
       aria-label={label}
-      className="min-w-[8ch] text-center [font-variant-numeric:tabular-nums]"
+      className="relative inline-grid place-items-center"
     >
-      <span aria-hidden="true">
+      <span
+        aria-hidden="true"
+        className="invisible col-start-1 row-start-1 whitespace-pre"
+      >
+        {label}
+      </span>
+      <span
+        aria-hidden="true"
+        className="col-start-1 row-start-1 whitespace-pre text-center"
+      >
         {display}
       </span>
     </span>
