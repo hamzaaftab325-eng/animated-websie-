@@ -94,10 +94,10 @@ export function EverythingYouNeed() {
           </p>
         </div>
 
-        <div className="relative mt-[clamp(2.9rem,5.4vh,4.6rem)] grid w-full max-w-[840px] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[14px] lg:[transform:translateY(-20px)_scale(0.94)]">
+        <div className="relative mt-[clamp(2.9rem,5.4vh,4.6rem)] grid w-full max-w-[840px] grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-[14px] lg:[transform:translateY(-22px)_scale(0.92)]">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute -bottom-[8px] left-1/2 hidden h-[18px] w-[82%] -translate-x-1/2 rounded-[50%] bg-[#5c3733]/14 blur-[14px] lg:block"
+            className="pointer-events-none absolute -bottom-[7px] left-1/2 hidden h-[16px] w-[76%] -translate-x-1/2 rounded-[50%] bg-[#5c3733]/12 blur-[13px] lg:block"
           />
           {FEATURES.map((feature) => {
             const Icon = feature.icon;
@@ -106,7 +106,7 @@ export function EverythingYouNeed() {
               <article
                 key={feature.title}
                 data-reveal
-                className="group relative min-h-[242px] overflow-hidden rounded-[22px] border border-white/[0.44] bg-white/[0.07] px-5 py-5 text-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,.35),inset_0_-1px_0_rgba(255,255,255,.05),0_10px_24px_rgba(75,44,40,.11)] backdrop-blur-[14px] transition-[transform,background-color,border-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[2px] hover:border-white/[0.58] hover:bg-white/[0.09] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.48),inset_0_-1px_0_rgba(255,255,255,.07),0_16px_32px_rgba(75,44,40,.14)]"
+                className="group relative min-h-[228px] overflow-hidden rounded-[22px] border border-white/[0.44] bg-white/[0.07] px-5 py-[18px] text-center text-white shadow-[inset_0_1px_0_rgba(255,255,255,.35),inset_0_-1px_0_rgba(255,255,255,.05),0_9px_22px_rgba(75,44,40,.10)] backdrop-blur-[14px] transition-[transform,background-color,border-color,box-shadow] duration-700 ease-[cubic-bezier(.16,1,.3,1)] hover:-translate-y-[2px] hover:border-white/[0.58] hover:bg-white/[0.09] hover:shadow-[inset_0_1px_0_rgba(255,255,255,.48),inset_0_-1px_0_rgba(255,255,255,.07),0_15px_30px_rgba(75,44,40,.13)]"
               >
                 <div
                   aria-hidden="true"
