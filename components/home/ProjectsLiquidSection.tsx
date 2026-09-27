@@ -7,7 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import * as THREE from 'three';
 
 const PROJECTS_BACKGROUND =
-  'https://res.cloudinary.com/diometfe9/image/upload/v1790183196/download_enkn9u.png';
+  'https://d2jqrm6oza8nb6.cloudfront.net/datasets/f22a0761-888b-4768-89f3-1f7ad3c6c1ea.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYjZlMzM1NzcwMDFkNmMzMiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDY2MDQ3MX0.EWR8dgIfR0ccSBdDtBhrLKhD9tkxysKSZbxqlgBxepU';
 
 const BUTTON_LABEL = 'View Projects';
 
