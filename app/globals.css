@@ -415,6 +415,16 @@ a {
     padding-block-start: 7.4626865672vw;
   }
 
+  .ffProjects_tint {
+    background:
+      linear-gradient(
+        180deg,
+        rgba(8, 5, 4, .11) 0%,
+        rgba(8, 5, 4, .025) 44%,
+        rgba(8, 5, 4, .08) 100%
+      );
+  }
+
   .ffProjects_bg {
     width: 100vw;
     height: 199.0049751244vw;
@@ -438,29 +448,31 @@ a {
   .ffProjects_content {
     height: 223.8805970149vw;
     margin-block-start: -1.2437810945vw;
-    padding-block-start: 0;
+    padding-block-start: 10vw;
     padding-inline-start: 14.9253731343vw;
     padding-inline-end: 8.9552238806vw;
   }
 
   .ffProjects_title {
     max-width: 76vw;
-    font-size: 7.4626865672vw;
-    line-height: 1;
+    font-size: clamp(31px, 7.4626865672vw, 38px);
+    line-height: .98;
+    text-shadow: 0 3px 24px rgba(0, 0, 0, .26);
   }
 
   .ffProjects_descriptions {
-    margin-block-start: 6.2189054726vw;
+    margin-block-start: 5.25vw;
     max-width: 72vw;
   }
 
   .ffProjects_description {
-    font-size: 2.9850746269vw;
-    line-height: 2.4;
+    font-size: clamp(12px, 2.9850746269vw, 15px);
+    line-height: 2.05;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, .22);
   }
 
   .ffProjects_buttonWrap {
-    margin-block-start: 9.4527363184vw;
+    margin-block-start: 7.5vw;
     margin-inline-start: -4.9751243781vw;
     width: 56vw;
   }

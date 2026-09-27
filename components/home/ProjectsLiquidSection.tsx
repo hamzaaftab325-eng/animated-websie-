@@ -67,6 +67,9 @@ export function ProjectsLiquidSection() {
       window.matchMedia(
         '(prefers-reduced-motion: reduce)'
       ).matches;
+    const isMobile = window.matchMedia(
+      '(max-width: 767px)'
+    ).matches;
 
     const ctx = gsap.context(() => {
       if (reducedMotion) {
@@ -117,9 +120,68 @@ export function ProjectsLiquidSection() {
         force3D: true,
       });
 
-      if (image) {
+      if (isMobile) {
+        if (image) {
+          gsap.fromTo(
+            image,
+            {
+              yPercent: -3.5,
+              scale: 1.09,
+            },
+            {
+              yPercent: 6,
+              scale: 1.035,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true,
+              },
+            }
+          );
+        }
+
+        if (contents) {
+          gsap.fromTo(
+            contents,
+            { y: 32 },
+            {
+              y: -58,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true,
+              },
+            }
+          );
+        }
+      } else {
+        if (image) {
+          gsap.fromTo(
+            image,
+            {
+              yPercent: -6,
+              scale: 1.115,
+            },
+            {
+              yPercent: 9,
+              scale: 1.025,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true,
+              },
+            }
+          );
+        }
+
         gsap.fromTo(
-          image,
+          canvas,
           {
             yPercent: -6,
             scale: 1.115,
@@ -136,59 +198,40 @@ export function ProjectsLiquidSection() {
             },
           }
         );
-      }
 
-      gsap.fromTo(
-        canvas,
-        {
-          yPercent: -6,
-          scale: 1.115,
-        },
-        {
-          yPercent: 9,
-          scale: 1.025,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: true,
-          },
+        if (contents) {
+          gsap.fromTo(
+            contents,
+            { y: 74 },
+            {
+              y: -128,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top bottom',
+                end: 'bottom top',
+                scrub: true,
+              },
+            }
+          );
         }
-      );
 
-      if (contents) {
-        gsap.fromTo(
-          contents,
-          { y: 74 },
-          {
-            y: -128,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: true,
-            },
-          }
-        );
-      }
-
-      if (label) {
-        gsap.fromTo(
-          label,
-          { y: 14 },
-          {
-            y: -44,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top center',
-              end: 'bottom top',
-              scrub: true,
-            },
-          }
-        );
+        if (label) {
+          gsap.fromTo(
+            label,
+            { y: 14 },
+            {
+              y: -44,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top center',
+                end: 'bottom top',
+                scrub: true,
+              },
+            }
+          );
+        }
       }
 
       if (tint) {
@@ -208,7 +251,11 @@ export function ProjectsLiquidSection() {
         );
       }
 
+      let referencePlayed = false;
+
       const playReferenceAnimation = () => {
+        if (referencePlayed) return;
+        referencePlayed = true;
         gsap.to(titleLines, {
           opacity: 1,
           duration: 0.72,
@@ -292,9 +339,27 @@ export function ProjectsLiquidSection() {
 
       ScrollTrigger.create({
         trigger: section,
-        start: 'top 78%',
+        start: 'top 88%',
         once: true,
         onEnter: playReferenceAnimation,
+        onEnterBack: playReferenceAnimation,
+      });
+
+      // Mobile browsers can restore a page mid-scroll before ScrollTrigger
+      // has completed its first refresh. If the section is already visible,
+      // reveal the editorial content immediately instead of leaving the
+      // dark architectural ceiling empty.
+      requestAnimationFrame(() => {
+        const rect =
+          section.getBoundingClientRect();
+
+        if (
+          rect.top <
+            window.innerHeight * 0.92 &&
+          rect.bottom > 0
+        ) {
+          playReferenceAnimation();
+        }
       });
     }, section);
 
