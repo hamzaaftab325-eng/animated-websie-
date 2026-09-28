@@ -34,11 +34,11 @@ export function SmoothScrollProvider({
     gsap.registerPlugin(ScrollTrigger);
 
     const instance = new Lenis({
-      lerp: 0.12,
+      lerp: 0.095,
       smoothWheel: true,
       syncTouch: false,
-      wheelMultiplier: 0.92,
-      touchMultiplier: 1,
+      wheelMultiplier: 0.9,
+      touchMultiplier: 1.05,
       overscroll: false,
       autoResize: true,
     });
@@ -53,7 +53,7 @@ export function SmoothScrollProvider({
 
     instance.on('scroll', onScroll);
     gsap.ticker.add(onTick);
-    gsap.ticker.lagSmoothing(500, 33);
+    gsap.ticker.lagSmoothing(0);
     setLenis(instance);
 
     return () => {
