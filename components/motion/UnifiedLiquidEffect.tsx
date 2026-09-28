@@ -878,6 +878,57 @@ export function UnifiedLiquidEffect({
       outputColor.swap();
     };
 
+    const syncCanvasSource = () => {
+      if (
+        !sourceCanvas ||
+        !sourceBuffer ||
+        !sourceBufferContext ||
+        disposed
+      ) {
+        return;
+      }
+
+      const width = Math.max(
+        1,
+        sourceCanvas.width
+      );
+      const height = Math.max(
+        1,
+        sourceCanvas.height
+      );
+
+      if (
+        sourceBuffer.width !== width ||
+        sourceBuffer.height !== height
+      ) {
+        sourceBuffer.width = width;
+        sourceBuffer.height = height;
+      }
+
+      try {
+        sourceBufferContext.drawImage(
+          sourceCanvas,
+          0,
+          0,
+          width,
+          height
+        );
+
+        texture.needsUpdate = true;
+        sceneMaterial.uniforms
+          .u_image_size.value.set(
+            width,
+            height
+          );
+
+        canvas.classList.add(
+          'is-liquid-ready'
+        );
+      } catch {
+        // Source may be between resize/paint cycles; next hero frame retries.
+      }
+    };
+
     const renderFinal = () => {
       if (
         !sceneTarget ||
@@ -885,58 +936,6 @@ export function UnifiedLiquidEffect({
         !outputColor
       ) {
         return;
-      }
-
-      if (
-        sourceCanvas &&
-        sourceBuffer &&
-        sourceBufferContext
-      ) {
-        const width = Math.max(
-          1,
-          sourceCanvas.width
-        );
-        const height = Math.max(
-          1,
-          sourceCanvas.height
-        );
-
-        if (
-          sourceBuffer.width !== width ||
-          sourceBuffer.height !== height
-        ) {
-          sourceBuffer.width = width;
-          sourceBuffer.height = height;
-        }
-
-        try {
-          sourceBufferContext.drawImage(
-            sourceCanvas,
-            0,
-            0,
-            width,
-            height
-          );
-
-          texture.needsUpdate = true;
-          sceneMaterial.uniforms
-            .u_image_size.value.set(
-              width,
-              height
-            );
-
-          if (
-            !canvas.classList.contains(
-              'is-liquid-ready'
-            )
-          ) {
-            canvas.classList.add(
-              'is-liquid-ready'
-            );
-          }
-        } catch {
-          return;
-        }
       }
 
       renderPass(
@@ -1056,7 +1055,23 @@ export function UnifiedLiquidEffect({
       { passive: true }
     );
 
+    const sourceUpdateEvent =
+      `liquid-source-update:${sourceValue}`;
+
+    if (sourceCanvas) {
+      window.addEventListener(
+        sourceUpdateEvent,
+        syncCanvasSource
+      );
+    }
+
     resize();
+
+    if (sourceCanvas) {
+      requestAnimationFrame(
+        syncCanvasSource
+      );
+    }
 
     const loop = () => {
       if (disposed) return;
@@ -1085,6 +1100,14 @@ export function UnifiedLiquidEffect({
         'resize',
         onResize
       );
+
+      if (sourceCanvas) {
+        window.removeEventListener(
+          sourceUpdateEvent,
+          syncCanvasSource
+        );
+      }
+
       canvas.classList.remove(
         'is-liquid-ready'
       );
