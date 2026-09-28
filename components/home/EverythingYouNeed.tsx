@@ -363,7 +363,6 @@ export function EverythingYouNeed() {
       '  vec2 dir = normalize(velocity);',
       '  vec2 distortedUv = vUv;',
       '  distortedUv -= u_disturb_power * dir * offset;',
-      '  distortedUv -= u_disturb_power * dir * offset;',
       '  distortedUv = clamp(distortedUv, 0.002, 0.998);',
       '  vec3 original = texture2D(u_scene, vUv).rgb;',
       '  vec3 distorted = texture2D(u_scene, distortedUv).rgb;',
@@ -893,7 +892,7 @@ export function EverythingYouNeed() {
       advectionMaterial.uniforms
         .u_dt.value = dt;
       advectionMaterial.uniforms
-        .u_dissipation.value = 0.97;
+        .u_dissipation.value = 0.955;
       renderPass(
         advectionMaterial,
         velocity.write
@@ -912,9 +911,9 @@ export function EverythingYouNeed() {
           1 / outputColor.height
         );
       advectionMaterial.uniforms
-        .u_dt.value = 8 * dt;
+        .u_dt.value = 2.5 * dt;
       advectionMaterial.uniforms
-        .u_dissipation.value = 0.98;
+        .u_dissipation.value = 0.94;
       renderPass(
         advectionMaterial,
         outputColor.write
@@ -974,13 +973,23 @@ export function EverythingYouNeed() {
         return;
       }
 
-      const x =
-        (event.clientX - rect.left) /
-        rect.width;
+      const x = Math.max(
+        0,
+        Math.min(
+          1,
+          (event.clientX - rect.left) /
+            rect.width
+        )
+      );
       const yPx =
         event.clientY - rect.top;
-      const y =
-        1 - yPx / rect.height;
+      const y = Math.max(
+        0,
+        Math.min(
+          1,
+          1 - yPx / rect.height
+        )
+      );
 
       if (
         pointer.lastX == null ||
