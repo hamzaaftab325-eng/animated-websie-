@@ -32,6 +32,15 @@ export function UnifiedLiquidEffect({
             sourceValue
           ) as HTMLCanvasElement | null)
         : null;
+    const sourceBuffer =
+      sourceCanvas
+        ? document.createElement('canvas')
+        : null;
+    const sourceBufferContext =
+      sourceBuffer?.getContext('2d', {
+        alpha: false,
+        desynchronized: false,
+      }) ?? null;
 
     if (
       !section ||
@@ -456,11 +465,24 @@ export function UnifiedLiquidEffect({
           );
         }
       );
-    } else if (sourceCanvas) {
+    } else if (
+      sourceCanvas &&
+      sourceBuffer &&
+      sourceBufferContext
+    ) {
+      sourceBuffer.width = Math.max(
+        1,
+        sourceCanvas.width
+      );
+      sourceBuffer.height = Math.max(
+        1,
+        sourceCanvas.height
+      );
+
       texture.dispose();
       texture =
         new THREE.CanvasTexture(
-          sourceCanvas
+          sourceBuffer
         );
       texture.colorSpace =
         THREE.SRGBColorSpace;
@@ -865,19 +887,56 @@ export function UnifiedLiquidEffect({
         return;
       }
 
-      if (sourceCanvas) {
-        texture.needsUpdate = true;
-        sceneMaterial.uniforms
-          .u_image_size.value.set(
-            Math.max(
-              1,
-              sourceCanvas.width
-            ),
-            Math.max(
-              1,
-              sourceCanvas.height
-            )
+      if (
+        sourceCanvas &&
+        sourceBuffer &&
+        sourceBufferContext
+      ) {
+        const width = Math.max(
+          1,
+          sourceCanvas.width
+        );
+        const height = Math.max(
+          1,
+          sourceCanvas.height
+        );
+
+        if (
+          sourceBuffer.width !== width ||
+          sourceBuffer.height !== height
+        ) {
+          sourceBuffer.width = width;
+          sourceBuffer.height = height;
+        }
+
+        try {
+          sourceBufferContext.drawImage(
+            sourceCanvas,
+            0,
+            0,
+            width,
+            height
           );
+
+          texture.needsUpdate = true;
+          sceneMaterial.uniforms
+            .u_image_size.value.set(
+              width,
+              height
+            );
+
+          if (
+            !canvas.classList.contains(
+              'is-liquid-ready'
+            )
+          ) {
+            canvas.classList.add(
+              'is-liquid-ready'
+            );
+          }
+        } catch {
+          return;
+        }
       }
 
       renderPass(
@@ -998,21 +1057,6 @@ export function UnifiedLiquidEffect({
     );
 
     resize();
-
-    if (sourceCanvas) {
-      sceneMaterial.uniforms
-        .u_image_size.value.set(
-          Math.max(1, sourceCanvas.width),
-          Math.max(1, sourceCanvas.height)
-        );
-      requestAnimationFrame(() => {
-        if (!disposed) {
-          canvas.classList.add(
-            'is-liquid-ready'
-          );
-        }
-      });
-    }
 
     const loop = () => {
       if (disposed) return;
