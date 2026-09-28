@@ -585,3 +585,307 @@ a {
     display: none;
   }
 }
+
+
+/* Frame & Form — post-project immersive liquid story */
+.liquidStory {
+  position: relative;
+  z-index: 55;
+  min-height: 132svh;
+  overflow: clip;
+  isolation: isolate;
+  background: #14100f;
+  color: #f6f1ec;
+}
+
+.liquidStory_media,
+.liquidStory_tint,
+.liquidStory_grid {
+  position: absolute;
+  inset: 0;
+}
+
+.liquidStory_media {
+  z-index: 0;
+  overflow: hidden;
+}
+
+.liquidStory_media img,
+.liquidStory_liquidCanvas {
+  position: absolute;
+  inset: -10% -4%;
+  display: block;
+  width: 108%;
+  height: 120%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  transform: scale(1.16);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.liquidStory_media img {
+  z-index: 0;
+}
+
+.liquidStory_liquidCanvas {
+  z-index: 1;
+  opacity: 0;
+  transition: opacity .22s ease;
+}
+
+.liquidStory_liquidCanvas.is-liquid-ready {
+  opacity: 1;
+}
+
+.liquidStory_tint {
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(13, 10, 9, .24) 0%,
+      rgba(13, 10, 9, .04) 34%,
+      rgba(13, 10, 9, .12) 68%,
+      rgba(13, 10, 9, .48) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(13, 10, 9, .24) 0%,
+      transparent 36%,
+      transparent 68%,
+      rgba(13, 10, 9, .22) 100%
+    );
+}
+
+.liquidStory_grid {
+  z-index: 3;
+  pointer-events: none;
+  opacity: .24;
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.10) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.08) 1px,
+      transparent 1px
+    );
+  background-size: 100% 25%, 25% 100%;
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent,
+      #000 12%,
+      #000 82%,
+      transparent
+    );
+}
+
+.liquidStory_content {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  justify-content: space-between;
+  padding:
+    clamp(26px, 3vw, 48px)
+    clamp(22px, 4.5vw, 72px)
+    clamp(24px, 3.5vw, 54px);
+  will-change: transform;
+}
+
+.liquidStory_topline,
+.liquidStory_footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: rgba(246,241,236,.68);
+}
+
+.liquidStory_meta {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.liquidStory_meta span {
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: rgba(246,241,236,.46);
+}
+
+.liquidStory_stage {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.7fr)
+    minmax(260px, .62fr);
+  align-items: end;
+  gap: clamp(36px, 7vw, 116px);
+  width: 100%;
+}
+
+.liquidStory_title {
+  margin: 0;
+  max-width: 900px;
+  font-family:
+    "Playfair Display",
+    Georgia,
+    serif;
+  font-size:
+    clamp(62px, 10vw, 160px);
+  font-weight: 400;
+  line-height: .82;
+  letter-spacing: -.055em;
+  text-shadow:
+    0 8px 38px rgba(12,8,6,.22);
+}
+
+.liquidStory_mask {
+  display: block;
+  overflow: clip;
+  padding-bottom: .08em;
+  margin-bottom: -.08em;
+  perspective: 900px;
+}
+
+.liquidStory_mask > span {
+  display: block;
+  transform-origin: 0 100%;
+  will-change:
+    transform,
+    opacity,
+    filter;
+}
+
+.liquidStory_mask--offset {
+  padding-left: clamp(34px, 8vw, 130px);
+}
+
+.liquidStory_copy {
+  max-width: 330px;
+  padding-bottom: clamp(8px, 1.8vw, 28px);
+}
+
+.liquidStory_copy > p {
+  margin: 0;
+  font-family:
+    "Shippori Mincho",
+    Georgia,
+    serif;
+  font-size:
+    clamp(14px, 1.1vw, 18px);
+  line-height: 1.85;
+  color: rgba(246,241,236,.80);
+}
+
+.liquidStory_link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 11px 0;
+  border-bottom:
+    1px solid rgba(246,241,236,.46);
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-decoration: none;
+  transition:
+    gap .5s var(--ease-premium),
+    border-color .5s var(--ease-premium);
+}
+
+.liquidStory_link:hover {
+  gap: 18px;
+  border-color: rgba(246,241,236,.86);
+}
+
+@media (max-width: 900px) {
+  .liquidStory {
+    min-height: 118svh;
+  }
+
+  .liquidStory_stage {
+    grid-template-columns: 1fr;
+    align-items: end;
+    gap: 34px;
+  }
+
+  .liquidStory_copy {
+    margin-left: auto;
+    max-width: 390px;
+  }
+
+  .liquidStory_title {
+    font-size:
+      clamp(58px, 13vw, 112px);
+  }
+}
+
+@media (max-width: 767px) {
+  .liquidStory {
+    min-height: 108svh;
+  }
+
+  .liquidStory_content {
+    padding:
+      22px
+      20px
+      26px;
+  }
+
+  .liquidStory_topline,
+  .liquidStory_footer {
+    font-size: 8px;
+    letter-spacing: .13em;
+  }
+
+  .liquidStory_meta {
+    display: none;
+  }
+
+  .liquidStory_title {
+    font-size:
+      clamp(52px, 16vw, 76px);
+  }
+
+  .liquidStory_mask--offset {
+    padding-left: 12vw;
+  }
+
+  .liquidStory_copy {
+    margin-left: 10vw;
+    max-width: 76vw;
+  }
+
+  .liquidStory_media img {
+    object-position: 58% 50%;
+  }
+
+  .liquidStory_liquidCanvas {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquidStory_mask > span {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .liquidStory_media img,
+  .liquidStory_liquidCanvas {
+    transform: none !important;
+  }
+}
