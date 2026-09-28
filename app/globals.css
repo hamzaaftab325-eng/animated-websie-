@@ -159,7 +159,7 @@ a {
   mix-blend-mode: normal;
 }
 
-.ffProjects_bg.is-liquid-ready .ffProjects_liquidCanvas {
+.ffProjects_liquidCanvas.is-liquid-ready {
   opacity: 1;
 }
 
@@ -540,7 +540,7 @@ a {
   transition: opacity .24s ease;
 }
 
-.eynLiquidBg.is-liquid-ready .eynLiquidCanvas {
+.eynLiquidCanvas.is-liquid-ready {
   opacity: 1;
 }
 
@@ -554,5 +554,34 @@ a {
   .eynLiquidBg img,
   .eynLiquidCanvas {
     transform: none !important;
+  }
+}
+
+
+/* Unified liquid renderer */
+.unifiedLiquidCanvas {
+  pointer-events: none;
+  backface-visibility: hidden;
+}
+
+.heroLiquidCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .22s ease;
+}
+
+.heroLiquidCanvas.is-liquid-ready {
+  opacity: 1;
+}
+
+@media (hover: none), (pointer: coarse), (max-width: 767px) {
+  .heroLiquidCanvas {
+    display: none;
   }
 }
