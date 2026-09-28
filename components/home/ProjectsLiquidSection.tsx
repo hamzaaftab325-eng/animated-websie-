@@ -129,12 +129,12 @@ export function ProjectsLiquidSection() {
           gsap.fromTo(
             image,
             {
-              yPercent: -4.8,
-              scale: 1.095,
+              yPercent: -4.5,
+              scale: 1.13,
             },
             {
-              yPercent: 7.5,
-              scale: 1.025,
+              yPercent: 6,
+              scale: 1.08,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -167,12 +167,12 @@ export function ProjectsLiquidSection() {
           gsap.fromTo(
             image,
             {
-              yPercent: -9,
-              scale: 1.13,
+              yPercent: -6.5,
+              scale: 1.18,
             },
             {
-              yPercent: 10.5,
-              scale: 1.025,
+              yPercent: 7.5,
+              scale: 1.12,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -206,9 +206,9 @@ export function ProjectsLiquidSection() {
         if (contents) {
           gsap.fromTo(
             contents,
-            { y: 82 },
+            { y: 68 },
             {
-              y: -138,
+              y: -112,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -223,9 +223,9 @@ export function ProjectsLiquidSection() {
         if (label) {
           gsap.fromTo(
             label,
-            { y: 18 },
+            { y: 14 },
             {
-              y: -52,
+              y: -44,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -705,7 +705,7 @@ export function ProjectsLiquidSection() {
             0.5
           ),
         },
-        u_point_size: { value: 0.00022 },
+        u_point_size: { value: 0.00018 },
       }
     );
 
@@ -840,7 +840,7 @@ export function ProjectsLiquidSection() {
         u_scene: { value: null },
         u_velocity: { value: null },
         u_output: { value: null },
-        u_disturb_power: { value: 0.34 },
+        u_disturb_power: { value: 0.22 },
       },
       true
     );
@@ -1105,7 +1105,7 @@ export function ProjectsLiquidSection() {
         outputColor.read.texture;
       splatMaterial.uniforms
         .u_point_value.value.set(
-          0.016,
+          0.012,
           0,
           0
         );
@@ -1281,8 +1281,8 @@ export function ProjectsLiquidSection() {
         event.clientY - pointer.lastY;
 
       pointer.moved = true;
-      pointer.dx = 4.2 * dxPx;
-      pointer.dy = 4.2 * dyPx;
+      pointer.dx = 3 * dxPx;
+      pointer.dy = 3 * dyPx;
       pointer.x = x;
       pointer.y = y;
       pointer.lastX = event.clientX;
