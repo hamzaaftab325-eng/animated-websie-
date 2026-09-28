@@ -71,6 +71,10 @@ export function ProjectsLiquidSection() {
       '(max-width: 767px)'
     ).matches;
 
+    let revealObserver:
+      | IntersectionObserver
+      | null = null;
+
     const ctx = gsap.context(() => {
       if (reducedMotion) {
         gsap.set(
@@ -339,23 +343,40 @@ export function ProjectsLiquidSection() {
 
       ScrollTrigger.create({
         trigger: section,
-        start: 'top 88%',
+        start: 'top 90%',
         once: true,
         onEnter: playReferenceAnimation,
         onEnterBack: playReferenceAnimation,
       });
 
-      // Mobile browsers can restore a page mid-scroll before ScrollTrigger
-      // has completed its first refresh. If the section is already visible,
-      // reveal the editorial content immediately instead of leaving the
-      // dark architectural ceiling empty.
+      // Keep the content reveal independent from ScrollTrigger/Lenis timing.
+      // This prevents the projects copy from remaining at opacity:0 while
+      // the section itself is already visible.
+      revealObserver =
+        new IntersectionObserver(
+          ([entry]) => {
+            if (entry?.isIntersecting) {
+              playReferenceAnimation();
+              revealObserver?.disconnect();
+              revealObserver = null;
+            }
+          },
+          {
+            threshold: 0.08,
+            rootMargin:
+              '12% 0px 12% 0px',
+          }
+        );
+
+      revealObserver.observe(section);
+
       requestAnimationFrame(() => {
         const rect =
           section.getBoundingClientRect();
 
         if (
           rect.top <
-            window.innerHeight * 0.92 &&
+            window.innerHeight * 0.96 &&
           rect.bottom > 0
         ) {
           playReferenceAnimation();
@@ -385,6 +406,8 @@ export function ProjectsLiquidSection() {
         'load',
         onImageReady
       );
+      revealObserver?.disconnect();
+      revealObserver = null;
       ctx.revert();
     };
   }, []);
@@ -1426,10 +1449,10 @@ export function ProjectsLiquidSection() {
                 <div className="ffProjects_descriptions">
                   <p className="ffProjects_description">
                     {[
-                      'Through three practices,',
-                      'Izanami designs harmony across life.',
-                      'How life is nurtured, how living is enriched,',
-                      'and how one returns to oneself.',
+                      'Frame & Form turns imagination into experience.',
+                      'We shape digital worlds through design, motion,',
+                      'interaction, and atmosphere — creating work',
+                      'that feels intentional, immersive, and alive.',
                     ].map((line) => (
                       <span
                         key={line}
