@@ -5,7 +5,7 @@ import Link from 'next/link';
 import gsap from 'gsap';
 import SplitType from 'split-type';
 import { ArrowUpRight } from 'lucide-react';
-import { HeroLiquidOverlay } from './HeroLiquidOverlay';
+import { UnifiedLiquidEffect } from '../motion/UnifiedLiquidEffect';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const FRAME_COUNT = 82;
@@ -968,12 +968,15 @@ export function CinematicHero() {
           className="absolute inset-0 h-full w-full"
         />
 
-        <HeroLiquidOverlay
-          sourceCanvasId="heroSequence"
+        <UnifiedLiquidEffect
+          sectionRef={rootRef}
+          sourceType="canvas"
+          sourceValue="heroSequence"
+          className="heroLiquidCanvas"
         />
 
         <div
-          className="pointer-events-none absolute inset-0 z-[1]"
+          className="pointer-events-none absolute inset-0 z-[3]"
           style={{
             background:
               'linear-gradient(180deg,rgba(68,78,103,.16) 0%,rgba(173,117,137,.08) 45%,rgba(157,101,117,.16) 100%), linear-gradient(180deg,rgba(8,10,15,.05) 0%,rgba(8,10,15,.01) 55%,rgba(8,10,15,.22) 100%)',
@@ -989,7 +992,7 @@ export function CinematicHero() {
           }}
         />
 
-        <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[3] opacity-[.05] mix-blend-soft-light" />
+        <div className="hero-grain pointer-events-none absolute -inset-1/2 z-[4] opacity-[.05] mix-blend-soft-light" />
       </div>
 
       <i
