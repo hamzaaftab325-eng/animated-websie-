@@ -920,6 +920,17 @@ export function ProjectsLiquidSection() {
       | THREE.WebGLRenderTarget
       | null = null;
 
+    const rectSafeWidth = () =>
+      Math.max(
+        1,
+        canvas.getBoundingClientRect().width
+      );
+    const rectSafeHeight = () =>
+      Math.max(
+        1,
+        canvas.getBoundingClientRect().height
+      );
+
     const pointer = {
       x: 0.65,
       y: 0.5,
@@ -940,7 +951,7 @@ export function ProjectsLiquidSection() {
 
     const resize = () => {
       const rect =
-        bgWrap.getBoundingClientRect();
+        canvas.getBoundingClientRect();
 
       if (
         !rect.width ||
@@ -1075,10 +1086,10 @@ export function ProjectsLiquidSection() {
       pointer.moved = false;
 
       splatMaterial.uniforms.u_ratio.value =
-        bgWrap.clientWidth /
+        rectSafeWidth() /
         Math.max(
           1,
-          bgWrap.clientHeight
+          rectSafeHeight()
         );
       splatMaterial.uniforms.u_point.value.set(
         pointer.x,
@@ -1228,7 +1239,7 @@ export function ProjectsLiquidSection() {
         .u_output.value =
         outputColor.read.texture;
       finalMaterial.uniforms
-        .u_disturb_power.value = 0.34;
+        .u_disturb_power.value = 0.22;
 
       quad.material = finalMaterial;
       renderer.setRenderTarget(null);
@@ -1243,7 +1254,7 @@ export function ProjectsLiquidSection() {
       event: MouseEvent
     ) => {
       const rect =
-        bgWrap.getBoundingClientRect();
+        canvas.getBoundingClientRect();
 
       if (
         event.clientX < rect.left ||
