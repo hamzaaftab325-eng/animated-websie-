@@ -109,14 +109,14 @@ export function CinematicHero() {
       ).matches;
 
     const decodedLimit =
-      isMobile ? 12 : 18;
+      isMobile ? 10 : 18;
     const decodeBehind =
-      isMobile ? 3 : 2;
+      isMobile ? 1 : 2;
     const decodeAhead =
-      isMobile ? 5 : 6;
+      isMobile ? 3 : 6;
     const preloadConcurrency =
       isMobile
-        ? 2
+        ? 1
         : BACKGROUND_PRELOAD_CONCURRENCY;
 
     let destroyed = false;
@@ -130,6 +130,8 @@ export function CinematicHero() {
     let backgroundPreloadTimer = 0;
     let lastViewportWidth =
       window.innerWidth;
+    let stableViewportHeight =
+      window.innerHeight;
     let heroReady = false;
 
     const prefersReducedMotion =
@@ -775,10 +777,15 @@ export function CinematicHero() {
     };
 
     const readScroll = () => {
+      const viewportHeight =
+        isMobile
+          ? stableViewportHeight
+          : window.innerHeight;
+
       const range = Math.max(
         1,
         track.offsetHeight -
-          window.innerHeight
+          viewportHeight
       );
 
       const scrollPosition =
@@ -966,7 +973,7 @@ export function CinematicHero() {
         backgroundPreloadTimer =
           window.setTimeout(() => {
             void preloadRemainingFrames();
-          }, isMobile ? 1400 : 320);
+          }, isMobile ? 2400 : 320);
       } catch (error) {
         console.error(
           'Hero startup failed:',
@@ -1017,6 +1024,11 @@ export function CinematicHero() {
 
           lastViewportWidth =
             currentWidth;
+
+          if (isMobile) {
+            stableViewportHeight =
+              window.innerHeight;
+          }
 
           lenis.resize();
           resizeCanvas();
