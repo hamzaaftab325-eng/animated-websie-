@@ -129,18 +129,18 @@ export function ProjectsLiquidSection() {
           gsap.fromTo(
             image,
             {
-              yPercent: -2.5,
-              scale: 1.065,
+              yPercent: -4.8,
+              scale: 1.095,
             },
             {
-              yPercent: 4.5,
-              scale: 1.02,
+              yPercent: 7.5,
+              scale: 1.025,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
                 start: 'top bottom',
                 end: 'bottom top',
-                scrub: true,
+                scrub: 0.7,
               },
             }
           );
@@ -149,15 +149,15 @@ export function ProjectsLiquidSection() {
         if (contents) {
           gsap.fromTo(
             contents,
-            { y: 24 },
+            { y: 36 },
             {
-              y: -42,
+              y: -68,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
                 start: 'top bottom',
                 end: 'bottom top',
-                scrub: true,
+                scrub: 0.7,
               },
             }
           );
@@ -167,18 +167,18 @@ export function ProjectsLiquidSection() {
           gsap.fromTo(
             image,
             {
-              yPercent: -5.5,
-              scale: 1.095,
+              yPercent: -9,
+              scale: 1.13,
             },
             {
-              yPercent: 6.5,
-              scale: 1.035,
+              yPercent: 10.5,
+              scale: 1.025,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
                 start: 'top bottom',
                 end: 'bottom top',
-                scrub: true,
+                scrub: 0.7,
               },
             }
           );
@@ -198,7 +198,7 @@ export function ProjectsLiquidSection() {
               trigger: section,
               start: 'top bottom',
               end: 'bottom top',
-              scrub: true,
+              scrub: 0.7,
             },
           }
         );
@@ -206,15 +206,15 @@ export function ProjectsLiquidSection() {
         if (contents) {
           gsap.fromTo(
             contents,
-            { y: 58 },
+            { y: 82 },
             {
-              y: -94,
+              y: -138,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
                 start: 'top bottom',
                 end: 'bottom top',
-                scrub: true,
+                scrub: 0.7,
               },
             }
           );
@@ -223,15 +223,15 @@ export function ProjectsLiquidSection() {
         if (label) {
           gsap.fromTo(
             label,
-            { y: 10 },
+            { y: 18 },
             {
-              y: -34,
+              y: -52,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
                 start: 'top center',
                 end: 'bottom top',
-                scrub: true,
+                scrub: 0.7,
               },
             }
           );
@@ -249,7 +249,7 @@ export function ProjectsLiquidSection() {
               trigger: section,
               start: 'top bottom',
               end: 'center center',
-              scrub: true,
+              scrub: 0.7,
             },
           }
         );
