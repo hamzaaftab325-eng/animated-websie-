@@ -976,7 +976,7 @@ export function CinematicHero() {
         />
 
         <div
-          className="pointer-events-none absolute inset-0 z-[3]"
+          className="pointer-events-none absolute inset-0 z-[2]"
           style={{
             background:
               'linear-gradient(180deg,rgba(68,78,103,.16) 0%,rgba(173,117,137,.08) 45%,rgba(157,101,117,.16) 100%), linear-gradient(180deg,rgba(8,10,15,.05) 0%,rgba(8,10,15,.01) 55%,rgba(8,10,15,.22) 100%)',
@@ -985,7 +985,7 @@ export function CinematicHero() {
 
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[2]"
+          className="pointer-events-none absolute inset-0 z-[3]"
           style={{
             background:
               'radial-gradient(ellipse at 50% 38%,rgba(7,9,13,0) 32%,rgba(7,9,13,.055) 68%,rgba(7,9,13,.18) 100%), linear-gradient(90deg,rgba(7,9,13,.10) 0%,rgba(7,9,13,0) 24%,rgba(7,9,13,0) 76%,rgba(7,9,13,.10) 100%)',
