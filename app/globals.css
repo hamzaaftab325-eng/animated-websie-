@@ -511,3 +511,48 @@ a {
     clip-path: inset(0 calc(100% - 5vw) 0 0) !important;
   }
 }
+
+
+/* Everything You Need — shared liquid background treatment */
+.eynLiquidBg img,
+.eynLiquidCanvas {
+  position: absolute;
+  inset: -8% 0;
+  display: block;
+  width: 100%;
+  height: 116%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  transform: scale(1.12);
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+.eynLiquidBg img {
+  z-index: 0;
+}
+
+.eynLiquidCanvas {
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .24s ease;
+}
+
+.eynLiquidBg.is-liquid-ready .eynLiquidCanvas {
+  opacity: 1;
+}
+
+@media (hover: none), (pointer: coarse), (max-width: 767px) {
+  .eynLiquidCanvas {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eynLiquidBg img,
+  .eynLiquidCanvas {
+    transform: none !important;
+  }
+}
