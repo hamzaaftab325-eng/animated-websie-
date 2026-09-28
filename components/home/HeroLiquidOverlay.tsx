@@ -267,9 +267,9 @@ export function HeroLiquidOverlay({
       '  vec3 distorted = texture2D(u_scene, distortedUv).rgb;',
       '  float delta = length(distorted - original);',
       '  float field = abs(offset) * 24.0 + length(rawVelocity) * 0.004;',
-      '  float changedPixels = smoothstep(0.004, 0.055, delta);',
-      '  float activeFluid = smoothstep(0.004, 0.10, field);',
-      '  float alpha = max(changedPixels * activeFluid, activeFluid * 0.34);',
+      '  float changedPixels = smoothstep(0.012, 0.105, delta);',
+      '  float activeFluid = smoothstep(0.010, 0.16, field);',
+      '  float alpha = changedPixels * activeFluid;',
       '  gl_FragColor = vec4(distorted, alpha);',
       '}',
     ].join('\n');
@@ -310,7 +310,7 @@ export function HeroLiquidOverlay({
             0.5
           ),
         },
-        u_point_size: { value: 0.00014 },
+        u_point_size: { value: 0.00018 },
       }
     );
 
@@ -423,7 +423,7 @@ export function HeroLiquidOverlay({
         u_scene: { value: null },
         u_velocity: { value: null },
         u_output: { value: null },
-        u_disturb_power: { value: 0.20 },
+        u_disturb_power: { value: 0.22 },
       },
       true
     );
@@ -892,8 +892,8 @@ export function HeroLiquidOverlay({
         event.clientY - pointer.lastY;
 
       pointer.moved = true;
-      pointer.dx = 2.8 * dxPx;
-      pointer.dy = 2.8 * dyPx;
+      pointer.dx = 3 * dxPx;
+      pointer.dy = 3 * dyPx;
       pointer.x = x;
       pointer.y = y;
       pointer.lastX = event.clientX;
