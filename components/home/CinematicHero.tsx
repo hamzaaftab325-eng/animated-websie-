@@ -88,7 +88,6 @@ export function CinematicHero() {
 
     const context = canvas.getContext('2d', {
       alpha: false,
-      desynchronized: true,
     });
 
     if (!context) return;
@@ -115,6 +114,7 @@ export function CinematicHero() {
     let progress = 0;
     let requestedFrame = 0;
     let paintedFrame = -1;
+    let scrollDirection: 1 | -1 = 1;
     let renderRaf = 0;
     let resizeRaf = 0;
     let backgroundPreloadTimer = 0;
@@ -613,23 +613,53 @@ export function CinematicHero() {
     const render = () => {
       renderRaf = 0;
 
-      const exact =
-        decodedFrames.get(requestedFrame);
+      let renderIndex = requestedFrame;
+      let frame =
+        decodedFrames.get(renderIndex);
 
-      // Never substitute a different cached frame for the requested one.
-      // That fallback was the source of visible stepping/backtracking when
-      // scrolling quickly through the sequence.
-      if (!exact) return;
-      if (requestedFrame === paintedFrame) {
+      if (!frame) {
+        for (
+          let distance = 1;
+          distance <= 2;
+          distance += 1
+        ) {
+          const candidate =
+            requestedFrame +
+            scrollDirection * distance;
+
+          if (
+            candidate >= 0 &&
+            candidate < FRAME_COUNT
+          ) {
+            const decoded =
+              decodedFrames.get(candidate);
+
+            if (decoded) {
+              renderIndex = candidate;
+              frame = decoded;
+              break;
+            }
+          }
+        }
+      }
+
+      if (!frame) return;
+      if (renderIndex === paintedFrame) {
         return;
       }
 
       decodeUse.set(
-        requestedFrame,
+        renderIndex,
         performance.now()
       );
-      drawCover(exact);
-      paintedFrame = requestedFrame;
+      drawCover(frame);
+      paintedFrame = renderIndex;
+
+      window.dispatchEvent(
+        new CustomEvent(
+          'liquid-source-update:heroSequence'
+        )
+      );
     };
 
     function scheduleRender() {
@@ -725,6 +755,7 @@ export function CinematicHero() {
       const direction: 1 | -1 =
         nextFrame >= requestedFrame ? 1 : -1;
 
+      scrollDirection = direction;
       requestedFrame = nextFrame;
 
       primeDecodeWindow(
@@ -823,6 +854,12 @@ export function CinematicHero() {
         if (initial) {
           drawCover(initial);
           paintedFrame = requestedFrame;
+
+          window.dispatchEvent(
+            new CustomEvent(
+              'liquid-source-update:heroSequence'
+            )
+          );
         }
 
         gsap.to(boot, {
