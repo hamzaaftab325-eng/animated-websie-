@@ -130,11 +130,11 @@ export function ProjectsLiquidSection() {
             image,
             {
               yPercent: -4.5,
-              scale: 1.13,
+              scale: 1.15,
             },
             {
               yPercent: 6,
-              scale: 1.08,
+              scale: 1.13,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -168,11 +168,11 @@ export function ProjectsLiquidSection() {
             image,
             {
               yPercent: -6.5,
-              scale: 1.18,
+              scale: 1.19,
             },
             {
               yPercent: 7.5,
-              scale: 1.12,
+              scale: 1.165,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -187,12 +187,12 @@ export function ProjectsLiquidSection() {
         gsap.fromTo(
           canvas,
           {
-            yPercent: -9,
-            scale: 1.13,
+            yPercent: -6.5,
+            scale: 1.19,
           },
           {
-            yPercent: 10.5,
-            scale: 1.025,
+            yPercent: 7.5,
+            scale: 1.165,
             ease: 'none',
             scrollTrigger: {
               trigger: section,
