@@ -627,6 +627,17 @@ export function EverythingYouNeed() {
       | THREE.WebGLRenderTarget
       | null = null;
 
+    const rectSafeWidth = () =>
+      Math.max(
+        1,
+        canvas.getBoundingClientRect().width
+      );
+    const rectSafeHeight = () =>
+      Math.max(
+        1,
+        canvas.getBoundingClientRect().height
+      );
+
     const pointer = {
       x: 0.65,
       y: 0.5,
@@ -647,7 +658,7 @@ export function EverythingYouNeed() {
 
     const resize = () => {
       const rect =
-        bgWrap.getBoundingClientRect();
+        canvas.getBoundingClientRect();
 
       if (
         !rect.width ||
@@ -782,10 +793,10 @@ export function EverythingYouNeed() {
       pointer.moved = false;
 
       splatMaterial.uniforms.u_ratio.value =
-        bgWrap.clientWidth /
+        rectSafeWidth() /
         Math.max(
           1,
-          bgWrap.clientHeight
+          rectSafeHeight()
         );
       splatMaterial.uniforms.u_point.value.set(
         pointer.x,
@@ -935,7 +946,7 @@ export function EverythingYouNeed() {
         .u_output.value =
         outputColor.read.texture;
       finalMaterial.uniforms
-        .u_disturb_power.value = 0.34;
+        .u_disturb_power.value = 0.22;
 
       quad.material = finalMaterial;
       renderer.setRenderTarget(null);
@@ -950,7 +961,7 @@ export function EverythingYouNeed() {
       event: MouseEvent
     ) => {
       const rect =
-        bgWrap.getBoundingClientRect();
+        canvas.getBoundingClientRect();
 
       if (
         event.clientX < rect.left ||
