@@ -187,12 +187,12 @@ export function ProjectsLiquidSection() {
         gsap.fromTo(
           canvas,
           {
-            yPercent: -5.5,
-            scale: 1.095,
+            yPercent: -9,
+            scale: 1.13,
           },
           {
-            yPercent: 6.5,
-            scale: 1.035,
+            yPercent: 10.5,
+            scale: 1.025,
             ease: 'none',
             scrollTrigger: {
               trigger: section,
