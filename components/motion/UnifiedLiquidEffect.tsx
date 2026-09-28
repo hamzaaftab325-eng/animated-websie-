@@ -451,7 +451,6 @@ export function UnifiedLiquidEffect({
                 2048
             );
 
-          resize();
           canvas.classList.add(
             'is-liquid-ready'
           );
