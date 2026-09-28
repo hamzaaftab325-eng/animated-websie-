@@ -104,7 +104,7 @@ a {
   z-index: 50;
   width: 100vw;
   min-height: 100vw;
-  padding-block-start: 1.875vw;
+  padding-block-start: 0;
   overflow: clip;
   isolation: isolate;
   background: #0c0806;
@@ -414,7 +414,7 @@ a {
 @media (max-width: 767px) {
   .ffProjects {
     min-height: 256.7164179104vw;
-    padding-block-start: 7.4626865672vw;
+    padding-block-start: 0;
   }
 
   .ffProjects_tint {

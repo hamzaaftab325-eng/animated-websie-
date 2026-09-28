@@ -7,7 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import * as THREE from 'three';
 
 const PROJECTS_BACKGROUND =
-  'https://d2jqrm6oza8nb6.cloudfront.net/datasets/f22a0761-888b-4768-89f3-1f7ad3c6c1ea.png?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYjZlMzM1NzcwMDFkNmMzMiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MDY2MDQ3MX0.EWR8dgIfR0ccSBdDtBhrLKhD9tkxysKSZbxqlgBxepU';
+  'https://res.cloudinary.com/diometfe9/image/upload/v1790258302/ChatGPT_Image_Sep_24_2026_03_46_32_PM_1_d3f6xc.webp';
 
 const BUTTON_LABEL = 'View Projects';
 
@@ -129,12 +129,12 @@ export function ProjectsLiquidSection() {
           gsap.fromTo(
             image,
             {
-              yPercent: -3.5,
-              scale: 1.09,
+              yPercent: -2.5,
+              scale: 1.065,
             },
             {
-              yPercent: 6,
-              scale: 1.035,
+              yPercent: 4.5,
+              scale: 1.02,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -149,9 +149,9 @@ export function ProjectsLiquidSection() {
         if (contents) {
           gsap.fromTo(
             contents,
-            { y: 32 },
+            { y: 24 },
             {
-              y: -58,
+              y: -42,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -167,12 +167,12 @@ export function ProjectsLiquidSection() {
           gsap.fromTo(
             image,
             {
-              yPercent: -6,
-              scale: 1.115,
+              yPercent: -5.5,
+              scale: 1.095,
             },
             {
-              yPercent: 9,
-              scale: 1.025,
+              yPercent: 6.5,
+              scale: 1.035,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -187,12 +187,12 @@ export function ProjectsLiquidSection() {
         gsap.fromTo(
           canvas,
           {
-            yPercent: -6,
-            scale: 1.115,
+            yPercent: -5.5,
+            scale: 1.095,
           },
           {
-            yPercent: 9,
-            scale: 1.025,
+            yPercent: 6.5,
+            scale: 1.035,
             ease: 'none',
             scrollTrigger: {
               trigger: section,
@@ -206,9 +206,9 @@ export function ProjectsLiquidSection() {
         if (contents) {
           gsap.fromTo(
             contents,
-            { y: 74 },
+            { y: 58 },
             {
-              y: -128,
+              y: -94,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -223,9 +223,9 @@ export function ProjectsLiquidSection() {
         if (label) {
           gsap.fromTo(
             label,
-            { y: 14 },
+            { y: 10 },
             {
-              y: -44,
+              y: -34,
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
@@ -705,7 +705,7 @@ export function ProjectsLiquidSection() {
             0.5
           ),
         },
-        u_point_size: { value: 0.0005 },
+        u_point_size: { value: 0.00022 },
       }
     );
 
@@ -840,7 +840,7 @@ export function ProjectsLiquidSection() {
         u_scene: { value: null },
         u_velocity: { value: null },
         u_output: { value: null },
-        u_disturb_power: { value: 0.5 },
+        u_disturb_power: { value: 0.34 },
       },
       true
     );
@@ -1105,7 +1105,7 @@ export function ProjectsLiquidSection() {
         outputColor.read.texture;
       splatMaterial.uniforms
         .u_point_value.value.set(
-          0.025,
+          0.016,
           0,
           0
         );
@@ -1228,7 +1228,7 @@ export function ProjectsLiquidSection() {
         .u_output.value =
         outputColor.read.texture;
       finalMaterial.uniforms
-        .u_disturb_power.value = 0.5;
+        .u_disturb_power.value = 0.34;
 
       quad.material = finalMaterial;
       renderer.setRenderTarget(null);
@@ -1281,8 +1281,8 @@ export function ProjectsLiquidSection() {
         event.clientY - pointer.lastY;
 
       pointer.moved = true;
-      pointer.dx = 6 * dxPx;
-      pointer.dy = 6 * dyPx;
+      pointer.dx = 4.2 * dxPx;
+      pointer.dy = 4.2 * dyPx;
       pointer.x = x;
       pointer.y = y;
       pointer.lastX = event.clientX;
@@ -1418,14 +1418,14 @@ export function ProjectsLiquidSection() {
                 <p
                   id="projectsTitle"
                   className="ffProjects_title"
-                  aria-label="Designing the Dimensions of Life"
+                  aria-label="Creating Digital Worlds with Feeling"
                 >
                   <span className="ffProjects_lineMask">
                     <span
                       data-projects-title-line
                       className="ffProjects_titleLine"
                     >
-                      Designing
+                      Creating
                     </span>
                   </span>
                   <span className="ffProjects_lineMask">
@@ -1433,7 +1433,7 @@ export function ProjectsLiquidSection() {
                       data-projects-title-line
                       className="ffProjects_titleLine"
                     >
-                      the Dimensions
+                      Digital Worlds
                     </span>
                   </span>
                   <span className="ffProjects_lineMask">
@@ -1441,7 +1441,7 @@ export function ProjectsLiquidSection() {
                       data-projects-title-line
                       className="ffProjects_titleLine"
                     >
-                      of Life
+                      with Feeling
                     </span>
                   </span>
                 </p>

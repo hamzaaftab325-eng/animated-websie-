@@ -34,12 +34,13 @@ export function SmoothScrollProvider({
     gsap.registerPlugin(ScrollTrigger);
 
     const instance = new Lenis({
-      lerp: 0.16,
+      lerp: 0.12,
       smoothWheel: true,
       syncTouch: false,
-      wheelMultiplier: 1,
+      wheelMultiplier: 0.92,
       touchMultiplier: 1,
       overscroll: false,
+      autoResize: true,
     });
 
     const onTick = (time: number) => {
@@ -68,36 +69,43 @@ export function SmoothScrollProvider({
 
     lenis.scrollTo(0, { immediate: true });
 
-    const frame = requestAnimationFrame(() => {
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
+    let revealContext:
+      | gsap.Context
+      | null = null;
 
-      gsap.utils
-        .toArray<HTMLElement>('[data-reveal]')
-        .forEach((element) => {
-          gsap.fromTo(
-            element,
-            {
-              y: 28,
-              opacity: 0,
-            },
-            {
-              y: 0,
-              opacity: 1,
-              duration: 0.9,
-              ease: 'power4.out',
-              scrollTrigger: {
-                trigger: element,
-                start: 'top 90%',
-                once: true,
+    const frame = requestAnimationFrame(() => {
+      revealContext = gsap.context(() => {
+        gsap.utils
+          .toArray<HTMLElement>('[data-reveal]')
+          .forEach((element) => {
+            gsap.fromTo(
+              element,
+              {
+                y: 28,
+                opacity: 0,
               },
-            }
-          );
-        });
+              {
+                y: 0,
+                opacity: 1,
+                duration: 0.9,
+                ease: 'power4.out',
+                scrollTrigger: {
+                  trigger: element,
+                  start: 'top 90%',
+                  once: true,
+                },
+              }
+            );
+          });
+      });
 
       ScrollTrigger.refresh();
     });
 
-    return () => cancelAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(frame);
+      revealContext?.revert();
+    };
   }, [pathname, lenis]);
 
   const value = useMemo(() => ({ lenis }), [lenis]);
