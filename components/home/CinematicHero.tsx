@@ -103,12 +103,21 @@ export function CinematicHero() {
     const decodeUse =
       new Map<number, number>();
 
+    const isMobile =
+      window.matchMedia(
+        '(max-width: 767px), (pointer: coarse)'
+      ).matches;
+
     const decodedLimit =
-      window.innerWidth < 768 ? 10 : 18;
+      isMobile ? 12 : 18;
     const decodeBehind =
-      window.innerWidth < 768 ? 1 : 2;
+      isMobile ? 3 : 2;
     const decodeAhead =
-      window.innerWidth < 768 ? 4 : 6;
+      isMobile ? 5 : 6;
+    const preloadConcurrency =
+      isMobile
+        ? 2
+        : BACKGROUND_PRELOAD_CONCURRENCY;
 
     let destroyed = false;
     let progress = 0;
@@ -117,7 +126,10 @@ export function CinematicHero() {
     let scrollDirection: 1 | -1 = 1;
     let renderRaf = 0;
     let resizeRaf = 0;
+    let scrollRaf = 0;
     let backgroundPreloadTimer = 0;
+    let lastViewportWidth =
+      window.innerWidth;
     let heroReady = false;
 
     const prefersReducedMotion =
@@ -126,16 +138,19 @@ export function CinematicHero() {
       ).matches;
 
     const hiddenHeadingState = {
-      opacity: 0.04,
-      yPercent: 62,
-      scale: 0.965,
-      rotationX: -12,
-      filter: 'blur(20px)',
+      opacity: isMobile ? 0 : 0.04,
+      yPercent: isMobile ? 34 : 62,
+      scale: isMobile ? 0.99 : 0.965,
+      rotationX: isMobile ? 0 : -12,
+      filter: isMobile
+        ? 'none'
+        : 'blur(20px)',
       transformOrigin: '50% 72%',
       transformPerspective: 1100,
       force3D: true,
-      willChange:
-        'transform, opacity, filter',
+      willChange: isMobile
+        ? 'transform, opacity'
+        : 'transform, opacity, filter',
     };
 
     // Keep the state array aligned with the panel array. The previous
@@ -217,9 +232,9 @@ export function CinematicHero() {
         scale: 1,
         rotationX: 0,
         filter: 'blur(0px)',
-        duration: 1.12,
+        duration: isMobile ? 0.72 : 1.12,
         stagger: {
-          each: 0.032,
+          each: isMobile ? 0.018 : 0.032,
           from: 'start',
         },
         ease: 'expo.out',
@@ -447,8 +462,18 @@ export function CinematicHero() {
 
         if (typeof createImageBitmap === 'function') {
           try {
-            decoded =
-              (await createImageBitmap(blob)) as DecodedFrame;
+            decoded = isMobile
+              ? ((await createImageBitmap(
+                  blob,
+                  {
+                    resizeWidth: 1280,
+                    resizeHeight: 720,
+                    resizeQuality: 'medium',
+                  }
+                )) as DecodedFrame)
+              : ((await createImageBitmap(
+                  blob
+                )) as DecodedFrame);
           } catch {
             decoded = null;
           }
@@ -537,11 +562,17 @@ export function CinematicHero() {
         )
       );
 
-      const dpr = Math.min(
-        window.devicePixelRatio || 1,
-        2,
-        sourceSafeDpr
-      );
+      const dpr = isMobile
+        ? Math.min(
+            window.devicePixelRatio || 1,
+            1.15,
+            sourceSafeDpr
+          )
+        : Math.min(
+            window.devicePixelRatio || 1,
+            2,
+            sourceSafeDpr
+          );
 
       const width = Math.max(
         1,
@@ -599,7 +630,8 @@ export function CinematicHero() {
         canvas.height
       );
       context.imageSmoothingEnabled = true;
-      context.imageSmoothingQuality = 'high';
+      context.imageSmoothingQuality =
+        isMobile ? 'medium' : 'high';
 
       context.drawImage(
         frame,
@@ -618,19 +650,34 @@ export function CinematicHero() {
         decodedFrames.get(renderIndex);
 
       if (!frame) {
+        const searchRadius =
+          isMobile ? 5 : 2;
+
         for (
           let distance = 1;
-          distance <= 2;
+          distance <= searchRadius;
           distance += 1
         ) {
-          const candidate =
+          const trailing =
+            requestedFrame -
+            scrollDirection * distance;
+          const leading =
             requestedFrame +
             scrollDirection * distance;
 
-          if (
-            candidate >= 0 &&
-            candidate < FRAME_COUNT
-          ) {
+          const candidates = [
+            trailing,
+            leading,
+          ];
+
+          for (const candidate of candidates) {
+            if (
+              candidate < 0 ||
+              candidate >= FRAME_COUNT
+            ) {
+              continue;
+            }
+
             const decoded =
               decodedFrames.get(candidate);
 
@@ -640,6 +687,8 @@ export function CinematicHero() {
               break;
             }
           }
+
+          if (frame) break;
         }
       }
 
@@ -732,8 +781,13 @@ export function CinematicHero() {
           window.innerHeight
       );
 
+      const scrollPosition =
+        isMobile
+          ? window.scrollY
+          : lenis.animatedScroll;
+
       progress = clamp(
-        lenis.animatedScroll / range,
+        scrollPosition / range,
         0,
         1
       );
@@ -769,8 +823,19 @@ export function CinematicHero() {
     const preloadInitialFrames = async () => {
       let completed = 0;
 
+      const startupFrames =
+        isMobile
+          ? [
+              0,
+              1,
+              2,
+              3,
+              LAST_FRAME_INDEX,
+            ]
+          : INITIAL_FRAMES;
+
       await Promise.all(
-        INITIAL_FRAMES.map(async (index) => {
+        startupFrames.map(async (index) => {
           const blob =
             await ensureFrameBlob(index);
 
@@ -783,7 +848,7 @@ export function CinematicHero() {
           completed += 1;
           setBootProgress(
             completed /
-              INITIAL_FRAMES.length,
+              startupFrames.length,
             'STARTING'
           );
         })
@@ -815,7 +880,7 @@ export function CinematicHero() {
         Array.from(
           {
             length:
-              BACKGROUND_PRELOAD_CONCURRENCY,
+              preloadConcurrency,
           },
           () => worker()
         )
@@ -832,14 +897,30 @@ export function CinematicHero() {
 
         if (destroyed) return;
 
-        await Promise.all([
-          decodeFrame(0),
-          decodeFrame(1),
-          decodeFrame(2),
-          decodeFrame(3),
-          decodeFrame(4),
-          decodeFrame(LAST_FRAME_INDEX),
-        ]);
+        const initialDecodeFrames =
+          isMobile
+            ? [
+                0,
+                1,
+                2,
+                3,
+                LAST_FRAME_INDEX,
+              ]
+            : [
+                0,
+                1,
+                2,
+                3,
+                4,
+                LAST_FRAME_INDEX,
+              ];
+
+        await Promise.all(
+          initialDecodeFrames.map(
+            (index) =>
+              decodeFrame(index)
+          )
+        );
 
         if (destroyed) return;
 
@@ -885,7 +966,7 @@ export function CinematicHero() {
         backgroundPreloadTimer =
           window.setTimeout(() => {
             void preloadRemainingFrames();
-          }, 320);
+          }, isMobile ? 1400 : 320);
       } catch (error) {
         console.error(
           'Hero startup failed:',
@@ -900,6 +981,16 @@ export function CinematicHero() {
     const onLenisScroll =
       () => readScroll();
 
+    const onNativeScroll = () => {
+      if (scrollRaf) return;
+
+      scrollRaf =
+        requestAnimationFrame(() => {
+          scrollRaf = 0;
+          readScroll();
+        });
+    };
+
     const onResize = () => {
       if (resizeRaf) {
         cancelAnimationFrame(resizeRaf);
@@ -908,6 +999,25 @@ export function CinematicHero() {
       resizeRaf =
         requestAnimationFrame(() => {
           resizeRaf = 0;
+
+          const currentWidth =
+            window.innerWidth;
+          const widthChanged =
+            Math.abs(
+              currentWidth -
+                lastViewportWidth
+            ) > 2;
+
+          if (
+            isMobile &&
+            !widthChanged
+          ) {
+            return;
+          }
+
+          lastViewportWidth =
+            currentWidth;
+
           lenis.resize();
           resizeCanvas();
           readScroll();
@@ -915,7 +1025,18 @@ export function CinematicHero() {
         });
     };
 
-    lenis.on('scroll', onLenisScroll);
+    if (isMobile) {
+      window.addEventListener(
+        'scroll',
+        onNativeScroll,
+        { passive: true }
+      );
+    } else {
+      lenis.on(
+        'scroll',
+        onLenisScroll
+      );
+    }
 
     window.addEventListener(
       'resize',
@@ -938,13 +1059,28 @@ export function CinematicHero() {
         cancelAnimationFrame(resizeRaf);
       }
 
+      if (scrollRaf) {
+        cancelAnimationFrame(scrollRaf);
+      }
+
       if (backgroundPreloadTimer) {
         window.clearTimeout(
           backgroundPreloadTimer
         );
       }
 
-      lenis.off('scroll', onLenisScroll);
+      if (isMobile) {
+        window.removeEventListener(
+          'scroll',
+          onNativeScroll
+        );
+      } else {
+        lenis.off(
+          'scroll',
+          onLenisScroll
+        );
+      }
+
       window.removeEventListener(
         'resize',
         onResize
@@ -1099,7 +1235,7 @@ export function CinematicHero() {
       <div
         data-hero-track
         aria-hidden="true"
-        className="relative z-[1] h-[320vh] min-h-[1950px]"
+        className="relative z-[1] h-[320svh] min-h-[1900px] md:h-[320vh] md:min-h-[1950px]"
       />
     </div>
   );
