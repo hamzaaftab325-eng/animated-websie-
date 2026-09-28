@@ -5,6 +5,7 @@ import Link from 'next/link';
 import gsap from 'gsap';
 import SplitType from 'split-type';
 import { ArrowUpRight } from 'lucide-react';
+import { HeroLiquidOverlay } from './HeroLiquidOverlay';
 import { useSmoothScroll } from '../motion/SmoothScrollProvider';
 
 const FRAME_COUNT = 82;
@@ -938,6 +939,7 @@ export function CinematicHero() {
   return (
     <div
       ref={rootRef}
+      data-hero-liquid-root
       className="relative min-h-screen overflow-x-clip bg-[#09090b]"
     >
       <div
@@ -964,6 +966,10 @@ export function CinematicHero() {
           id="heroSequence"
           aria-hidden="true"
           className="absolute inset-0 h-full w-full"
+        />
+
+        <HeroLiquidOverlay
+          sourceCanvasId="heroSequence"
         />
 
         <div
