@@ -71,22 +71,16 @@ export function EverythingYouNeed() {
     const content = section.querySelector<HTMLElement>(
       '[data-eyn-content]'
     );
-    const cards = Array.from(
-      section.querySelectorAll<HTMLElement>(
-        '[data-eyn-card]'
-      )
-    );
-
     const ctx = gsap.context(() => {
       gsap.fromTo(
         [image, canvas],
         {
-          yPercent: -7,
-          scale: 1.12,
+          yPercent: -5.5,
+          scale: 1.16,
         },
         {
-          yPercent: 9,
-          scale: 1.035,
+          yPercent: 6.5,
+          scale: 1.105,
           ease: 'none',
           scrollTrigger: {
             trigger: section,
@@ -101,9 +95,9 @@ export function EverythingYouNeed() {
       if (content) {
         gsap.fromTo(
           content,
-          { y: 34 },
+          { y: 28 },
           {
-            y: -54,
+            y: -46,
             ease: 'none',
             scrollTrigger: {
               trigger: section,
@@ -116,24 +110,6 @@ export function EverythingYouNeed() {
         );
       }
 
-      if (cards.length) {
-        gsap.fromTo(
-          cards,
-          { y: 18 },
-          {
-            y: -28,
-            stagger: 0.025,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top 88%',
-              end: 'bottom 12%',
-              scrub: 0.85,
-              invalidateOnRefresh: true,
-            },
-          }
-        );
-      }
     }, section);
 
     requestAnimationFrame(() => {
@@ -436,7 +412,7 @@ export function EverythingYouNeed() {
             0.5
           ),
         },
-        u_point_size: { value: 0.00022 },
+        u_point_size: { value: 0.00018 },
       }
     );
 
@@ -571,7 +547,7 @@ export function EverythingYouNeed() {
         u_scene: { value: null },
         u_velocity: { value: null },
         u_output: { value: null },
-        u_disturb_power: { value: 0.34 },
+        u_disturb_power: { value: 0.22 },
       },
       true
     );
@@ -836,7 +812,7 @@ export function EverythingYouNeed() {
         outputColor.read.texture;
       splatMaterial.uniforms
         .u_point_value.value.set(
-          0.016,
+          0.012,
           0,
           0
         );
@@ -1012,8 +988,8 @@ export function EverythingYouNeed() {
         event.clientY - pointer.lastY;
 
       pointer.moved = true;
-      pointer.dx = 4.2 * dxPx;
-      pointer.dy = 4.2 * dyPx;
+      pointer.dx = 3 * dxPx;
+      pointer.dy = 3 * dyPx;
       pointer.x = x;
       pointer.y = y;
       pointer.lastX = event.clientX;
