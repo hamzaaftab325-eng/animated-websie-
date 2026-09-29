@@ -1045,6 +1045,47 @@ export function UnifiedLiquidEffect({
       pointer.lastY = event.clientY;
     };
 
+    const seedPointer = (
+      event: PointerEvent
+    ) => {
+      const rect =
+        canvas.getBoundingClientRect();
+
+      if (
+        event.clientX < rect.left ||
+        event.clientX > rect.right ||
+        event.clientY < rect.top ||
+        event.clientY > rect.bottom
+      ) {
+        return;
+      }
+
+      pointer.x = Math.max(
+        0,
+        Math.min(
+          1,
+          (event.clientX - rect.left) /
+            rect.width
+        )
+      );
+      pointer.y = Math.max(
+        0,
+        Math.min(
+          1,
+          1 -
+            (event.clientY - rect.top) /
+              rect.height
+        )
+      );
+      pointer.lastX = event.clientX;
+      pointer.lastY = event.clientY;
+      pointer.dx = 0.35;
+      pointer.dy = 0.35;
+      pointer.moved = true;
+      lastInteractionAt =
+        performance.now();
+    };
+
     const resetPointer = () => {
       pointer.lastX = null;
       pointer.lastY = null;
@@ -1070,6 +1111,11 @@ export function UnifiedLiquidEffect({
 
     observer.observe(section);
 
+    window.addEventListener(
+      'pointerdown',
+      seedPointer,
+      { passive: true }
+    );
     window.addEventListener(
       'pointermove',
       onPointerMove,
@@ -1147,6 +1193,10 @@ export function UnifiedLiquidEffect({
       cancelAnimationFrame(loopRaf);
       cancelAnimationFrame(resizeRaf);
       observer.disconnect();
+      window.removeEventListener(
+        'pointerdown',
+        seedPointer
+      );
       window.removeEventListener(
         'pointermove',
         onPointerMove
