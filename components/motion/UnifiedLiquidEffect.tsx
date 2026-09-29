@@ -51,17 +51,21 @@ export function UnifiedLiquidEffect({
       return;
     }
 
-    const desktopFinePointer =
+    const finePointer =
       window.matchMedia(
-        '(min-width: 768px) and (hover: hover) and (pointer: fine)'
+        '(hover: hover) and (pointer: fine)'
       ).matches;
+    const touchLiquidMode =
+      sourceType === 'canvas' &&
+      !finePointer;
     const reducedMotion =
       window.matchMedia(
         '(prefers-reduced-motion: reduce)'
       ).matches;
 
     if (
-      !desktopFinePointer ||
+      (!finePointer &&
+        !touchLiquidMode) ||
       reducedMotion
     ) {
       return;
@@ -71,6 +75,8 @@ export function UnifiedLiquidEffect({
     let active = true;
     let resizeRaf = 0;
     let loopRaf = 0;
+    let lastTouchFrame = 0;
+    let lastInteractionAt = 0;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -90,10 +96,12 @@ export function UnifiedLiquidEffect({
       THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(
-      Math.min(
-        window.devicePixelRatio || 1,
-        1.5
-      )
+      touchLiquidMode
+        ? 1
+        : Math.min(
+            window.devicePixelRatio || 1,
+            1.5
+          )
     );
 
     const quadGeometry =
@@ -328,7 +336,11 @@ export function UnifiedLiquidEffect({
             0.5
           ),
         },
-        u_point_size: { value: 0.00018 },
+        u_point_size: {
+          value: touchLiquidMode
+            ? 0.00028
+            : 0.00018,
+        },
       }
     );
 
@@ -635,7 +647,10 @@ export function UnifiedLiquidEffect({
           rect.height
         );
 
-      const maxSide = 720;
+      const maxSide =
+        touchLiquidMode
+          ? 360
+          : 720;
       const scale = Math.min(
         1,
         maxSide /
@@ -965,7 +980,7 @@ export function UnifiedLiquidEffect({
     };
 
     const onPointerMove = (
-      event: MouseEvent
+      event: PointerEvent
     ) => {
       const rect =
         canvas.getBoundingClientRect();
@@ -1016,12 +1031,23 @@ export function UnifiedLiquidEffect({
         event.clientY - pointer.lastY;
 
       pointer.moved = true;
-      pointer.dx = 3 * dxPx;
-      pointer.dy = 3 * dyPx;
+      pointer.dx =
+        (touchLiquidMode ? 2.2 : 3) *
+        dxPx;
+      pointer.dy =
+        (touchLiquidMode ? 2.2 : 3) *
+        dyPx;
+      lastInteractionAt =
+        performance.now();
       pointer.x = x;
       pointer.y = y;
       pointer.lastX = event.clientX;
       pointer.lastY = event.clientY;
+    };
+
+    const resetPointer = () => {
+      pointer.lastX = null;
+      pointer.lastY = null;
     };
 
     const onResize = () => {
@@ -1045,8 +1071,18 @@ export function UnifiedLiquidEffect({
     observer.observe(section);
 
     window.addEventListener(
-      'mousemove',
+      'pointermove',
       onPointerMove,
+      { passive: true }
+    );
+    window.addEventListener(
+      'pointerup',
+      resetPointer,
+      { passive: true }
+    );
+    window.addEventListener(
+      'pointercancel',
+      resetPointer,
       { passive: true }
     );
     window.addEventListener(
@@ -1073,12 +1109,31 @@ export function UnifiedLiquidEffect({
       );
     }
 
-    const loop = () => {
+    const loop = (
+      time = performance.now()
+    ) => {
       if (disposed) return;
 
-      if (active) {
+      const shouldRenderTouch =
+        !touchLiquidMode ||
+        pointer.moved ||
+        time - lastInteractionAt < 850;
+
+      const frameReady =
+        !touchLiquidMode ||
+        time - lastTouchFrame >= 30;
+
+      if (
+        active &&
+        shouldRenderTouch &&
+        frameReady
+      ) {
         stepFluid();
         renderFinal();
+
+        if (touchLiquidMode) {
+          lastTouchFrame = time;
+        }
       }
 
       loopRaf =
@@ -1093,8 +1148,16 @@ export function UnifiedLiquidEffect({
       cancelAnimationFrame(resizeRaf);
       observer.disconnect();
       window.removeEventListener(
-        'mousemove',
+        'pointermove',
         onPointerMove
+      );
+      window.removeEventListener(
+        'pointerup',
+        resetPointer
+      );
+      window.removeEventListener(
+        'pointercancel',
+        resetPointer
       );
       window.removeEventListener(
         'resize',
