@@ -28,17 +28,31 @@ export function SmoothScrollProvider({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const [lenis, setLenis] = useState<Lenis | null>(null);
+  const [lenis, setLenis] =
+    useState<Lenis | null>(null);
+  const [nativeTouch, setNativeTouch] =
+    useState(false);
 
   useEffect(() => {
     gsap.registerPlugin(ScrollTrigger);
 
+    const touchMode =
+      window.matchMedia(
+        '(max-width: 767px), (pointer: coarse)'
+      ).matches;
+
+    setNativeTouch(touchMode);
+
+    if (touchMode) {
+      setLenis(null);
+      return;
+    }
+
     const instance = new Lenis({
-      lerp: 0.115,
+      lerp: 0.12,
       smoothWheel: true,
       syncTouch: false,
       wheelMultiplier: 0.95,
-      touchMultiplier: 1,
       overscroll: false,
       autoResize: true,
     });
@@ -65,53 +79,75 @@ export function SmoothScrollProvider({
   }, []);
 
   useEffect(() => {
-    if (!lenis) return;
+    if (!lenis && !nativeTouch) return;
 
-    lenis.scrollTo(0, { immediate: true });
+    if (lenis) {
+      lenis.scrollTo(0, {
+        immediate: true,
+      });
+    } else {
+      window.scrollTo(0, 0);
+    }
 
     let revealContext:
       | gsap.Context
       | null = null;
 
-    const frame = requestAnimationFrame(() => {
-      revealContext = gsap.context(() => {
-        gsap.utils
-          .toArray<HTMLElement>('[data-reveal]')
-          .forEach((element) => {
-            gsap.fromTo(
-              element,
-              {
-                y: 28,
-                opacity: 0,
-              },
-              {
-                y: 0,
-                opacity: 1,
-                duration: 0.9,
-                ease: 'power4.out',
-                scrollTrigger: {
-                  trigger: element,
-                  start: 'top 90%',
-                  once: true,
+    const frame =
+      requestAnimationFrame(() => {
+        revealContext = gsap.context(() => {
+          gsap.utils
+            .toArray<HTMLElement>(
+              '[data-reveal]'
+            )
+            .forEach((element) => {
+              gsap.fromTo(
+                element,
+                {
+                  y: nativeTouch
+                    ? 14
+                    : 24,
+                  opacity: 0,
                 },
-              }
-            );
-          });
-      });
+                {
+                  y: 0,
+                  opacity: 1,
+                  duration: nativeTouch
+                    ? 0.58
+                    : 0.8,
+                  ease: 'power3.out',
+                  scrollTrigger: {
+                    trigger: element,
+                    start: 'top 92%',
+                    once: true,
+                  },
+                }
+              );
+            });
+        });
 
-      ScrollTrigger.refresh();
-    });
+        ScrollTrigger.refresh();
+      });
 
     return () => {
       cancelAnimationFrame(frame);
       revealContext?.revert();
     };
-  }, [pathname, lenis]);
+  }, [
+    pathname,
+    lenis,
+    nativeTouch,
+  ]);
 
-  const value = useMemo(() => ({ lenis }), [lenis]);
+  const value = useMemo(
+    () => ({ lenis }),
+    [lenis]
+  );
 
   return (
-    <SmoothScrollContext.Provider value={value}>
+    <SmoothScrollContext.Provider
+      value={value}
+    >
       {children}
     </SmoothScrollContext.Provider>
   );
