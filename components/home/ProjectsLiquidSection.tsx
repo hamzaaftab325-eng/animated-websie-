@@ -50,25 +50,13 @@ export function ProjectsLiquidSection() {
       section.querySelector<HTMLElement>(
         '[data-projects-line-last]'
       );
-    const contents =
-      section.querySelector<HTMLElement>(
-        '[data-projects-contents]'
-      );
-    const label =
-      section.querySelector<HTMLElement>(
-        '[data-projects-label]'
-      );
-    const tint =
-      section.querySelector<HTMLElement>(
-        '[data-projects-tint]'
-      );
 
     const reducedMotion =
       window.matchMedia(
         '(prefers-reduced-motion: reduce)'
       ).matches;
     const isMobile = window.matchMedia(
-      '(max-width: 767px)'
+      '(max-width: 767px), (pointer: coarse)'
     ).matches;
 
     let revealObserver:
@@ -234,14 +222,6 @@ export function ProjectsLiquidSection() {
           force3D: true,
         });
       };
-
-      ScrollTrigger.create({
-        trigger: section,
-        start: 'top 90%',
-        once: true,
-        onEnter: playReferenceAnimation,
-        onEnterBack: playReferenceAnimation,
-      });
 
       // Keep the content reveal independent from ScrollTrigger/Lenis timing.
       // This prevents the projects copy from remaining at opacity:0 while
