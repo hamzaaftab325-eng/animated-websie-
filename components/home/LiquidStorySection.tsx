@@ -28,10 +28,6 @@ export function LiquidStorySection() {
       section?.querySelector<HTMLCanvasElement>(
         '[data-liquid-canvas]'
       );
-    const content =
-      section?.querySelector<HTMLElement>(
-        '[data-story-content]'
-      );
     const kicker =
       section?.querySelector<HTMLElement>(
         '[data-story-kicker]'
@@ -45,8 +41,7 @@ export function LiquidStorySection() {
     if (
       !section ||
       !image ||
-      !canvas ||
-      !content
+      !canvas
     ) {
       return;
     }
@@ -55,61 +50,52 @@ export function LiquidStorySection() {
       window.matchMedia(
         '(prefers-reduced-motion: reduce)'
       ).matches;
+    const touchMode =
+      window.matchMedia(
+        '(max-width: 767px), (pointer: coarse)'
+      ).matches;
 
     if (reducedMotion) return;
 
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        [image, canvas],
-        {
-          yPercent: -5.5,
-          scale: 1.16,
-        },
-        {
-          yPercent: 6.5,
-          scale: 1.105,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 0.75,
-            invalidateOnRefresh: true,
+      if (!touchMode) {
+        gsap.fromTo(
+          [image, canvas],
+          {
+            yPercent: -3.25,
+            scale: 1.15,
           },
-        }
-      );
-
-      gsap.fromTo(
-        content,
-        { y: 42 },
-        {
-          y: -54,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: section,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: 0.8,
-            invalidateOnRefresh: true,
-          },
-        }
-      );
+          {
+            yPercent: 4.25,
+            scale: 1.12,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: section,
+              start: 'top bottom',
+              end: 'bottom top',
+              scrub: 0.9,
+            },
+          }
+        );
+      }
 
       if (kicker) {
         gsap.fromTo(
           kicker,
           {
             opacity: 0,
-            y: 18,
+            y: touchMode ? 10 : 16,
           },
           {
             opacity: 1,
             y: 0,
-            duration: 0.85,
+            duration: touchMode
+              ? 0.55
+              : 0.78,
             ease: 'power3.out',
             scrollTrigger: {
               trigger: section,
-              start: 'top 76%',
+              start: 'top 82%',
               once: true,
             },
           }
@@ -119,34 +105,41 @@ export function LiquidStorySection() {
       gsap.fromTo(
         words,
         {
-          yPercent: 110,
+          yPercent: touchMode
+            ? 55
+            : 95,
           opacity: 0,
-          rotateX: 8,
-          filter: 'blur(10px)',
+          rotateX: touchMode
+            ? 0
+            : 6,
+          filter: touchMode
+            ? 'none'
+            : 'blur(7px)',
         },
         {
           yPercent: 0,
           opacity: 1,
           rotateX: 0,
           filter: 'blur(0px)',
-          duration: 1.15,
-          stagger: 0.08,
+          duration: touchMode
+            ? 0.7
+            : 1,
+          stagger: touchMode
+            ? 0.05
+            : 0.07,
           ease: 'expo.out',
           scrollTrigger: {
             trigger: section,
-            start: 'top 72%',
+            start: 'top 78%',
             once: true,
           },
         }
       );
     }, section);
 
-    requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
-    });
-
     return () => ctx.revert();
   }, []);
+
 
   return (
     <section
