@@ -52,10 +52,27 @@ export function SiteHeader() {
       window.matchMedia(
         '(prefers-reduced-motion: reduce)'
       ).matches;
+    const touchMode =
+      window.matchMedia(
+        '(max-width: 767px), (pointer: coarse)'
+      ).matches;
 
-    if (prefersReducedMotion) {
-      gsap.set([nav, ...items], {
-        clearProps: 'all',
+    if (
+      prefersReducedMotion ||
+      touchMode
+    ) {
+      gsap.set(nav, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: 'none',
+        clearProps: 'willChange',
+      });
+      gsap.set(items, {
+        opacity: 1,
+        y: 0,
+        filter: 'none',
+        clearProps: 'willChange',
       });
 
       if (isHome) {
