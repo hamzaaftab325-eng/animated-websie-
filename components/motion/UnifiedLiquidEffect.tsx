@@ -56,18 +56,13 @@ export function UnifiedLiquidEffect({
         '(hover: hover) and (pointer: fine)'
       ).matches;
     const touchLiquidMode =
-      sourceType === 'canvas' &&
       !finePointer;
     const reducedMotion =
       window.matchMedia(
         '(prefers-reduced-motion: reduce)'
       ).matches;
 
-    if (
-      (!finePointer &&
-        !touchLiquidMode) ||
-      reducedMotion
-    ) {
+    if (reducedMotion) {
       return;
     }
 
@@ -77,6 +72,7 @@ export function UnifiedLiquidEffect({
     let loopRaf = 0;
     let lastTouchFrame = 0;
     let lastInteractionAt = 0;
+    let idleTimer = 0;
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -338,7 +334,7 @@ export function UnifiedLiquidEffect({
         },
         u_point_size: {
           value: touchLiquidMode
-            ? 0.00028
+            ? 0.00024
             : 0.00018,
         },
       }
@@ -649,7 +645,7 @@ export function UnifiedLiquidEffect({
 
       const maxSide =
         touchLiquidMode
-          ? 360
+          ? 320
           : 720;
       const scale = Math.min(
         1,
@@ -1105,7 +1101,7 @@ export function UnifiedLiquidEffect({
         },
         {
           rootMargin:
-            '25% 0px 25% 0px',
+            '8% 0px 8% 0px',
         }
       );
 
@@ -1155,22 +1151,47 @@ export function UnifiedLiquidEffect({
       );
     }
 
+    const scheduleLoop = (
+      delay = 0
+    ) => {
+      if (disposed) return;
+
+      if (delay > 0) {
+        idleTimer =
+          window.setTimeout(() => {
+            idleTimer = 0;
+            loopRaf =
+              requestAnimationFrame(
+                loop
+              );
+          }, delay);
+        return;
+      }
+
+      loopRaf =
+        requestAnimationFrame(loop);
+    };
+
     const loop = (
       time = performance.now()
     ) => {
       if (disposed) return;
 
+      if (!active) {
+        scheduleLoop(140);
+        return;
+      }
+
       const shouldRenderTouch =
         !touchLiquidMode ||
         pointer.moved ||
-        time - lastInteractionAt < 850;
+        time - lastInteractionAt < 720;
 
       const frameReady =
         !touchLiquidMode ||
-        time - lastTouchFrame >= 30;
+        time - lastTouchFrame >= 32;
 
       if (
-        active &&
         shouldRenderTouch &&
         frameReady
       ) {
@@ -1182,8 +1203,12 @@ export function UnifiedLiquidEffect({
         }
       }
 
-      loopRaf =
-        requestAnimationFrame(loop);
+      scheduleLoop(
+        touchLiquidMode &&
+        !shouldRenderTouch
+          ? 64
+          : 0
+      );
     };
 
     loop();
@@ -1192,6 +1217,9 @@ export function UnifiedLiquidEffect({
       disposed = true;
       cancelAnimationFrame(loopRaf);
       cancelAnimationFrame(resizeRaf);
+      if (idleTimer) {
+        window.clearTimeout(idleTimer);
+      }
       observer.disconnect();
       window.removeEventListener(
         'pointerdown',
