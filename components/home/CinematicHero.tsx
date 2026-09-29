@@ -56,7 +56,7 @@ export function CinematicHero() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!lenis || !rootRef.current) return;
+    if (!rootRef.current) return;
 
     const root = rootRef.current;
     const track =
@@ -107,6 +107,10 @@ export function CinematicHero() {
       window.matchMedia(
         '(max-width: 767px), (pointer: coarse)'
       ).matches;
+
+    if (!isMobile && !lenis) {
+      return;
+    }
 
     const decodedLimit =
       isMobile ? 10 : 18;
@@ -791,7 +795,8 @@ export function CinematicHero() {
       const scrollPosition =
         isMobile
           ? window.scrollY
-          : lenis.animatedScroll;
+          : (lenis?.animatedScroll ??
+              window.scrollY);
 
       progress = clamp(
         scrollPosition / range,
@@ -1030,7 +1035,7 @@ export function CinematicHero() {
               window.innerHeight;
           }
 
-          lenis.resize();
+          lenis?.resize();
           resizeCanvas();
           readScroll();
           scheduleRender();
@@ -1044,7 +1049,7 @@ export function CinematicHero() {
         { passive: true }
       );
     } else {
-      lenis.on(
+      lenis?.on(
         'scroll',
         onLenisScroll
       );
@@ -1087,7 +1092,7 @@ export function CinematicHero() {
           onNativeScroll
         );
       } else {
-        lenis.off(
+        lenis?.off(
           'scroll',
           onLenisScroll
         );
