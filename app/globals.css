@@ -380,12 +380,6 @@ a {
   }
 }
 
-@media (hover: none), (pointer: coarse), (max-width: 767px) {
-  .ffProjects_liquidCanvas {
-    display: none;
-  }
-}
-
 @media (min-width: 768px) and (max-width: 1100px) {
   .ffProjects_content {
     padding-block-start: 13vw;
@@ -542,12 +536,6 @@ a {
 
 .eynLiquidCanvas.is-liquid-ready {
   opacity: 1;
-}
-
-@media (hover: none), (pointer: coarse), (max-width: 767px) {
-  .eynLiquidCanvas {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -875,9 +863,6 @@ a {
     object-position: 58% 50%;
   }
 
-  .liquidStory_liquidCanvas {
-    display: none;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
