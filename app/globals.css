@@ -573,6 +573,9 @@ a {
   height: 100%;
   opacity: 0;
   pointer-events: none;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: opacity;
   transition: opacity .22s ease;
 }
 
@@ -582,7 +585,7 @@ a {
 
 @media (hover: none), (pointer: coarse), (max-width: 767px) {
   .heroLiquidCanvas {
-    display: none;
+    display: block;
   }
 }
 
