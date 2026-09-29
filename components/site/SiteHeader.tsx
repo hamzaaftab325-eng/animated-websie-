@@ -187,6 +187,53 @@ export function SiteHeader() {
 
     if (!nav || !button || !liquid) return;
 
+    const touchMode =
+      window.matchMedia(
+        '(max-width: 767px), (pointer: coarse)'
+      ).matches;
+
+    if (touchMode) {
+      setMenuOpen(false);
+
+      gsap.killTweensOf([
+        nav,
+        button,
+        liquid,
+      ]);
+
+      gsap.set(liquid, {
+        autoAlpha: 0,
+        clearProps:
+          'transform,filter',
+      });
+
+      gsap.set(nav, {
+        autoAlpha: compact ? 0 : 1,
+        y: 0,
+        scale: 1,
+        filter: 'none',
+        pointerEvents: compact
+          ? 'none'
+          : 'auto',
+      });
+
+      gsap.set(button, {
+        autoAlpha: compact ? 1 : 0,
+        scale: 1,
+        filter: 'none',
+        pointerEvents: compact
+          ? 'auto'
+          : 'none',
+      });
+
+      if (compact) {
+        hasCompactTransitionedRef.current =
+          true;
+      }
+
+      return;
+    }
+
     const centerOffset = Math.max(
       0,
       window.innerWidth * 0.5 - 42
