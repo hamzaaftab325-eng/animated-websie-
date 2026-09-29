@@ -103,18 +103,22 @@ export function ProjectsLiquidSection() {
       }
 
       gsap.set(titleLines, {
-        yPercent: 125,
+        yPercent: isMobile ? 65 : 125,
         opacity: 0,
-        rotateX: 9,
-        filter: 'blur(10px)',
+        rotateX: isMobile ? 0 : 9,
+        filter: isMobile
+          ? 'none'
+          : 'blur(10px)',
         transformOrigin: '0% 100%',
         force3D: true,
       });
 
       gsap.set(descLines, {
-        yPercent: 115,
+        yPercent: isMobile ? 48 : 115,
         opacity: 0,
-        filter: 'blur(7px)',
+        filter: isMobile
+          ? 'none'
+          : 'blur(7px)',
         force3D: true,
       });
 
@@ -124,132 +128,22 @@ export function ProjectsLiquidSection() {
         force3D: true,
       });
 
-      if (isMobile) {
-        if (image) {
-          gsap.fromTo(
-            image,
-            {
-              yPercent: -4.5,
-              scale: 1.15,
-            },
-            {
-              yPercent: 6,
-              scale: 1.13,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 0.7,
-              },
-            }
-          );
-        }
-
-        if (contents) {
-          gsap.fromTo(
-            contents,
-            { y: 36 },
-            {
-              y: -68,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 0.7,
-              },
-            }
-          );
-        }
-      } else {
-        if (image) {
-          gsap.fromTo(
-            image,
-            {
-              yPercent: -6.5,
-              scale: 1.19,
-            },
-            {
-              yPercent: 7.5,
-              scale: 1.165,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 0.7,
-              },
-            }
-          );
-        }
-
+      if (!isMobile) {
         gsap.fromTo(
-          canvas,
+          [image, canvas],
           {
-            yPercent: -6.5,
-            scale: 1.19,
+            yPercent: -3.5,
+            scale: 1.16,
           },
           {
-            yPercent: 7.5,
-            scale: 1.165,
+            yPercent: 4.5,
+            scale: 1.125,
             ease: 'none',
             scrollTrigger: {
               trigger: section,
               start: 'top bottom',
               end: 'bottom top',
-              scrub: 0.7,
-            },
-          }
-        );
-
-        if (contents) {
-          gsap.fromTo(
-            contents,
-            { y: 68 },
-            {
-              y: -112,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 0.7,
-              },
-            }
-          );
-        }
-
-        if (label) {
-          gsap.fromTo(
-            label,
-            { y: 14 },
-            {
-              y: -44,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top center',
-                end: 'bottom top',
-                scrub: 0.7,
-              },
-            }
-          );
-        }
-      }
-
-      if (tint) {
-        gsap.fromTo(
-          tint,
-          { opacity: 0.88 },
-          {
-            opacity: 1,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top bottom',
-              end: 'center center',
-              scrub: 0.7,
+              scrub: 0.9,
             },
           }
         );
