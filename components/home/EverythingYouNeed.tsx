@@ -61,61 +61,46 @@ export function EverythingYouNeed() {
         '[data-liquid-canvas]'
       );
 
-    if (!section || !image || !canvas) return;
+    if (!section || !image || !canvas) {
+      return;
+    }
 
-    const reducedMotion = window.matchMedia(
-      '(prefers-reduced-motion: reduce)'
-    ).matches;
+    const reducedMotion =
+      window.matchMedia(
+        '(prefers-reduced-motion: reduce)'
+      ).matches;
+    const touchMode =
+      window.matchMedia(
+        '(max-width: 767px), (pointer: coarse)'
+      ).matches;
 
-    if (reducedMotion) return;
+    if (
+      reducedMotion ||
+      touchMode
+    ) {
+      return;
+    }
 
-    const content = section.querySelector<HTMLElement>(
-      '[data-eyn-content]'
-    );
     const ctx = gsap.context(() => {
       gsap.fromTo(
         [image, canvas],
         {
-          yPercent: -5.5,
-          scale: 1.16,
+          yPercent: -3.25,
+          scale: 1.15,
         },
         {
-          yPercent: 6.5,
-          scale: 1.105,
+          yPercent: 4.25,
+          scale: 1.12,
           ease: 'none',
           scrollTrigger: {
             trigger: section,
             start: 'top bottom',
             end: 'bottom top',
-            scrub: 0.75,
-            invalidateOnRefresh: true,
+            scrub: 0.9,
           },
         }
       );
-
-      if (content) {
-        gsap.fromTo(
-          content,
-          { y: 28 },
-          {
-            y: -46,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: section,
-              start: 'top bottom',
-              end: 'bottom top',
-              scrub: 0.8,
-              invalidateOnRefresh: true,
-            },
-          }
-        );
-      }
-
     }, section);
-
-    requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
-    });
 
     return () => ctx.revert();
   }, []);
